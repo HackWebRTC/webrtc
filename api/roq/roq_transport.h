@@ -5,9 +5,11 @@
 #ifndef API_ROQ_ROQ_TRANSPORT_H_
 #define API_ROQ_ROQ_TRANSPORT_H_
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <span>
 
 #include "api/call/transport.h"
@@ -45,6 +47,9 @@ class RoqPacketTransport final : public Transport {
                const PacketOptions& options) override;
   bool SendRtcp(std::span<const uint8_t> packet,
                 const PacketOptions& options) override;
+  uint64_t accepted_rtp_packets() const {
+    return accepted_rtp_packets_->load();
+  }
 
  private:
   bool Send(uint64_t flow_id,
@@ -53,6 +58,8 @@ class RoqPacketTransport final : public Transport {
 
   PacketAcceptedCallback packet_accepted_;
   const RoqPacketTransportConfig config_;
+  std::shared_ptr<std::atomic<uint64_t>> accepted_rtp_packets_ =
+      std::make_shared<std::atomic<uint64_t>>(0);
 };
 
 }  // namespace webrtc::roq

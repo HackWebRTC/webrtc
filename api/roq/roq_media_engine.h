@@ -109,6 +109,8 @@ class RoqMediaEngine {
   virtual void GenerateSenderKeyFrame(const std::string& binding_id) = 0;
   virtual void RequestReceiverKeyFrame(const std::string& binding_id) = 0;
   virtual void PullAudio(const std::string& binding_id) = 0;
+  virtual void NotifyPacketAccepted(const PacketOptions& options,
+                                    size_t packet_size) = 0;
   virtual RoqMediaEngineStats stats() = 0;
   virtual std::optional<RoqMediaBindingStats> binding_stats(
       const std::string& binding_id) = 0;

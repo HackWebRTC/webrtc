@@ -178,6 +178,42 @@ TEST(RoqMediaEngineTest, StartsRecordingForTheFirstDeviceAudioPublication) {
   engine->Stop();
 }
 
+TEST(RoqMediaEngineTest, StopsRecordingAfterTheLastDevicePublicationCloses) {
+  const Environment env = CreateTestEnvironment();
+  scoped_refptr<test::MockAudioDeviceModule> audio =
+      test::MockAudioDeviceModule::CreateNice();
+  bool recording = false;
+  ON_CALL(*audio, Initialized()).WillByDefault(::testing::Return(true));
+  ON_CALL(*audio, SetRecordingDevice(::testing::An<uint16_t>()))
+      .WillByDefault(::testing::Return(0));
+  ON_CALL(*audio, InitRecording()).WillByDefault(::testing::Return(0));
+  ON_CALL(*audio, Recording()).WillByDefault([&] { return recording; });
+  ON_CALL(*audio, StartRecording()).WillByDefault([&] { recording = true; return 0; });
+  ON_CALL(*audio, StopRecording()).WillByDefault([&] { recording = false; return 0; });
+  auto video_encoder = CreateBuiltinVideoEncoderFactory();
+  auto video_decoder = CreateBuiltinVideoDecoderFactory();
+  NullTransport transport;
+  std::string error;
+  std::unique_ptr<RoqMediaEngine> engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = video_encoder.get(),
+       .video_decoder_factory = video_decoder.get()},
+      env, &error);
+  ASSERT_TRUE(engine);
+  ASSERT_TRUE(engine->Start(&error));
+  ASSERT_TRUE(engine->AddSendBinding(
+      {.binding_id = "microphone", .kind = RoqMediaKind::kAudio,
+       .primary_ssrc = 1001, .payload_type = 111, .transport = &transport,
+       .audio_input_mode = RoqAudioInputMode::kDevice}, &error));
+  ASSERT_TRUE(recording);
+
+  EXPECT_TRUE(engine->RemoveBinding("microphone"));
+  EXPECT_FALSE(recording);
+  engine->Stop();
+}
+
 TEST(RoqMediaEngineTest, PacketizesLargeVideoFramesForTheRoqMtu) {
   const Environment env = CreateTestEnvironment();
   scoped_refptr<AudioDeviceModule> audio =
@@ -364,6 +400,46 @@ TEST(RoqMediaEngineTest, AddsIndependentSendBindingsToTheSameCall) {
   EXPECT_TRUE(engine->RemoveBinding("microphone"));
   EXPECT_TRUE(engine->HasBinding("camera"));
   EXPECT_EQ(engine->binding_count(), 1u);
+  engine->Stop();
+}
+
+TEST(RoqMediaEngineTest, CountsAcceptedExternalAudioPackets) {
+  const Environment env = CreateTestEnvironment();
+  scoped_refptr<AudioDeviceModule> audio =
+      CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_TRUE(audio);
+  ASSERT_EQ(audio->Init(), 0);
+  auto video_encoder = CreateBuiltinVideoEncoderFactory();
+  auto video_decoder = CreateBuiltinVideoDecoderFactory();
+  NullTransport transport;
+  std::string error;
+  std::unique_ptr<RoqMediaEngine> engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = video_encoder.get(),
+       .video_decoder_factory = video_decoder.get()},
+      env, &error);
+  ASSERT_TRUE(engine) << error;
+  ASSERT_TRUE(engine->Start(&error)) << error;
+  ASSERT_TRUE(engine->AddSendBinding(
+      {.binding_id = "microphone", .kind = RoqMediaKind::kAudio,
+       .primary_ssrc = 1001, .payload_type = 111, .transport = &transport},
+      &error));
+
+  std::vector<int16_t> samples(960);
+  for (uint32_t index = 0; index < 120; ++index)
+    engine->SendAudioBlock("microphone", samples, index * 480);
+
+  bool sent = false;
+  for (int attempt = 0; attempt < 300 && !sent; ++attempt) {
+    sent = engine->stats().sent_audio_packets > 0;
+    if (!sent)
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_TRUE(sent);
+  ASSERT_TRUE(engine->RemoveBinding("microphone"));
+  EXPECT_GT(engine->stats().sent_audio_packets, 0);
   engine->Stop();
 }
 

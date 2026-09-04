@@ -80,9 +80,11 @@ TEST(RoqPacketTransportTest, DefersAcceptedCallbackUntilQuicheSubmission) {
 
   EXPECT_TRUE(transport.SendRtp(packet, PacketOptions()));
   EXPECT_FALSE(accepted);
+  EXPECT_EQ(transport.accepted_rtp_packets(), 0u);
   ASSERT_TRUE(session.on_submitted_);
   session.on_submitted_();
   EXPECT_TRUE(accepted);
+  EXPECT_EQ(transport.accepted_rtp_packets(), 1u);
 }
 
 TEST(RoqPacketTransportTest, ClassifiesKeyVideoFrame) {

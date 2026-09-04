@@ -85,11 +85,15 @@ bool RoqPacketTransport::Send(uint64_t flow_id,
     }
   }
   PacketAcceptedCallback accepted = packet_accepted_;
+  std::shared_ptr<std::atomic<uint64_t>> accepted_rtp_packets =
+      flow_id == config_.rtp_flow_id ? accepted_rtp_packets_ : nullptr;
   std::vector<uint8_t> accepted_packet(packet.begin(), packet.end());
   if (config_.session->SendMedia(
           flow_id, packet, std::move(datagram),
-          [accepted = std::move(accepted), flow_id,
+          [accepted = std::move(accepted), accepted_rtp_packets, flow_id,
            packet = std::move(accepted_packet), options] {
+            if (accepted_rtp_packets)
+              ++*accepted_rtp_packets;
             if (accepted)
               accepted(flow_id, packet, options);
           }) != RoqSendResult::kQueued) {

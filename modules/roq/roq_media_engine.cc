@@ -31,6 +31,7 @@
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "rtc_base/copy_on_write_buffer.h"
+#include "rtc_base/network/sent_packet.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread.h"
 #include "video/config/video_encoder_config.h"
@@ -99,6 +100,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
       *error = "failed to start media worker thread";
       return false;
     }
+    safety_->SetAlive();
     worker_->BlockingCall([this] {
       AudioState::Config audio;
       audio.audio_mixer = AudioMixerImpl::Create();
@@ -130,6 +132,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
   void Stop() override {
     if (!started_)
       return;
+    safety_->SetNotAlive();
     worker_->BlockingCall([this] {
       for (auto& [id, binding] : bindings_)
         Destroy(binding);
@@ -288,6 +291,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
     ssrcs_.erase(it->second.config.primary_ssrc);
     ssrcs_.erase(it->second.config.rtx_ssrc);
     bindings_.erase(it);
+    worker_->BlockingCall([this] { UpdateAudioDeviceState(); });
     return true;
   }
 
@@ -418,8 +422,39 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
           }
         }
       }
+      for (const auto& [id, terminal] : terminal_stats_) {
+        result.sent_audio_packets += terminal.sent_audio_packets;
+        result.sent_video_frames += terminal.sent_video_frames;
+        result.received_audio_packets += terminal.received_audio_packets;
+        result.decoded_video_frames += terminal.decoded_video_frames;
+        result.pli_sent += terminal.pli_sent;
+        result.fir_sent += terminal.fir_sent;
+        result.nack_sent += terminal.nack_sent;
+        result.nack_received += terminal.nack_received;
+        result.retransmitted_packets_sent +=
+            terminal.retransmitted_packets_sent;
+      }
     });
     return result;
+  }
+
+  void NotifyPacketAccepted(const PacketOptions& options,
+                            size_t packet_size) override {
+    if (!worker_ || !call_ || options.packet_id < 0)
+      return;
+    auto notify = [this, options, packet_size] {
+      SentPacketInfo sent(options.packet_id, env_.clock().TimeInMilliseconds());
+      sent.info.included_in_feedback = options.included_in_feedback;
+      sent.info.included_in_allocation = options.included_in_allocation;
+      sent.info.packet_size_bytes = packet_size;
+      sent.info.packet_type = PacketType::kData;
+      call_->OnSentPacket(sent);
+    };
+    if (worker_->IsCurrent()) {
+      notify();
+    } else {
+      worker_->PostTask(SafeTask(safety_, std::move(notify)));
+    }
   }
 
   std::optional<RoqMediaBindingStats> binding_stats(
@@ -450,6 +485,16 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
       }
     }
     return false;
+  }
+
+  void UpdateAudioDeviceState() {
+    const bool should_play = config_.use_audio_device_playout &&
+                             HasAudioReceiveBinding();
+    if (!should_play && config_.audio_device_module->Playing())
+      config_.audio_device_module->StopPlayout();
+    const bool should_record = HasDeviceAudioSendBinding();
+    if (!should_record && config_.audio_device_module->Recording())
+      config_.audio_device_module->StopRecording();
   }
 
   bool CanAdd(const RoqMediaBindingConfig& config,
@@ -542,6 +587,8 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
   scoped_refptr<AudioState> audio_state_;
   std::unique_ptr<Call> call_;
   std::unique_ptr<VideoBitrateAllocatorFactory> bitrate_allocator_factory_;
+  scoped_refptr<PendingTaskSafetyFlag> safety_ =
+      PendingTaskSafetyFlag::CreateDetached();
   std::map<std::string, Binding> bindings_;
   std::map<std::string, RoqMediaBindingStats> terminal_stats_;
   std::set<uint32_t> ssrcs_;
