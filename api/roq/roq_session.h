@@ -21,7 +21,14 @@
 
 namespace webrtc::roq {
 
-enum class RoqSendResult { kQueued, kQueueFull, kOversize, kInvalid, kClosed };
+enum class RoqSendResult {
+  kQueued,
+  kDropped,
+  kQueueFull,
+  kOversize,
+  kInvalid,
+  kClosed
+};
 enum class RoqMediaType { kAudio, kVideo, kRtcp };
 enum class RoqDatagramPriority {
   kPeriodicRtcp,
@@ -41,6 +48,7 @@ struct RoqFlowConfig {
 struct RoqFrameId {
   uint32_t ssrc = 0;
   uint32_t timestamp = 0;
+  std::string binding_id;
 
   bool operator==(const RoqFrameId&) const = default;
 };
@@ -53,6 +61,7 @@ struct RoqPacketId {
 };
 
 struct RoqDatagramMetadata {
+  std::string binding_id;
   RoqMediaType media_type = RoqMediaType::kVideo;
   Timestamp enqueue_time = Timestamp::MinusInfinity();
   Timestamp deadline = Timestamp::PlusInfinity();
@@ -60,6 +69,11 @@ struct RoqDatagramMetadata {
   std::optional<RoqFrameId> frame_id;
   std::optional<RoqPacketId> packet_id;
   std::optional<RoqPacketId> original_packet_id;
+  bool frame_complete = false;
+  bool contains_idr = false;
+  bool contains_sps = false;
+  bool contains_pps = false;
+  std::function<void()> request_key_frame;
 };
 
 struct RoqSessionConfig {
@@ -75,6 +89,7 @@ struct RoqSessionConfig {
   size_t maximum_udp_payload = 1350;
   uint64_t max_idle_timeout_ms = 5000;
   size_t outgoing_queue_capacity = 512;
+  size_t outgoing_queue_byte_capacity = 512 * 1024;
   Clock* clock = Clock::GetRealTimeClock();
   std::vector<uint64_t> allowed_flow_ids;
   std::vector<uint64_t> receive_flow_ids;
@@ -118,13 +133,23 @@ struct RoqSessionStats {
   size_t expired_drops = 0;
   size_t invalid_drops = 0;
   size_t quiche_slot_expired_drops = 0;
+  size_t peak_quiche_queue_size = 0;
   size_t peak_queue_size = 0;
+  size_t peak_queue_bytes = 0;
   int64_t max_queue_delay_us = 0;
   size_t dropped_periodic_rtcp = 0;
   size_t dropped_video_delta = 0;
   size_t dropped_video_key = 0;
   size_t dropped_audio = 0;
   size_t dropped_critical_rtcp = 0;
+  size_t dependency_drops = 0;
+  size_t recovery_requests = 0;
+  size_t network_control_updates = 0;
+  size_t controller_probe_cluster_count = 0;
+  int64_t controller_target_rate_bps = 0;
+  int64_t controller_pacer_rate_bps = 0;
+  int64_t controller_padding_rate_bps = 0;
+  bool controller_has_congestion_window = false;
   size_t max_datagram_payload = 0;
   uint64_t max_pacing_delay_ns = 0;
   uint64_t rtt_ns = 0;
@@ -135,6 +160,16 @@ struct RoqSessionStats {
   uint64_t startup_exit_cwnd = 0;
   size_t pmtu_bytes = 0;
   size_t dgram_lost = 0;
+};
+
+struct RoqBindingSendStats {
+  size_t enqueued_packets = 0;
+  size_t queued_packets = 0;
+  size_t queued_bytes = 0;
+  size_t submitted_packets = 0;
+  size_t dropped_packets = 0;
+  size_t dependency_drops = 0;
+  size_t recovery_requests = 0;
 };
 
 class RoqSession {
@@ -179,12 +214,30 @@ class RoqSession {
                                   std::span<const uint8_t> packet,
                                   RoqDatagramMetadata metadata,
                                   std::function<void()> on_submitted) = 0;
+  virtual void PurgeSendBinding(const std::string& binding_id) {
+    (void)binding_id;
+  }
+  virtual void RecordNetworkControlState(size_t probe_cluster_count,
+                                         int64_t target_rate_bps,
+                                         int64_t pacer_rate_bps,
+                                         int64_t padding_rate_bps,
+                                         bool has_congestion_window) {
+    (void)probe_cluster_count;
+    (void)target_rate_bps;
+    (void)pacer_rate_bps;
+    (void)padding_rate_bps;
+    (void)has_congestion_window;
+  }
   virtual void RecordInvalidDatagram() = 0;
   virtual void UpdatePeerDatagramPayloadLimit(size_t bytes) = 0;
   virtual void Close(uint64_t application_error = 0,
                      std::string reason = "complete") = 0;
   virtual bool WaitUntilClosed(TimeDelta timeout) = 0;
   virtual RoqSessionStats stats() const = 0;
+  virtual RoqBindingSendStats send_stats(const std::string& binding_id) const {
+    (void)binding_id;
+    return {};
+  }
   virtual std::string error() const = 0;
 };
 

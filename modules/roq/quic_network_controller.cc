@@ -18,9 +18,13 @@ class QuicNetworkController final : public NetworkControllerInterface {
  public:
   explicit QuicNetworkController(
       QuicNetworkControllerFactory::StatsProvider stats_provider,
-      QuicNetworkControllerFactory::UpdateObserver update_observer)
+      QuicNetworkControllerFactory::UpdateObserver update_observer,
+      DataRate minimum_rate,
+      DataRate startup_rate,
+      DataRate maximum_rate)
       : stats_provider_(std::move(stats_provider)),
-        update_observer_(std::move(update_observer)) {}
+        update_observer_(std::move(update_observer)),
+        policy_(minimum_rate, startup_rate, maximum_rate) {}
 
   NetworkControlUpdate OnNetworkAvailability(NetworkAvailability msg) override;
   NetworkControlUpdate OnNetworkRouteChange(NetworkRouteChange msg) override;
@@ -139,6 +143,9 @@ NetworkControlUpdate QuicNetworkController::OnStreamsConfig(StreamsConfig msg) {
 
 NetworkControlUpdate QuicNetworkController::OnTargetRateConstraints(
     TargetRateConstraints msg) {
+  policy_.SetLimits(msg.min_data_rate.value_or(DataRate::BitsPerSec(1)),
+                    msg.starting_rate.value_or(budget_.target_rate),
+                    msg.max_data_rate.value_or(DataRate::PlusInfinity()));
   return Update(msg.at_time);
 }
 
@@ -164,14 +171,21 @@ NetworkControlUpdate QuicNetworkController::OnNetworkStateEstimate(
 
 QuicNetworkControllerFactory::QuicNetworkControllerFactory(
     StatsProvider stats_provider,
-    UpdateObserver update_observer)
+    UpdateObserver update_observer,
+    DataRate minimum_rate,
+    DataRate startup_rate,
+    DataRate maximum_rate)
     : stats_provider_(std::move(stats_provider)),
-      update_observer_(std::move(update_observer)) {}
+      update_observer_(std::move(update_observer)),
+      minimum_rate_(minimum_rate),
+      startup_rate_(startup_rate),
+      maximum_rate_(maximum_rate) {}
 
 std::unique_ptr<NetworkControllerInterface>
 QuicNetworkControllerFactory::Create(NetworkControllerConfig) {
-  return std::make_unique<QuicNetworkController>(stats_provider_,
-                                                 update_observer_);
+  return std::make_unique<QuicNetworkController>(
+      stats_provider_, update_observer_, minimum_rate_, startup_rate_,
+      maximum_rate_);
 }
 
 TimeDelta QuicNetworkControllerFactory::GetProcessInterval() const {

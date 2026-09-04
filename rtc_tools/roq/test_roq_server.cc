@@ -273,6 +273,8 @@ class TestRoqServerImpl final : public TestRoqServer {
     switch (result) {
       case DatagramEnqueueResult::kQueued:
         return RoqSendResult::kQueued;
+      case DatagramEnqueueResult::kDropped:
+        return RoqSendResult::kDropped;
       case DatagramEnqueueResult::kQueueFull:
         return RoqSendResult::kQueueFull;
       case DatagramEnqueueResult::kOversize:
@@ -298,7 +300,7 @@ class TestRoqServerImpl final : public TestRoqServer {
           stats_.max_datagram_payload == 0
               ? bytes
               : std::min(bytes, stats_.max_datagram_payload);
-      outgoing_.SetMaxDatagramSize(effective);
+      outgoing_.SetMaxDatagramSize(effective, config_.clock->CurrentTime());
       if (quiche_slot_size_ > effective)
         purge_quiche_slot_for_pmtu_ = true;
       CopyQueueStatsLocked();
@@ -451,7 +453,7 @@ class TestRoqServerImpl final : public TestRoqServer {
       if (stats_.max_datagram_payload == effective)
         return;
       stats_.max_datagram_payload = effective;
-      outgoing_.SetMaxDatagramSize(effective);
+      outgoing_.SetMaxDatagramSize(effective, config_.clock->CurrentTime());
       if (quiche_slot_size_ > effective)
         purge_quiche_slot_for_pmtu_ = true;
       CopyQueueStatsLocked();

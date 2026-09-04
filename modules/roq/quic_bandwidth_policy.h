@@ -36,12 +36,22 @@ struct QuicMediaBudget {
 
 class QuicBandwidthPolicy {
  public:
+  QuicBandwidthPolicy(DataRate minimum_rate = DataRate::KilobitsPerSec(256),
+                      DataRate startup_rate = DataRate::KilobitsPerSec(1000),
+                      DataRate maximum_rate = DataRate::PlusInfinity());
+  void SetLimits(DataRate minimum_rate,
+                 DataRate startup_rate,
+                 DataRate maximum_rate);
   QuicMediaBudget Update(const QuicBandwidthSample& sample);
 
  private:
   uint64_t last_acked_bytes_ = 0;
   std::optional<Timestamp> last_ack_time_;
-  DataRate target_rate_ = DataRate::KilobitsPerSec(1000);
+  DataRate minimum_rate_;
+  DataRate startup_rate_;
+  DataRate maximum_rate_;
+  DataRate target_rate_;
+  bool has_fresh_sample_ = false;
 };
 
 }  // namespace webrtc::roq

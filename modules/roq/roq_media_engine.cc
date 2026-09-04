@@ -114,10 +114,31 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
           CallConfig::CreateWithJoinedWorkerAndNetworkQueue(env_,
                                                             worker_.get());
       call_config.audio_state = audio_state_;
+      call_config.bitrate_config.min_bitrate_bps = config_.send_min_bitrate_bps;
+      call_config.bitrate_config.start_bitrate_bps =
+          config_.send_start_bitrate_bps;
+      call_config.bitrate_config.max_bitrate_bps = config_.send_max_bitrate_bps;
       if (config_.network_stats_provider) {
         call_config.per_call_network_controller_factory =
             std::make_unique<QuicNetworkControllerFactory>(
-                config_.network_stats_provider, nullptr);
+                config_.network_stats_provider,
+                [this](const QuicNetworkControlState& state) {
+                  network_control_updates_.fetch_add(1);
+                  controller_target_rate_bps_.store(state.target_rate.bps());
+                  controller_pacer_rate_bps_.store(state.pacer_rate.bps());
+                  controller_padding_rate_bps_.store(state.padding_rate.bps());
+                  controller_probe_cluster_count_.store(
+                      state.probe_cluster_count);
+                  controller_has_congestion_window_.store(
+                      state.has_congestion_window);
+                  if (config_.network_control_observer)
+                    config_.network_control_observer(state);
+                },
+                DataRate::BitsPerSec(config_.send_min_bitrate_bps),
+                DataRate::BitsPerSec(config_.send_start_bitrate_bps),
+                config_.send_max_bitrate_bps > 0
+                    ? DataRate::BitsPerSec(config_.send_max_bitrate_bps)
+                    : DataRate::PlusInfinity());
       }
       call_ = Call::Create(std::move(call_config));
       bitrate_allocator_factory_ = CreateBuiltinVideoBitrateAllocatorFactory();
@@ -154,8 +175,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
     Binding binding{.config = config};
     worker_->BlockingCall([&] {
       if (config.kind == RoqMediaKind::kAudio) {
-        if (config_.use_audio_device_playout &&
-            !HasAudioReceiveBinding() &&
+        if (config_.use_audio_device_playout && !HasAudioReceiveBinding() &&
             (config_.audio_device_module->SetPlayoutDevice(0) != 0 ||
              config_.audio_device_module->InitSpeaker() != 0)) {
           return;
@@ -181,6 +201,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         VideoReceiveStreamInterface::Config receive(
             config.transport, config_.video_decoder_factory);
         receive.rtp.remote_ssrc = config.primary_ssrc;
+        receive.rtp.nack.rtp_history_ms = 1000;
         receive.rtp.rtx_ssrc = config.rtx_ssrc;
         if (config.rtx_ssrc != 0) {
           receive.rtp.rtx_associated_payload_types[config.rtx_payload_type] =
@@ -212,6 +233,12 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
     Binding binding{.config = config};
     worker_->BlockingCall([&] {
       if (config.kind == RoqMediaKind::kAudio) {
+        if (config.audio_bitrate_bps <= 0 ||
+            config.video_min_bitrate_bps != 0 ||
+            config.video_start_bitrate_bps != 0 ||
+            config.video_max_bitrate_bps != 0) {
+          return;
+        }
         if (config.audio_input_mode == RoqAudioInputMode::kDevice &&
             !HasDeviceAudioSendBinding() &&
             (config_.audio_device_module->SetRecordingDevice(0) != 0 ||
@@ -226,9 +253,9 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         opus_parameters["useinbandfec"] = "1";
         send.send_codec_spec = AudioSendStream::Config::SendCodecSpec(
             config.payload_type, {"opus", 48000, 2, opus_parameters});
-        send.send_codec_spec->target_bitrate_bps = 128000;
-        send.min_bitrate_bps = 128000;
-        send.max_bitrate_bps = 128000;
+        send.send_codec_spec->target_bitrate_bps = config.audio_bitrate_bps;
+        send.min_bitrate_bps = config.audio_bitrate_bps;
+        send.max_bitrate_bps = config.audio_bitrate_bps;
         send.include_in_congestion_control_allocation = true;
         send.encoder_factory = config_.audio_encoder_factory;
         binding.audio_send = call_->CreateAudioSendStream(send);
@@ -241,6 +268,12 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
           return;
         }
       } else {
+        if (config.audio_bitrate_bps != 0 ||
+            config.video_min_bitrate_bps <= 0 ||
+            config.video_start_bitrate_bps < config.video_min_bitrate_bps ||
+            config.video_max_bitrate_bps < config.video_start_bitrate_bps) {
+          return;
+        }
         VideoSendStream::Config send(config.transport);
         send.rtp.ssrcs = {config.primary_ssrc};
         send.rtp.payload_name = "H264";
@@ -256,9 +289,18 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         encoder.codec_type = kVideoCodecH264;
         encoder.video_format = H264Format();
         encoder.number_of_streams = 1;
-        encoder.max_bitrate_bps = 4'000'000;
+        encoder.max_bitrate_bps = config.video_max_bitrate_bps;
+        encoder.bitrate_priority = 1.0;
+        encoder.frame_drop_enabled = true;
         encoder.simulcast_layers.resize(1);
         encoder.simulcast_layers[0].active = true;
+        encoder.simulcast_layers[0].min_bitrate_bps =
+            config.video_min_bitrate_bps;
+        encoder.simulcast_layers[0].target_bitrate_bps =
+            config.video_start_bitrate_bps;
+        encoder.simulcast_layers[0].max_bitrate_bps =
+            config.video_max_bitrate_bps;
+        encoder.simulcast_layers[0].bitrate_priority = 1.0;
         encoder.simulcast_layers[0].max_framerate = 60;
         encoder.simulcast_layers[0].scale_resolution_down_by = 1.0;
         binding.video_source = std::make_unique<PushVideoSource>();
@@ -270,11 +312,9 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         binding.video_send->Start();
       }
     });
-    if (config.kind == RoqMediaKind::kAudio && !binding.audio &&
-        !binding.audio_send) {
-      *error = config.audio_input_mode == RoqAudioInputMode::kDevice
-                   ? "failed to start audio recording device"
-                   : "failed to start audio playout device";
+    if ((config.kind == RoqMediaKind::kAudio && !binding.audio_send) ||
+        (config.kind == RoqMediaKind::kVideo && !binding.video_send)) {
+      *error = "invalid publication bitrate config";
       return false;
     }
     Install(std::move(config), std::move(binding));
@@ -293,6 +333,24 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
     bindings_.erase(it);
     worker_->BlockingCall([this] { UpdateAudioDeviceState(); });
     return true;
+  }
+
+  void UpdateSendBitrateConstraints(int min_bitrate_bps,
+                                    int start_bitrate_bps,
+                                    int max_bitrate_bps) override {
+    if (!worker_ || !call_ || min_bitrate_bps <= 0 ||
+        start_bitrate_bps < min_bitrate_bps ||
+        max_bitrate_bps < start_bitrate_bps) {
+      return;
+    }
+    worker_->PostTask([this, min_bitrate_bps, start_bitrate_bps,
+                       max_bitrate_bps] {
+      BitrateConstraints constraints;
+      constraints.min_bitrate_bps = min_bitrate_bps;
+      constraints.start_bitrate_bps = start_bitrate_bps;
+      constraints.max_bitrate_bps = max_bitrate_bps;
+      call_->GetTransportControllerSend()->SetSdpBitrateParameters(constraints);
+    });
   }
 
   bool HasBinding(const std::string& binding_id) const override {
@@ -392,6 +450,14 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
 
   RoqMediaEngineStats stats() override {
     RoqMediaEngineStats result;
+    result.network_control_updates = network_control_updates_.load();
+    result.controller_target_rate_bps = controller_target_rate_bps_.load();
+    result.controller_pacer_rate_bps = controller_pacer_rate_bps_.load();
+    result.controller_padding_rate_bps = controller_padding_rate_bps_.load();
+    result.controller_probe_cluster_count =
+        controller_probe_cluster_count_.load();
+    result.controller_has_congestion_window =
+        controller_has_congestion_window_.load();
     if (!worker_ || !call_)
       return result;
     worker_->BlockingCall([&] {
@@ -488,8 +554,8 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
   }
 
   void UpdateAudioDeviceState() {
-    const bool should_play = config_.use_audio_device_playout &&
-                             HasAudioReceiveBinding();
+    const bool should_play =
+        config_.use_audio_device_playout && HasAudioReceiveBinding();
     if (!should_play && config_.audio_device_module->Playing())
       config_.audio_device_module->StopPlayout();
     const bool should_record = HasDeviceAudioSendBinding();
@@ -548,6 +614,8 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         result.sent_video_frames = video.frames_sent;
         for (const auto& [ssrc, stream] : video.substreams) {
           result.nack_received += stream.rtcp_packet_type_counts.nack_packets;
+          result.nack_requests_received +=
+              stream.rtcp_packet_type_counts.nack_requests;
           result.retransmitted_packets_sent +=
               stream.rtp_stats.retransmitted.packets;
         }
@@ -592,6 +660,12 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
   std::map<std::string, Binding> bindings_;
   std::map<std::string, RoqMediaBindingStats> terminal_stats_;
   std::set<uint32_t> ssrcs_;
+  std::atomic<uint64_t> network_control_updates_ = 0;
+  std::atomic<int64_t> controller_target_rate_bps_ = 0;
+  std::atomic<int64_t> controller_pacer_rate_bps_ = 0;
+  std::atomic<int64_t> controller_padding_rate_bps_ = 0;
+  std::atomic<size_t> controller_probe_cluster_count_ = 0;
+  std::atomic<bool> controller_has_congestion_window_ = false;
   bool started_ = false;
 };
 

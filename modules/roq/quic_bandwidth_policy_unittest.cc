@@ -47,6 +47,38 @@ TEST(QuicBandwidthPolicyTest, StartsAtOneMegabitWithoutSample) {
   EXPECT_EQ(budget.target_rate, DataRate::KilobitsPerSec(1000));
 }
 
+TEST(QuicBandwidthPolicyTest, UpdatingInitialLimitsUsesNewStartRate) {
+  QuicBandwidthPolicy policy(DataRate::BitsPerSec(1),
+                             DataRate::BitsPerSec(128'000),
+                             DataRate::PlusInfinity());
+
+  policy.SetLimits(DataRate::BitsPerSec(384'000),
+                   DataRate::BitsPerSec(2'128'000),
+                   DataRate::BitsPerSec(4'128'000));
+
+  EXPECT_EQ(
+      policy
+          .Update(Sample(/*time_ms=*/0, /*acked_bytes=*/0,
+                         /*max_bandwidth_bps=*/0, /*delivery_rate_bps=*/0))
+          .target_rate,
+      DataRate::BitsPerSec(2'128'000));
+}
+
+TEST(QuicBandwidthPolicyTest, DynamicLimitsDoNotResetEstablishedEstimate) {
+  QuicBandwidthPolicy policy(DataRate::BitsPerSec(1),
+                             DataRate::BitsPerSec(128'000),
+                             DataRate::BitsPerSec(4'128'000));
+  ASSERT_EQ(policy.Update(Sample(100, 1000, 2'000'000, 2'000'000)).target_rate,
+            DataRate::BitsPerSec(402'400));
+
+  policy.SetLimits(DataRate::BitsPerSec(384'000),
+                   DataRate::BitsPerSec(2'128'000),
+                   DataRate::BitsPerSec(4'128'000));
+
+  EXPECT_EQ(policy.Update(Sample(200, 2000, 2'000'000, 2'000'000)).target_rate,
+            DataRate::BitsPerSec(621'920));
+}
+
 TEST(QuicBandwidthPolicyTest, UsesMinimumSignalAndDeductsTwentyFivePercent) {
   QuicBandwidthPolicy policy;
 
@@ -74,11 +106,13 @@ TEST(QuicBandwidthPolicyTest, AppliesIncreaseEwmaAndImmediateDecrease) {
             DataRate::BitsPerSec(600'000));
 }
 
-TEST(QuicBandwidthPolicyTest, ClampsToConfiguredBounds) {
-  QuicBandwidthPolicy policy;
+TEST(QuicBandwidthPolicyTest, DoesNotInflateCapacityToEncoderMinimum) {
+  QuicBandwidthPolicy policy(DataRate::KilobitsPerSec(256),
+                             DataRate::KilobitsPerSec(1000),
+                             DataRate::BitsPerSec(4'128'000));
 
   EXPECT_EQ(policy.Update(Sample(100, 1000, 100'000, 100'000)).target_rate,
-            DataRate::KilobitsPerSec(256));
+            DataRate::KilobitsPerSec(75));
   EXPECT_EQ(
       policy.Update(Sample(200, 2000, 100'000'000, 100'000'000)).target_rate,
       DataRate::BitsPerSec(4'128'000));

@@ -11,6 +11,7 @@
 #include <functional>
 #include <memory>
 #include <span>
+#include <string>
 
 #include "api/call/transport.h"
 #include "api/roq/roq_session.h"
@@ -20,6 +21,7 @@ namespace webrtc::roq {
 
 struct RoqPacketTransportConfig {
   RoqSession* session = nullptr;
+  std::string binding_id;
   RoqMediaType media_type = RoqMediaType::kVideo;
   uint64_t rtp_flow_id = 0;
   uint64_t rtcp_flow_id = 0;
@@ -33,6 +35,7 @@ struct RoqPacketTransportConfig {
   TimeDelta video_delta_deadline = TimeDelta::Millis(100);
   TimeDelta video_key_deadline = TimeDelta::Millis(150);
   TimeDelta periodic_rtcp_deadline = TimeDelta::Millis(250);
+  std::function<void()> request_key_frame;
 };
 
 class RoqPacketTransport final : public Transport {

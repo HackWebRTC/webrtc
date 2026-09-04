@@ -41,8 +41,12 @@ class QuicNetworkControllerFactory final
   using StatsProvider = std::function<RoqSessionStats()>;
   using UpdateObserver = std::function<void(const QuicNetworkControlState&)>;
 
-  explicit QuicNetworkControllerFactory(StatsProvider stats_provider,
-                                        UpdateObserver update_observer = {});
+  explicit QuicNetworkControllerFactory(
+      StatsProvider stats_provider,
+      UpdateObserver update_observer = {},
+      DataRate minimum_rate = DataRate::KilobitsPerSec(256),
+      DataRate startup_rate = DataRate::KilobitsPerSec(1000),
+      DataRate maximum_rate = DataRate::PlusInfinity());
 
   std::unique_ptr<NetworkControllerInterface> Create(
       NetworkControllerConfig config) override;
@@ -51,6 +55,9 @@ class QuicNetworkControllerFactory final
  private:
   const StatsProvider stats_provider_;
   const UpdateObserver update_observer_;
+  const DataRate minimum_rate_;
+  const DataRate startup_rate_;
+  const DataRate maximum_rate_;
 };
 
 }  // namespace webrtc::roq

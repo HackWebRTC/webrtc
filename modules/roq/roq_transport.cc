@@ -33,7 +33,8 @@ bool RoqPacketTransport::Send(uint64_t flow_id,
                               std::span<const uint8_t> packet,
                               const PacketOptions& options) {
   const Timestamp now = config_.clock->CurrentTime();
-  RoqDatagramMetadata datagram = {.media_type = config_.media_type,
+  RoqDatagramMetadata datagram = {.binding_id = config_.binding_id,
+                                  .media_type = config_.media_type,
                                   .enqueue_time = now};
   if (flow_id == config_.rtcp_flow_id) {
     bool critical = false;
@@ -67,8 +68,14 @@ bool RoqPacketTransport::Send(uint64_t flow_id,
                               : RoqDatagramPriority::kVideoDelta;
       datagram.deadline = now + (key ? config_.video_key_deadline
                                      : config_.video_delta_deadline);
-      datagram.frame_id = RoqFrameId{metadata.ssrc, metadata.timestamp};
+      datagram.frame_id =
+          RoqFrameId{metadata.ssrc, metadata.timestamp, config_.binding_id};
       datagram.packet_id = RoqPacketId{metadata.ssrc, metadata.sequence_number};
+      datagram.frame_complete = metadata.marker;
+      datagram.contains_idr = metadata.contains_idr;
+      datagram.contains_sps = metadata.contains_sps;
+      datagram.contains_pps = metadata.contains_pps;
+      datagram.request_key_frame = config_.request_key_frame;
     } else if (ParseRtpPacketMetadata(packet, &metadata) &&
                metadata.payload_type == config_.rtx_payload_type &&
                metadata.ssrc == config_.rtx_ssrc) {
@@ -88,15 +95,16 @@ bool RoqPacketTransport::Send(uint64_t flow_id,
   std::shared_ptr<std::atomic<uint64_t>> accepted_rtp_packets =
       flow_id == config_.rtp_flow_id ? accepted_rtp_packets_ : nullptr;
   std::vector<uint8_t> accepted_packet(packet.begin(), packet.end());
-  if (config_.session->SendMedia(
-          flow_id, packet, std::move(datagram),
-          [accepted = std::move(accepted), accepted_rtp_packets, flow_id,
-           packet = std::move(accepted_packet), options] {
-            if (accepted_rtp_packets)
-              ++*accepted_rtp_packets;
-            if (accepted)
-              accepted(flow_id, packet, options);
-          }) != RoqSendResult::kQueued) {
+  const RoqSendResult result = config_.session->SendMedia(
+      flow_id, packet, std::move(datagram),
+      [accepted = std::move(accepted), accepted_rtp_packets, flow_id,
+       packet = std::move(accepted_packet), options] {
+        if (accepted_rtp_packets)
+          ++*accepted_rtp_packets;
+        if (accepted)
+          accepted(flow_id, packet, options);
+      });
+  if (result != RoqSendResult::kQueued && result != RoqSendResult::kDropped) {
     return false;
   }
   return true;

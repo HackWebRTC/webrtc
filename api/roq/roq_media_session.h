@@ -45,8 +45,10 @@ struct RoqMediaSessionConfig {
   int audio_payload_type = 111;
   int video_payload_type = 96;
   int video_rtx_payload_type = 97;
-  int audio_bitrate_bps = 128000;
-  int video_bitrate_bps = 4000000;
+  int audio_bitrate_bps = 0;
+  int video_min_bitrate_bps = 0;
+  int video_start_bitrate_bps = 0;
+  int video_max_bitrate_bps = 0;
   size_t max_rtp_packet_size = 1200;
   RoqKeyFrameRequestMethod keyframe_request_method =
       RoqKeyFrameRequestMethod::kPli;

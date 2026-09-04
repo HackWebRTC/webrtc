@@ -91,8 +91,8 @@ class DeterministicRandom {
 
   bool Percent(uint64_t hundredths) { return Next() % 10000 < hundredths; }
 
-  int64_t Jitter() {
-    return static_cast<int64_t>(Next() % (2 * kJitterUs + 1)) - kJitterUs;
+  int64_t Jitter(int64_t range_us = kJitterUs) {
+    return static_cast<int64_t>(Next() % (2 * range_us + 1)) - range_us;
   }
 
  private:
@@ -205,28 +205,33 @@ class ImpairmentDirection {
                       const char* name,
                       EventLog* event_log,
                       UdpSelfTestResult* result,
-                      bool stepped_bandwidth = false)
+                      std::string profile = "m0")
       : seed_(seed),
         name_(name),
         event_log_(event_log),
         result_(result),
-        stepped_bandwidth_(stepped_bandwidth),
+        profile_(std::move(profile)),
         profile_start_(SteadyClock::now()) {}
 
   void Ingest(const uint8_t* bytes, size_t size, uint32_t sequence) {
     event_log_->Write("relay_ingress", name_, sequence);
     DeterministicRandom random(seed_ ^ ((static_cast<uint64_t>(sequence) + 1) *
                                         0x9e3779b97f4a7c15ULL));
-    if (!stepped_bandwidth_ && random.Percent(100)) {
+    const auto now = SteadyClock::now();
+    const bool constrained_m4 = IsM4Constrained(now);
+    const uint64_t loss_hundredths = constrained_m4 ? 200 : 100;
+    if (profile_ != "m3" && (profile_ != "m4" || constrained_m4) &&
+        random.Percent(loss_hundredths)) {
       ++result_->injected_loss;
       event_log_->Write("injected_loss", name_, sequence);
       return;
     }
-    const bool reordered = !stepped_bandwidth_ && random.Percent(100);
+    const bool reordered = profile_ != "m3" &&
+                           (profile_ != "m4" || constrained_m4) &&
+                           random.Percent(constrained_m4 ? 500 : 100);
     if (reordered) {
       ++result_->injected_reorder;
     }
-    const auto now = SteadyClock::now();
     const uint64_t bandwidth_bps = BandwidthBps(now);
     const int64_t serialization_us = static_cast<int64_t>(
         (size * 8 * 1000000ULL + bandwidth_bps - 1) / bandwidth_bps);
@@ -238,9 +243,14 @@ class ImpairmentDirection {
       event_log_->Write("queue_drop", name_, sequence);
       return;
     }
-    const int64_t jitter_us = stepped_bandwidth_ ? 0 : random.Jitter();
+    const int64_t jitter_us =
+        profile_ == "m3" || (profile_ == "m4" && !constrained_m4)
+            ? 0
+            : random.Jitter(constrained_m4 ? 20000 : kJitterUs);
+    const int64_t base_delay_us =
+        profile_ == "m4" ? (constrained_m4 ? 100000 : 25000) : kBaseDelayUs;
     const int64_t delay_us = std::max<int64_t>(
-        0, kBaseDelayUs + jitter_us + (reordered ? kReorderDelayUs : 0));
+        0, base_delay_us + jitter_us + (reordered ? kReorderDelayUs : 0));
     std::vector<uint8_t> payload(size);
     std::memcpy(payload.data(), bytes, size);
     queue_.push({.delivery_time =
@@ -274,9 +284,16 @@ class ImpairmentDirection {
 
  private:
   uint64_t BandwidthBps(SteadyClock::time_point now) const {
-    if (!stepped_bandwidth_)
+    if (profile_ == "m0")
       return kBitsPerSecond;
     const auto elapsed = now - profile_start_;
+    if (profile_ == "m4") {
+      if (elapsed < std::chrono::seconds(4))
+        return 10'000'000;
+      if (elapsed < std::chrono::seconds(12))
+        return 512'000;
+      return 8'000'000;
+    }
     if (elapsed < std::chrono::seconds(3))
       return 10'000'000;
     if (elapsed < std::chrono::seconds(10))
@@ -284,11 +301,17 @@ class ImpairmentDirection {
     return 6'000'000;
   }
 
+  bool IsM4Constrained(SteadyClock::time_point now) const {
+    const auto elapsed = now - profile_start_;
+    return profile_ == "m4" && elapsed >= std::chrono::seconds(4) &&
+           elapsed < std::chrono::seconds(12);
+  }
+
   const uint64_t seed_;
   const char* name_;
   EventLog* event_log_;
   UdpSelfTestResult* result_;
-  const bool stepped_bandwidth_;
+  const std::string profile_;
   const SteadyClock::time_point profile_start_;
   SteadyClock::time_point next_serialization_ = SteadyClock::now();
   std::priority_queue<ScheduledPacket,
@@ -507,11 +530,10 @@ UdpSelfTestResult RunUdpRelay(const std::string& listen_address,
   }
   std::cout << "{\"schema_version\":1,\"event\":\"ready\"}\n" << std::flush;
 
-  const bool stepped_bandwidth = profile == "m3";
   ImpairmentDirection outbound(1, "client_to_server", &event_log, &result,
-                               stepped_bandwidth);
+                               profile);
   ImpairmentDirection inbound(1 ^ 0x9e3779b97f4a7c15ULL, "server_to_client",
-                              &event_log, &result, stepped_bandwidth);
+                              &event_log, &result, profile);
   sockaddr_in client = {};
   bool have_client = false;
   uint32_t outbound_sequence = 0;

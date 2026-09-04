@@ -238,6 +238,14 @@ int main(int argc, char* argv[]) {
           UIntOption(args, "--drop-video-packet-after");
       const std::optional<uint32_t> drop_audio_every =
           UIntOption(args, "--drop-audio-every");
+      const std::optional<uint32_t> audio_bitrate_bps =
+          UIntOption(args, "--audio-bitrate-bps");
+      const std::optional<uint32_t> video_min_bitrate_bps =
+          UIntOption(args, "--video-min-bitrate-bps");
+      const std::optional<uint32_t> video_start_bitrate_bps =
+          UIntOption(args, "--video-start-bitrate-bps");
+      const std::optional<uint32_t> video_max_bitrate_bps =
+          UIntOption(args, "--video-max-bitrate-bps");
       const std::optional<std::string_view> cache_directory =
           OptionValue(args, "--cache-dir");
       if (!address || !manifest || !event_log || !run_id ||
@@ -272,6 +280,14 @@ int main(int argc, char* argv[]) {
               HasOption(args, "--replay-first-provisional"),
           .drop_all_provisional = HasOption(args, "--drop-all-provisional"),
           .duration_seconds = duration,
+          .audio_bitrate_bps =
+              static_cast<int>(audio_bitrate_bps.value_or(128000)),
+          .video_min_bitrate_bps =
+              static_cast<int>(video_min_bitrate_bps.value_or(256000)),
+          .video_start_bitrate_bps =
+              static_cast<int>(video_start_bitrate_bps.value_or(1000000)),
+          .video_max_bitrate_bps =
+              static_cast<int>(video_max_bitrate_bps.value_or(4000000)),
           .no_render = HasOption(args, "--no-render"),
           .drop_first_idr = HasOption(args, "--drop-first-idr"),
           .keyframe_request =
@@ -611,9 +627,10 @@ int main(int argc, char* argv[]) {
         OptionValue(args, "--run-id");
     const std::optional<std::string_view> event_log =
         OptionValue(args, "--event-log");
-    if (!profile || (*profile != "m0" && *profile != "m3") || !run_id ||
+    if (!profile ||
+        (*profile != "m0" && *profile != "m3" && *profile != "m4") || !run_id ||
         !event_log) {
-      std::cerr << "udp-relay requires --profile <m0|m3> --run-id <id> "
+      std::cerr << "udp-relay requires --profile <m0|m3|m4> --run-id <id> "
                    "--event-log <path>\n";
       return 2;
     }
@@ -646,15 +663,29 @@ int main(int argc, char* argv[]) {
               << ",\"injected_loss\":" << result.injected_loss
               << ",\"injected_reorder\":" << result.injected_reorder
               << ",\"forwarded\":" << result.forwarded << ",\"profile\":\""
-              << *profile
-              << "\",\"bandwidth_bps\":" << (*profile == "m3" ? 0 : 10'000'000)
+              << *profile << "\",\"bandwidth_bps\":"
+              << ((*profile == "m3" || *profile == "m4") ? 0 : 10'000'000)
               << ",\"bandwidth_steps_bps\":"
-              << (*profile == "m3" ? "[10000000,800000,6000000]" : "[]") << ','
-              << "\"base_one_way_delay_ms\":50,\"loss_percent\":"
-              << (*profile == "m3" ? 0 : 1) << ','
-              << "\"jitter_ms\":" << (*profile == "m3" ? 0 : 10)
-              << ",\"reorder_percent\":" << (*profile == "m3" ? 0 : 1) << ','
-              << "\"queue_limit_ms\":200,\"average_rtt_ms\":"
+              << (*profile == "m3"   ? "[10000000,800000,6000000]"
+                  : *profile == "m4" ? "[10000000,512000,8000000]"
+                                     : "[]")
+              << ','
+              << "\"base_one_way_delay_ms\":" << (*profile == "m4" ? 0 : 50)
+              << ",\"rtt_steps_ms\":"
+              << (*profile == "m4" ? "[50,200,50]" : "[]") << ','
+              << "\"loss_percent\":"
+              << (*profile == "m4"   ? 2
+                  : *profile == "m3" ? 0
+                                     : 1)
+              << ',' << "\"jitter_ms\":"
+              << (*profile == "m4"   ? 20
+                  : *profile == "m3" ? 0
+                                     : 10)
+              << ",\"reorder_percent\":"
+              << (*profile == "m4"   ? 5
+                  : *profile == "m3" ? 0
+                                     : 1)
+              << ',' << "\"queue_limit_ms\":200,\"average_rtt_ms\":"
               << result.average_rtt_ms
               << ",\"min_rtt_ms\":" << result.min_rtt_ms
               << ",\"max_rtt_ms\":" << result.max_rtt_ms << "}\n";

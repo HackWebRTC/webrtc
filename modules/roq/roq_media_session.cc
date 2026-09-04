@@ -88,6 +88,14 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
       *error = "media session already started";
       return false;
     }
+    if ((config_.send_audio && config_.audio_bitrate_bps <= 0) ||
+        (config_.send_video &&
+         (config_.video_min_bitrate_bps <= 0 ||
+          config_.video_start_bitrate_bps < config_.video_min_bitrate_bps ||
+          config_.video_max_bitrate_bps < config_.video_start_bitrate_bps))) {
+      *error = "invalid media bitrate config";
+      return false;
+    }
     worker_ = Thread::CreateWithSocketServer();
     if (!worker_->Start()) {
       *error = "failed to start media worker thread";
@@ -249,9 +257,12 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
     CallConfig call_config =
         CallConfig::CreateWithJoinedWorkerAndNetworkQueue(env_, worker_.get());
     call_config.audio_state = audio_state_;
-    call_config.bitrate_config.min_bitrate_bps = 256'000;
-    call_config.bitrate_config.start_bitrate_bps = 1'000'000;
-    call_config.bitrate_config.max_bitrate_bps = 4'128'000;
+    call_config.bitrate_config.min_bitrate_bps =
+        config_.audio_bitrate_bps + config_.video_min_bitrate_bps;
+    call_config.bitrate_config.start_bitrate_bps =
+        config_.audio_bitrate_bps + config_.video_start_bitrate_bps;
+    call_config.bitrate_config.max_bitrate_bps =
+        config_.audio_bitrate_bps + config_.video_max_bitrate_bps;
     call_config.per_call_network_controller_factory =
         std::make_unique<QuicNetworkControllerFactory>(
             config_.network_stats_provider,
@@ -265,7 +276,10 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
                 ++early_data_recovery_keyframes_;
                 video_send_stream_->GenerateKeyFrame({});
               }
-            });
+            },
+            DataRate::BitsPerSec(call_config.bitrate_config.min_bitrate_bps),
+            DataRate::BitsPerSec(call_config.bitrate_config.start_bitrate_bps),
+            DataRate::BitsPerSec(call_config.bitrate_config.max_bitrate_bps));
     call_ = Call::Create(std::move(call_config));
     if (config_.send_audio)
       audio_state_->SetRecording(false);
@@ -321,14 +335,14 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
       encoder.codec_type = kVideoCodecH264;
       encoder.video_format = h264;
       encoder.number_of_streams = 1;
-      encoder.max_bitrate_bps = config_.video_bitrate_bps;
+      encoder.max_bitrate_bps = config_.video_max_bitrate_bps;
       encoder.frame_drop_enabled = true;
       encoder.simulcast_layers.resize(1);
       auto& layer = encoder.simulcast_layers[0];
       layer.active = true;
-      layer.min_bitrate_bps = 128'000;
-      layer.target_bitrate_bps = 872'000;
-      layer.max_bitrate_bps = config_.video_bitrate_bps;
+      layer.min_bitrate_bps = config_.video_min_bitrate_bps;
+      layer.target_bitrate_bps = config_.video_start_bitrate_bps;
+      layer.max_bitrate_bps = config_.video_max_bitrate_bps;
       layer.max_framerate = 60;
       layer.scale_resolution_down_by = 1.0;
       layer.max_qp = 56;

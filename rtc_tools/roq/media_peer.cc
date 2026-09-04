@@ -755,7 +755,9 @@ RoqMediaSessionConfig BaseMediaConfig(
       .video_rtx_payload_type =
           static_cast<int>(manifest.video_rtx.payload_type),
       .audio_bitrate_bps = options.audio_bitrate_bps,
-      .video_bitrate_bps = options.video_bitrate_bps,
+      .video_min_bitrate_bps = options.video_min_bitrate_bps,
+      .video_start_bitrate_bps = options.video_start_bitrate_bps,
+      .video_max_bitrate_bps = options.video_max_bitrate_bps,
       .max_rtp_packet_size = independent_downlink ? 999u : 1460u,
       .audio_transport = audio_transport,
       .video_transport = video_transport,

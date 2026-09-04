@@ -27,7 +27,9 @@ struct MediaPeerOptions {
   bool drop_all_provisional = false;
   std::optional<double> duration_seconds;
   int audio_bitrate_bps = 128000;
-  int video_bitrate_bps = 4000000;
+  int video_min_bitrate_bps = 256000;
+  int video_start_bitrate_bps = 1000000;
+  int video_max_bitrate_bps = 4000000;
   bool no_render = false;
   bool drop_first_idr = false;
   std::string keyframe_request = "pli";

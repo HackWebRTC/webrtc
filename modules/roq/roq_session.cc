@@ -202,7 +202,9 @@ class RoqSessionImpl final : public RoqSession {
         receive_callback_(std::move(receive_callback)),
         datagram_size_callback_(std::move(datagram_size_callback)),
         reliable_message_callback_(std::move(reliable_message_callback)),
-        outgoing_(config_.outgoing_queue_capacity, config_.maximum_udp_payload),
+        outgoing_(config_.outgoing_queue_capacity,
+                  config_.maximum_udp_payload,
+                  config_.outgoing_queue_byte_capacity),
         receive_flows_(config_.receive_flow_ids.empty()
                            ? config_.allowed_flow_ids
                            : config_.receive_flow_ids),
@@ -257,8 +259,9 @@ class RoqSessionImpl final : public RoqSession {
   bool WaitUntilReliableMessagesSent(size_t count, TimeDelta timeout) override {
     std::unique_lock lock(mutex_);
     return condition_.wait_for(
-        lock, std::chrono::microseconds(timeout.us()),
-        [this, count] { return stats_.reliable_messages_sent >= count || closed_; });
+        lock, std::chrono::microseconds(timeout.us()), [this, count] {
+          return stats_.reliable_messages_sent >= count || closed_;
+        });
   }
 
   bool WaitUntilReliableMessagesDrained(TimeDelta timeout) override {
@@ -296,10 +299,9 @@ class RoqSessionImpl final : public RoqSession {
     receive_flows.reserve(flows.size());
     for (const RoqFlowConfig& flow : flows) {
       receive_flows.push_back(
-          {flow.flow_id,
-           flow.receive_policy == RoqReceiveFlowPolicy::kDeliver
-               ? ReceiveFlowPolicy::kDeliver
-               : ReceiveFlowPolicy::kDiscard});
+          {flow.flow_id, flow.receive_policy == RoqReceiveFlowPolicy::kDeliver
+                             ? ReceiveFlowPolicy::kDeliver
+                             : ReceiveFlowPolicy::kDiscard});
       if (flow.allow_send)
         send_flows.push_back(flow.flow_id);
     }
@@ -331,6 +333,7 @@ class RoqSessionImpl final : public RoqSession {
     }
     QueuedDatagram datagram = {
         .bytes = EncodeRoqDatagram(flow_id, packet),
+        .binding_id = metadata.binding_id,
         .flow_id = flow_id,
         .media_type = metadata.media_type,
         .enqueue_time = metadata.enqueue_time,
@@ -339,21 +342,29 @@ class RoqSessionImpl final : public RoqSession {
         .frame_id = metadata.frame_id,
         .packet_id = metadata.packet_id,
         .original_packet_id = metadata.original_packet_id,
+        .frame_complete = metadata.frame_complete,
+        .contains_idr = metadata.contains_idr,
+        .contains_sps = metadata.contains_sps,
+        .contains_pps = metadata.contains_pps,
+        .request_key_frame = std::move(metadata.request_key_frame),
         .on_submitted = std::move(on_submitted),
     };
     const DatagramEnqueueResult result =
         outgoing_.Enqueue(std::move(datagram), config_.clock->CurrentTime());
     if (result == DatagramEnqueueResult::kQueued && metadata.frame_id &&
-        quiche_slot_frame_id_ == metadata.frame_id) {
+        quiche_slot_datagram_ &&
+        quiche_slot_datagram_->frame_id == metadata.frame_id) {
       const std::optional<Timestamp> frame_deadline =
           outgoing_.FrameDeadline(*metadata.frame_id);
       if (frame_deadline)
-        quiche_slot_deadline_ = *frame_deadline;
+        quiche_slot_datagram_->deadline = *frame_deadline;
     }
     CopyQueueStatsLocked();
     switch (result) {
       case DatagramEnqueueResult::kQueued:
         return RoqSendResult::kQueued;
+      case DatagramEnqueueResult::kDropped:
+        return RoqSendResult::kDropped;
       case DatagramEnqueueResult::kQueueFull:
         return RoqSendResult::kQueueFull;
       case DatagramEnqueueResult::kOversize:
@@ -369,6 +380,29 @@ class RoqSessionImpl final : public RoqSession {
     CopyQueueStatsLocked();
   }
 
+  void PurgeSendBinding(const std::string& binding_id) override {
+    std::lock_guard lock(mutex_);
+    outgoing_.PurgeBinding(binding_id);
+    if (quiche_slot_datagram_ &&
+        quiche_slot_datagram_->binding_id == binding_id)
+      purge_quiche_slot_for_binding_ = true;
+    CopyQueueStatsLocked();
+  }
+
+  void RecordNetworkControlState(size_t probe_cluster_count,
+                                 int64_t target_rate_bps,
+                                 int64_t pacer_rate_bps,
+                                 int64_t padding_rate_bps,
+                                 bool has_congestion_window) override {
+    std::lock_guard lock(mutex_);
+    ++stats_.network_control_updates;
+    stats_.controller_probe_cluster_count = probe_cluster_count;
+    stats_.controller_target_rate_bps = target_rate_bps;
+    stats_.controller_pacer_rate_bps = pacer_rate_bps;
+    stats_.controller_padding_rate_bps = padding_rate_bps;
+    stats_.controller_has_congestion_window = has_congestion_window;
+  }
+
   void UpdatePeerDatagramPayloadLimit(size_t bytes) override {
     DatagramSizeCallback callback;
     size_t packet_limit = 0;
@@ -379,8 +413,9 @@ class RoqSessionImpl final : public RoqSession {
           stats_.max_datagram_payload == 0
               ? bytes
               : std::min(bytes, stats_.max_datagram_payload);
-      outgoing_.SetMaxDatagramSize(effective);
-      if (quiche_slot_size_ > effective)
+      outgoing_.SetMaxDatagramSize(effective, config_.clock->CurrentTime());
+      if (quiche_slot_datagram_ &&
+          quiche_slot_datagram_->bytes.size() > effective)
         purge_quiche_slot_for_pmtu_ = true;
       CopyQueueStatsLocked();
       callback = datagram_size_callback_;
@@ -408,6 +443,18 @@ class RoqSessionImpl final : public RoqSession {
   RoqSessionStats stats() const override {
     std::lock_guard lock(mutex_);
     return stats_;
+  }
+
+  RoqBindingSendStats send_stats(const std::string& binding_id) const override {
+    std::lock_guard lock(mutex_);
+    const DatagramBindingStats stats = outgoing_.BindingStats(binding_id);
+    return {.enqueued_packets = stats.enqueued_packets,
+            .queued_packets = stats.queued_packets,
+            .queued_bytes = stats.queued_bytes,
+            .submitted_packets = stats.submitted_packets,
+            .dropped_packets = stats.dropped_packets,
+            .dependency_drops = stats.dependency_drops,
+            .recovery_requests = stats.recovery_requests};
   }
 
   std::string error() const override {
@@ -474,6 +521,7 @@ class RoqSessionImpl final : public RoqSession {
     stats_.expired_drops = outgoing_.expired_drops();
     stats_.invalid_drops = outgoing_.invalid_drops();
     stats_.peak_queue_size = outgoing_.peak_size();
+    stats_.peak_queue_bytes = outgoing_.peak_byte_size();
     stats_.max_queue_delay_us = outgoing_.max_queue_delay().us();
     stats_.dropped_periodic_rtcp =
         outgoing_.dropped_by_priority(DatagramPriority::kPeriodicRtcp);
@@ -485,6 +533,8 @@ class RoqSessionImpl final : public RoqSession {
         outgoing_.dropped_by_priority(DatagramPriority::kAudio);
     stats_.dropped_critical_rtcp =
         outgoing_.dropped_by_priority(DatagramPriority::kRtcp);
+    stats_.dependency_drops = outgoing_.dependency_drops();
+    stats_.recovery_requests = outgoing_.recovery_requests();
   }
 
   void CopyFlowStatsLocked() {
@@ -499,15 +549,32 @@ class RoqSessionImpl final : public RoqSession {
     if (quiche_conn_path_stats(connection, 0, &path) != 0)
       return;
     quiche_conn_stats(connection, &connection_stats);
-    std::lock_guard lock(mutex_);
-    stats_.rtt_ns = path.rtt;
-    stats_.max_rtt_ns = path.max_rtt;
-    stats_.delivery_rate_bytes_per_second = path.delivery_rate;
-    stats_.max_bandwidth_bytes_per_second = path.max_bandwidth;
-    stats_.acked_bytes = connection_stats.acked_bytes;
-    stats_.startup_exit_cwnd = path.startup_exit_cwnd;
-    stats_.pmtu_bytes = path.pmtu;
-    stats_.dgram_lost = path.dgram_lost;
+    std::vector<std::function<void()>> callbacks;
+    {
+      std::lock_guard lock(mutex_);
+      stats_.rtt_ns = path.rtt;
+      stats_.max_rtt_ns = path.max_rtt;
+      stats_.delivery_rate_bytes_per_second = path.delivery_rate;
+      stats_.max_bandwidth_bytes_per_second = path.max_bandwidth;
+      stats_.acked_bytes = connection_stats.acked_bytes;
+      stats_.startup_exit_cwnd = path.startup_exit_cwnd;
+      stats_.pmtu_bytes = path.pmtu;
+      stats_.dgram_lost = path.dgram_lost;
+      const Timestamp now =
+          Timestamp::Micros(config_.clock->CurrentTime().us());
+      if (connection_stats.acked_bytes > last_path_acked_bytes_) {
+        last_path_acked_bytes_ = connection_stats.acked_bytes;
+        last_path_ack_at_ = now;
+      }
+      const bool fresh = path.startup_exit_cwnd > 0 && path.delivery_rate > 0 &&
+                         path.max_bandwidth > 0 &&
+                         last_path_ack_at_.IsFinite() &&
+                         now - last_path_ack_at_ <= TimeDelta::Seconds(1);
+      callbacks = outgoing_.RecoveryCallbacks(
+          now, TimeDelta::Micros(path.rtt / 1000), fresh);
+    }
+    for (auto& callback : callbacks)
+      callback();
   }
 
   void UpdateDatagramLimit(quiche_conn* connection) {
@@ -525,8 +592,9 @@ class RoqSessionImpl final : public RoqSession {
       if (stats_.max_datagram_payload == effective)
         return;
       stats_.max_datagram_payload = effective;
-      outgoing_.SetMaxDatagramSize(effective);
-      if (quiche_slot_size_ > effective)
+      outgoing_.SetMaxDatagramSize(effective, config_.clock->CurrentTime());
+      if (quiche_slot_datagram_ &&
+          quiche_slot_datagram_->bytes.size() > effective)
         purge_quiche_slot_for_pmtu_ = true;
       CopyQueueStatsLocked();
       callback = datagram_size_callback_;
@@ -737,7 +805,8 @@ class RoqSessionImpl final : public RoqSession {
           return;
         }
         cached_address_token = cached->address_token;
-        outgoing_.SetMaxDatagramSize(kEarlyDatagramPayloadLimit);
+        outgoing_.SetMaxDatagramSize(kEarlyDatagramPayloadLimit,
+                                     config_.clock->CurrentTime());
       }
     }
     receive_flows_.BeginUpdate(config_.clock->CurrentTime());
@@ -896,15 +965,16 @@ class RoqSessionImpl final : public RoqSession {
                 ++stats_.early_datagrams_sent;
                 stats_.early_data_attempted = true;
               }
-              quiche_slot_deadline_ = outgoing->deadline;
-              quiche_slot_size_ = outgoing->bytes.size();
-              quiche_slot_frame_id_ = outgoing->frame_id;
+              quiche_slot_datagram_ = *outgoing;
             }
             if (outgoing->on_submitted)
               outgoing->on_submitted();
           } else if (queued == QUICHE_ERR_BUFFER_TOO_SHORT) {
             std::lock_guard lock(mutex_);
             ++quiche_oversize_drops_;
+            outgoing_.RecordDropped(
+                *outgoing,
+                Timestamp::Micros(config_.clock->CurrentTime().us()));
             CopyQueueStatsLocked();
           } else if (queued != QUICHE_ERR_DONE) {
             std::lock_guard lock(mutex_);
@@ -925,30 +995,38 @@ class RoqSessionImpl final : public RoqSession {
             quiche_conn_dgram_send_queue_len(connection.get());
         bool purge_for_expiry = false;
         bool purge_for_pmtu = false;
+        bool purge_for_binding = false;
         {
           std::lock_guard lock(mutex_);
+          stats_.peak_quiche_queue_size =
+              std::max(stats_.peak_quiche_queue_size,
+                       static_cast<size_t>(std::max<ssize_t>(queue_length, 0)));
           purge_for_expiry =
-              quiche_slot_deadline_.has_value() &&
-              *quiche_slot_deadline_ <= config_.clock->CurrentTime();
+              quiche_slot_datagram_.has_value() &&
+              quiche_slot_datagram_->deadline <= config_.clock->CurrentTime();
           purge_for_pmtu = purge_quiche_slot_for_pmtu_;
+          purge_for_binding = purge_quiche_slot_for_binding_;
         }
         if (queue_length == 0) {
           std::lock_guard lock(mutex_);
-          quiche_slot_deadline_.reset();
-          quiche_slot_size_ = 0;
-          quiche_slot_frame_id_.reset();
+          quiche_slot_datagram_.reset();
           purge_quiche_slot_for_pmtu_ = false;
-        } else if (purge_for_expiry || purge_for_pmtu) {
+          purge_quiche_slot_for_binding_ = false;
+        } else if (purge_for_expiry || purge_for_pmtu || purge_for_binding) {
           quiche_conn_dgram_purge_outgoing(connection.get(), PurgeDatagram);
           std::lock_guard lock(mutex_);
           if (purge_for_expiry)
             ++stats_.quiche_slot_expired_drops;
           if (purge_for_pmtu)
             ++quiche_pmtu_purge_drops_;
-          quiche_slot_deadline_.reset();
-          quiche_slot_size_ = 0;
-          quiche_slot_frame_id_.reset();
+          if (!purge_for_binding && quiche_slot_datagram_) {
+            outgoing_.RecordDropped(
+                *quiche_slot_datagram_,
+                Timestamp::Micros(config_.clock->CurrentTime().us()));
+          }
+          quiche_slot_datagram_.reset();
           purge_quiche_slot_for_pmtu_ = false;
+          purge_quiche_slot_for_binding_ = false;
           CopyQueueStatsLocked();
         }
       }
@@ -1058,16 +1136,17 @@ class RoqSessionImpl final : public RoqSession {
   uint64_t close_code_ = 0;
   std::string close_reason_ = "complete";
   std::optional<size_t> application_datagram_limit_;
-  std::optional<Timestamp> quiche_slot_deadline_;
-  size_t quiche_slot_size_ = 0;
-  std::optional<RoqFrameId> quiche_slot_frame_id_;
+  std::optional<QueuedDatagram> quiche_slot_datagram_;
   bool purge_quiche_slot_for_pmtu_ = false;
+  bool purge_quiche_slot_for_binding_ = false;
   size_t quiche_pmtu_purge_drops_ = 0;
   size_t quiche_oversize_drops_ = 0;
   bool session_cached_ = false;
   bool cache_dirty_ = false;
   RoqSessionStats stats_;
   std::string error_;
+  uint64_t last_path_acked_bytes_ = 0;
+  Timestamp last_path_ack_at_ = Timestamp::MinusInfinity();
 };
 
 }  // namespace

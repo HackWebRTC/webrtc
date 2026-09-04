@@ -51,9 +51,7 @@ TEST(RoqMediaEngineTest, StartsPlayoutForTheFirstAudioSubscription) {
   ON_CALL(*audio, InitPlayout()).WillByDefault([&] {
     return playout_device_selected ? 0 : -1;
   });
-  ON_CALL(*audio, Playing()).WillByDefault([&] {
-    return playing;
-  });
+  ON_CALL(*audio, Playing()).WillByDefault([&] { return playing; });
   ON_CALL(*audio, StartPlayout()).WillByDefault([&] {
     playing = true;
     return 0;
@@ -138,9 +136,7 @@ TEST(RoqMediaEngineTest, StartsRecordingForTheFirstDeviceAudioPublication) {
   ON_CALL(*audio, InitRecording()).WillByDefault([&] {
     return recording_device_selected ? 0 : -1;
   });
-  ON_CALL(*audio, Recording()).WillByDefault([&] {
-    return recording;
-  });
+  ON_CALL(*audio, Recording()).WillByDefault([&] { return recording; });
   ON_CALL(*audio, StartRecording()).WillByDefault([&] {
     recording = true;
     return 0;
@@ -163,14 +159,15 @@ TEST(RoqMediaEngineTest, StartsRecordingForTheFirstDeviceAudioPublication) {
   ASSERT_TRUE(engine) << error;
   ASSERT_TRUE(engine->Start(&error)) << error;
 
-  ASSERT_TRUE(engine->AddSendBinding(
-      {.binding_id = "microphone",
-       .kind = RoqMediaKind::kAudio,
-       .primary_ssrc = 1001,
-       .payload_type = 111,
-       .transport = &transport,
-       .audio_input_mode = RoqAudioInputMode::kDevice},
-      &error))
+  ASSERT_TRUE(
+      engine->AddSendBinding({.binding_id = "microphone",
+                              .kind = RoqMediaKind::kAudio,
+                              .primary_ssrc = 1001,
+                              .payload_type = 111,
+                              .transport = &transport,
+                              .audio_input_mode = RoqAudioInputMode::kDevice,
+                              .audio_bitrate_bps = 128000},
+                             &error))
       << error;
 
   EXPECT_TRUE(recording_device_selected);
@@ -188,8 +185,14 @@ TEST(RoqMediaEngineTest, StopsRecordingAfterTheLastDevicePublicationCloses) {
       .WillByDefault(::testing::Return(0));
   ON_CALL(*audio, InitRecording()).WillByDefault(::testing::Return(0));
   ON_CALL(*audio, Recording()).WillByDefault([&] { return recording; });
-  ON_CALL(*audio, StartRecording()).WillByDefault([&] { recording = true; return 0; });
-  ON_CALL(*audio, StopRecording()).WillByDefault([&] { recording = false; return 0; });
+  ON_CALL(*audio, StartRecording()).WillByDefault([&] {
+    recording = true;
+    return 0;
+  });
+  ON_CALL(*audio, StopRecording()).WillByDefault([&] {
+    recording = false;
+    return 0;
+  });
   auto video_encoder = CreateBuiltinVideoEncoderFactory();
   auto video_decoder = CreateBuiltinVideoDecoderFactory();
   NullTransport transport;
@@ -203,10 +206,15 @@ TEST(RoqMediaEngineTest, StopsRecordingAfterTheLastDevicePublicationCloses) {
       env, &error);
   ASSERT_TRUE(engine);
   ASSERT_TRUE(engine->Start(&error));
-  ASSERT_TRUE(engine->AddSendBinding(
-      {.binding_id = "microphone", .kind = RoqMediaKind::kAudio,
-       .primary_ssrc = 1001, .payload_type = 111, .transport = &transport,
-       .audio_input_mode = RoqAudioInputMode::kDevice}, &error));
+  ASSERT_TRUE(
+      engine->AddSendBinding({.binding_id = "microphone",
+                              .kind = RoqMediaKind::kAudio,
+                              .primary_ssrc = 1001,
+                              .payload_type = 111,
+                              .transport = &transport,
+                              .audio_input_mode = RoqAudioInputMode::kDevice,
+                              .audio_bitrate_bps = 128000},
+                             &error));
   ASSERT_TRUE(recording);
 
   EXPECT_TRUE(engine->RemoveBinding("microphone"));
@@ -227,8 +235,7 @@ TEST(RoqMediaEngineTest, PacketizesLargeVideoFramesForTheRoqMtu) {
     bool SendRtp(std::span<const uint8_t> packet,
                  const PacketOptions&) override {
       ++packets;
-      maximum_packet_size =
-          std::max(maximum_packet_size.load(), packet.size());
+      maximum_packet_size = std::max(maximum_packet_size.load(), packet.size());
       return true;
     }
     bool SendRtcp(std::span<const uint8_t>, const PacketOptions&) override {
@@ -254,7 +261,10 @@ TEST(RoqMediaEngineTest, PacketizesLargeVideoFramesForTheRoqMtu) {
                                       .rtx_ssrc = 1002,
                                       .payload_type = 96,
                                       .rtx_payload_type = 97,
-                                      .transport = &transport},
+                                      .transport = &transport,
+                                      .video_min_bitrate_bps = 256000,
+                                      .video_start_bitrate_bps = 1000000,
+                                      .video_max_bitrate_bps = 2000000},
                                      &error))
       << error;
   auto frame = I420Buffer::Create(1920, 1080);
@@ -382,7 +392,8 @@ TEST(RoqMediaEngineTest, AddsIndependentSendBindingsToTheSameCall) {
                                       .kind = RoqMediaKind::kAudio,
                                       .primary_ssrc = 1001,
                                       .payload_type = 111,
-                                      .transport = &audio_transport},
+                                      .transport = &audio_transport,
+                                      .audio_bitrate_bps = 128000},
                                      &error))
       << error;
   EXPECT_FALSE(audio->Recording());
@@ -392,7 +403,10 @@ TEST(RoqMediaEngineTest, AddsIndependentSendBindingsToTheSameCall) {
                                       .rtx_ssrc = 1003,
                                       .payload_type = 96,
                                       .rtx_payload_type = 97,
-                                      .transport = &video_transport},
+                                      .transport = &video_transport,
+                                      .video_min_bitrate_bps = 256000,
+                                      .video_start_bitrate_bps = 1000000,
+                                      .video_max_bitrate_bps = 2000000},
                                      &error))
       << error;
   EXPECT_EQ(engine->binding_count(), 2u);
@@ -400,6 +414,107 @@ TEST(RoqMediaEngineTest, AddsIndependentSendBindingsToTheSameCall) {
   EXPECT_TRUE(engine->RemoveBinding("microphone"));
   EXPECT_TRUE(engine->HasBinding("camera"));
   EXPECT_EQ(engine->binding_count(), 1u);
+  engine->Stop();
+}
+
+TEST(RoqMediaEngineTest, QuicControllerDoesNotProbePadOrUseCongestionWindow) {
+  const Environment env = CreateTestEnvironment();
+  scoped_refptr<AudioDeviceModule> audio =
+      CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_TRUE(audio);
+  ASSERT_EQ(audio->Init(), 0);
+  auto video_encoder = CreateBuiltinVideoEncoderFactory();
+  auto video_decoder = CreateBuiltinVideoDecoderFactory();
+  const RoqSessionStats network = {
+      .rtt_ns = 50'000'000,
+      .delivery_rate_bytes_per_second = 250'000,
+      .max_bandwidth_bytes_per_second = 500'000,
+      .acked_bytes = 1000,
+      .startup_exit_cwnd = 12000,
+  };
+  std::string error;
+  std::unique_ptr<RoqMediaEngine> engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = video_encoder.get(),
+       .video_decoder_factory = video_decoder.get(),
+       .network_stats_provider = [&] { return network; },
+       .send_min_bitrate_bps = 256000,
+       .send_start_bitrate_bps = 1000000,
+       .send_max_bitrate_bps = 2000000},
+      env, &error);
+  ASSERT_TRUE(engine) << error;
+  ASSERT_TRUE(engine->Start(&error)) << error;
+  NullTransport transport;
+  ASSERT_TRUE(engine->AddSendBinding({.binding_id = "microphone",
+                                      .kind = RoqMediaKind::kAudio,
+                                      .primary_ssrc = 1001,
+                                      .payload_type = 111,
+                                      .transport = &transport,
+                                      .audio_bitrate_bps = 128000},
+                                     &error))
+      << error;
+
+  RoqMediaEngineStats stats;
+  for (int attempt = 0; attempt < 100; ++attempt) {
+    stats = engine->stats();
+    if (stats.network_control_updates > 0)
+      break;
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_GT(stats.network_control_updates, 0u);
+  EXPECT_GT(stats.controller_target_rate_bps, 0);
+  EXPECT_EQ(stats.controller_pacer_rate_bps, stats.controller_target_rate_bps);
+  EXPECT_EQ(stats.controller_padding_rate_bps, 0);
+  EXPECT_EQ(stats.controller_probe_cluster_count, 0u);
+  EXPECT_FALSE(stats.controller_has_congestion_window);
+  engine->Stop();
+}
+
+TEST(RoqMediaEngineTest, DynamicSendBitrateConstraintsReachQuicController) {
+  const Environment env = CreateTestEnvironment();
+  scoped_refptr<AudioDeviceModule> audio =
+      CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_TRUE(audio);
+  ASSERT_EQ(audio->Init(), 0);
+  auto video_encoder = CreateBuiltinVideoEncoderFactory();
+  auto video_decoder = CreateBuiltinVideoDecoderFactory();
+  std::string error;
+  std::unique_ptr<RoqMediaEngine> engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = video_encoder.get(),
+       .video_decoder_factory = video_decoder.get(),
+       .network_stats_provider = [] { return RoqSessionStats{}; },
+       .send_min_bitrate_bps = 128000,
+       .send_start_bitrate_bps = 128000,
+       .send_max_bitrate_bps = 128000},
+      env, &error);
+  ASSERT_TRUE(engine) << error;
+  ASSERT_TRUE(engine->Start(&error)) << error;
+  NullTransport transport;
+  ASSERT_TRUE(engine->AddSendBinding({.binding_id = "microphone",
+                                      .kind = RoqMediaKind::kAudio,
+                                      .primary_ssrc = 1001,
+                                      .payload_type = 111,
+                                      .transport = &transport,
+                                      .audio_bitrate_bps = 128000},
+                                     &error))
+      << error;
+
+  engine->UpdateSendBitrateConstraints(384000, 1128000, 2128000);
+
+  RoqMediaEngineStats stats;
+  for (int attempt = 0; attempt < 100; ++attempt) {
+    stats = engine->stats();
+    if (stats.controller_target_rate_bps == 1128000)
+      break;
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_EQ(stats.controller_target_rate_bps, 1128000);
+  EXPECT_EQ(stats.controller_pacer_rate_bps, 1128000);
   engine->Stop();
 }
 
@@ -422,10 +537,13 @@ TEST(RoqMediaEngineTest, CountsAcceptedExternalAudioPackets) {
       env, &error);
   ASSERT_TRUE(engine) << error;
   ASSERT_TRUE(engine->Start(&error)) << error;
-  ASSERT_TRUE(engine->AddSendBinding(
-      {.binding_id = "microphone", .kind = RoqMediaKind::kAudio,
-       .primary_ssrc = 1001, .payload_type = 111, .transport = &transport},
-      &error));
+  ASSERT_TRUE(engine->AddSendBinding({.binding_id = "microphone",
+                                      .kind = RoqMediaKind::kAudio,
+                                      .primary_ssrc = 1001,
+                                      .payload_type = 111,
+                                      .transport = &transport,
+                                      .audio_bitrate_bps = 128000},
+                                     &error));
 
   std::vector<int16_t> samples(960);
   for (uint32_t index = 0; index < 120; ++index)

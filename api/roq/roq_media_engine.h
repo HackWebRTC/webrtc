@@ -19,6 +19,7 @@
 #include "api/call/audio_sink.h"
 #include "api/call/transport.h"
 #include "api/environment/environment.h"
+#include "api/roq/quic_network_controller.h"
 #include "api/roq/roq_session.h"
 #include "api/scoped_refptr.h"
 #include "api/video/video_frame.h"
@@ -39,8 +40,12 @@ struct RoqMediaEngineConfig {
   VideoEncoderFactory* video_encoder_factory = nullptr;
   VideoDecoderFactory* video_decoder_factory = nullptr;
   std::function<RoqSessionStats()> network_stats_provider;
+  QuicNetworkControllerFactory::UpdateObserver network_control_observer;
   bool use_audio_device_playout = false;
   size_t max_rtp_packet_size = 1200;
+  int send_min_bitrate_bps = 1;
+  int send_start_bitrate_bps = 1;
+  int send_max_bitrate_bps = -1;
 };
 
 struct RoqMediaBindingConfig {
@@ -54,6 +59,10 @@ struct RoqMediaBindingConfig {
   AudioSinkInterface* audio_sink = nullptr;
   VideoSinkInterface<VideoFrame>* video_sink = nullptr;
   RoqAudioInputMode audio_input_mode = RoqAudioInputMode::kExternalPcm;
+  int audio_bitrate_bps = 0;
+  int video_min_bitrate_bps = 0;
+  int video_start_bitrate_bps = 0;
+  int video_max_bitrate_bps = 0;
 };
 
 struct RoqMediaEngineStats {
@@ -68,6 +77,12 @@ struct RoqMediaEngineStats {
   uint32_t nack_sent = 0;
   uint32_t nack_received = 0;
   uint64_t retransmitted_packets_sent = 0;
+  uint64_t network_control_updates = 0;
+  int64_t controller_target_rate_bps = 0;
+  int64_t controller_pacer_rate_bps = 0;
+  int64_t controller_padding_rate_bps = 0;
+  size_t controller_probe_cluster_count = 0;
+  bool controller_has_congestion_window = false;
 };
 
 struct RoqMediaBindingStats {
@@ -79,6 +94,7 @@ struct RoqMediaBindingStats {
   uint32_t fir_sent = 0;
   uint32_t nack_sent = 0;
   uint32_t nack_received = 0;
+  uint32_t nack_requests_received = 0;
   uint64_t retransmitted_packets_sent = 0;
 };
 
@@ -96,6 +112,9 @@ class RoqMediaEngine {
   virtual bool AddSendBinding(RoqMediaBindingConfig config,
                               std::string* error) = 0;
   virtual bool RemoveBinding(const std::string& binding_id) = 0;
+  virtual void UpdateSendBitrateConstraints(int min_bitrate_bps,
+                                            int start_bitrate_bps,
+                                            int max_bitrate_bps) = 0;
   virtual void SendVideoFrame(const std::string& binding_id,
                               scoped_refptr<I420BufferInterface> buffer,
                               int64_t pts_us) = 0;

@@ -10,10 +10,25 @@
 
 namespace webrtc::roq {
 
+QuicBandwidthPolicy::QuicBandwidthPolicy(DataRate minimum_rate,
+                                         DataRate startup_rate,
+                                         DataRate maximum_rate)
+    : minimum_rate_(minimum_rate),
+      startup_rate_(startup_rate),
+      maximum_rate_(maximum_rate),
+      target_rate_(startup_rate) {}
+
+void QuicBandwidthPolicy::SetLimits(DataRate minimum_rate,
+                                    DataRate startup_rate,
+                                    DataRate maximum_rate) {
+  minimum_rate_ = minimum_rate;
+  startup_rate_ = startup_rate;
+  maximum_rate_ = maximum_rate;
+  target_rate_ =
+      has_fresh_sample_ ? std::min(target_rate_, maximum_rate_) : startup_rate_;
+}
+
 QuicMediaBudget QuicBandwidthPolicy::Update(const QuicBandwidthSample& sample) {
-  constexpr int64_t kStartupRateBps = 1'000'000;
-  constexpr int64_t kMinimumRateBps = 256'000;
-  constexpr int64_t kMaximumRateBps = 4'128'000;
   if (sample.acked_bytes > last_acked_bytes_) {
     last_acked_bytes_ = sample.acked_bytes;
     last_ack_time_ = sample.at_time;
@@ -40,17 +55,17 @@ QuicMediaBudget QuicBandwidthPolicy::Update(const QuicBandwidthSample& sample) {
       valid ? raw_capacity - usable_media_rate - overhead - recovery_reserve
             : DataRate::Zero();
   if (fresh) {
+    has_fresh_sample_ = true;
     int64_t filtered = 0;
     if (usable_media_rate <= target_rate_) {
       filtered = usable_media_rate.bps();
     } else {
       filtered = (target_rate_.bps() * 8 + usable_media_rate.bps() * 2) / 10;
     }
-    target_rate_ = DataRate::BitsPerSec(
-        std::clamp(filtered, kMinimumRateBps, kMaximumRateBps));
-  } else {
     target_rate_ =
-        std::min(target_rate_, DataRate::BitsPerSec(kStartupRateBps));
+        DataRate::BitsPerSec(std::min(filtered, maximum_rate_.bps()));
+  } else {
+    target_rate_ = std::min(target_rate_, startup_rate_);
   }
   return {.fresh = fresh,
           .raw_capacity = raw_capacity,
