@@ -12,6 +12,7 @@ rate choices directly in each command. `SHA256SUMS` pins the resulting bytes.
 | `audio_only.mp4` | AAC-only, 44.1 kHz mono conversion |
 | `video_only.mp4` | H.264-only output |
 | `audio_video.mp4` | ordinary dual-track capture and loop |
+| `audio_video_b.mp4` | second dual-track source with distinct hue and 330 Hz tone |
 | `audio_shorter.mp4` | audio-defined common boundary |
 | `video_shorter.mp4` | video-defined common boundary |
 | `nonzero_start.mp4` | edit-list/non-zero PTS normalization |

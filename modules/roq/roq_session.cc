@@ -254,6 +254,20 @@ class RoqSessionImpl final : public RoqSession {
     return true;
   }
 
+  bool WaitUntilReliableMessagesSent(size_t count, TimeDelta timeout) override {
+    std::unique_lock lock(mutex_);
+    return condition_.wait_for(
+        lock, std::chrono::microseconds(timeout.us()),
+        [this, count] { return stats_.reliable_messages_sent >= count || closed_; });
+  }
+
+  bool WaitUntilReliableMessagesDrained(TimeDelta timeout) override {
+    std::unique_lock lock(mutex_);
+    return condition_.wait_for(
+        lock, std::chrono::microseconds(timeout.us()),
+        [this] { return reliable_messages_.empty() || closed_; });
+  }
+
   void BeginReceiveFlowUpdate() override {
     std::lock_guard lock(mutex_);
     receive_flows_.BeginUpdate(config_.clock->CurrentTime());
@@ -629,6 +643,7 @@ class RoqSessionImpl final : public RoqSession {
       reliable_messages_.pop_front();
       reliable_message_offset_ = 0;
       ++stats_.reliable_messages_sent;
+      condition_.notify_all();
     }
     return true;
   }

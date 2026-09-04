@@ -154,6 +154,15 @@ class RoqSession {
   virtual bool WaitUntilReady(TimeDelta timeout) = 0;
   virtual bool WaitUntilEstablished(TimeDelta timeout) = 0;
   virtual bool SendReplaySafeMessage(std::span<const uint8_t> message) = 0;
+  virtual bool WaitUntilReliableMessagesSent(size_t count, TimeDelta timeout) {
+    (void)count;
+    (void)timeout;
+    return true;
+  }
+  virtual bool WaitUntilReliableMessagesDrained(TimeDelta timeout) {
+    (void)timeout;
+    return true;
+  }
   virtual void BeginReceiveFlowUpdate() = 0;
   virtual void UpdateReceiveFlowIds(std::vector<uint64_t> flow_ids) = 0;
   virtual void BeginFlowUpdate() { BeginReceiveFlowUpdate(); }

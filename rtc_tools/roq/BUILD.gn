@@ -8,6 +8,9 @@
 
 import("../../roq.gni")
 import("../../webrtc.gni")
+if (is_mac) {
+  import("//build/config/mac/rules.gni")
+}
 
 assert(roq_repo_root != "",
        "roq_repo_root must point to the parent artc checkout")
@@ -25,6 +28,21 @@ rtc_library("livekit_roq_proto") {
   include_dirs = [ "$roq_repo_root/src/generated" ]
   deps = [ "//third_party/protobuf:protobuf_lite" ]
   cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
+}
+
+if (is_mac) {
+  rtc_library("livekit_roq_client_device") {
+    sources = [ "$roq_repo_root/src/native/livekit_roq/client_device_mac.mm" ]
+    include_dirs = [ "$roq_repo_root/src" ]
+    deps = [
+      "../../api/video:video_frame",
+      "../../sdk:base_objc",
+      "../../sdk:metal_objc",
+      "../../sdk:native_api",
+      "../../sdk:videocapture_objc",
+    ]
+    frameworks = [ "AVFoundation.framework" ]
+  }
 }
 
 if (rtc_enable_file_capturer) {
@@ -122,6 +140,22 @@ if (rtc_enable_file_capturer) {
   }
 }
 
+if (is_mac) {
+  mac_app_bundle("livekit_roq_device_app") {
+    testonly = true
+    output_name = "LiveKit RoQ Device"
+    info_plist = "$roq_repo_root/src/native/livekit_roq/device_app_info.plist"
+    sources = [ "$roq_repo_root/src/native/livekit_roq/device_app.mm" ]
+    include_dirs = [ "$roq_repo_root/src" ]
+    deps = [ ":livekit_roq_client" ]
+    frameworks = [ "AppKit.framework" ]
+    ldflags = [
+      "-rpath",
+      "@executable_path/../Frameworks",
+    ]
+  }
+}
+
 rtc_shared_library("livekit_roq_client") {
   output_name = "livekit_roq_client"
   ldflags = [ "-Wl,-install_name,@rpath/liblivekit_roq_client.dylib" ]
@@ -142,16 +176,24 @@ rtc_shared_library("livekit_roq_client") {
     ":livekit_roq_proto",
     "../../api/audio:create_audio_device_module",
     "../../api/audio_codecs:builtin_audio_decoder_factory",
+    "../../api/audio_codecs:builtin_audio_encoder_factory",
     "../../api/environment:environment_factory",
+    "../../api/file_capturer:file_capturer_api",
     "../../api/roq:roq_api",
     "../../api/units:time_delta",
     "../../api/units:timestamp",
     "../../api/video_codecs:builtin_video_decoder_factory",
+    "../../api/video_codecs:builtin_video_encoder_factory",
     "../../modules/roq:roq_core",
+    "../../modules/file_capturer:file_media_capturer",
     "../../system_wrappers",
     "//third_party/protobuf:protobuf_lite",
   ]
   cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
+  if (is_mac) {
+    deps += [ ":livekit_roq_client_device" ]
+    frameworks = [ "AVFoundation.framework" ]
+  }
 }
 
 if (rtc_include_tests) {
@@ -195,18 +237,26 @@ if (rtc_include_tests) {
       ":livekit_roq_proto",
       "../../api/audio:create_audio_device_module",
       "../../api/audio_codecs:builtin_audio_decoder_factory",
+      "../../api/audio_codecs:builtin_audio_encoder_factory",
       "../../api/environment:environment_factory",
+      "../../api/file_capturer:file_capturer_api",
       "../../api/roq:roq_api",
       "../../api/units:time_delta",
       "../../api/units:timestamp",
       "../../api/video_codecs:builtin_video_decoder_factory",
+      "../../api/video_codecs:builtin_video_encoder_factory",
       "../../modules/roq:roq_core",
+      "../../modules/file_capturer:file_media_capturer",
       "../../system_wrappers",
       "../../test:test_support",
       "//testing/gtest",
       "//third_party/protobuf:protobuf_lite",
     ]
     cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
+    if (is_mac) {
+      deps += [ ":livekit_roq_client_device" ]
+      frameworks = [ "AVFoundation.framework" ]
+    }
   }
 
   if (rtc_enable_file_capturer) {

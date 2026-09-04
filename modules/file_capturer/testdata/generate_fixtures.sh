@@ -39,6 +39,13 @@ common_output=(
   "$SCRIPT_DIR/audio_video.mp4"
 
 "$FFMPEG" -hide_banner -loglevel error -y \
+  -f lavfi -i "testsrc2=size=64x48:rate=10:duration=0.42" \
+  -f lavfi -i "sine=frequency=330:sample_rate=48000:duration=0.42" \
+  -vf hue=h=45:s=1.6 -map 0:v:0 -map 1:a:0 "${common_video[@]}" \
+  -ac 2 -c:a aac -b:a 64k "${common_output[@]}" \
+  "$SCRIPT_DIR/audio_video_b.mp4"
+
+"$FFMPEG" -hide_banner -loglevel error -y \
   -f lavfi -i "testsrc2=size=64x48:rate=10:duration=0.61" \
   -f lavfi -i "sine=frequency=550:sample_rate=32000:duration=0.31" \
   -map 0:v:0 -map 1:a:0 "${common_video[@]}" \
