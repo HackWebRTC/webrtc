@@ -186,6 +186,7 @@ rtc_shared_library("livekit_roq_client") {
     "../../api/video_codecs:builtin_video_encoder_factory",
     "../../modules/roq:roq_core",
     "../../modules/file_capturer:file_media_capturer",
+    "../../rtc_base:crypto_random",
     "../../system_wrappers",
     "//third_party/protobuf:protobuf_lite",
   ]
@@ -247,6 +248,7 @@ if (rtc_include_tests) {
       "../../api/video_codecs:builtin_video_encoder_factory",
       "../../modules/roq:roq_core",
       "../../modules/file_capturer:file_media_capturer",
+      "../../rtc_base:crypto_random",
       "../../system_wrappers",
       "../../test:test_support",
       "//testing/gtest",

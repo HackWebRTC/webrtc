@@ -628,9 +628,10 @@ int main(int argc, char* argv[]) {
     const std::optional<std::string_view> event_log =
         OptionValue(args, "--event-log");
     if (!profile ||
-        (*profile != "m0" && *profile != "m3" && *profile != "m4") || !run_id ||
+        (*profile != "m0" && *profile != "m3" && *profile != "m4" &&
+         *profile != "m5") || !run_id ||
         !event_log) {
-      std::cerr << "udp-relay requires --profile <m0|m3|m4> --run-id <id> "
+      std::cerr << "udp-relay requires --profile <m0|m3|m4|m5> --run-id <id> "
                    "--event-log <path>\n";
       return 2;
     }
@@ -664,7 +665,7 @@ int main(int argc, char* argv[]) {
               << ",\"injected_reorder\":" << result.injected_reorder
               << ",\"forwarded\":" << result.forwarded << ",\"profile\":\""
               << *profile << "\",\"bandwidth_bps\":"
-              << ((*profile == "m3" || *profile == "m4") ? 0 : 10'000'000)
+              << ((*profile == "m3" || *profile == "m4" || *profile == "m5") ? 0 : 10'000'000)
               << ",\"bandwidth_steps_bps\":"
               << (*profile == "m3"   ? "[10000000,800000,6000000]"
                   : *profile == "m4" ? "[10000000,512000,8000000]"

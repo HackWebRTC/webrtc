@@ -26,6 +26,9 @@ class FakeRoqSession final : public RoqSession {
   bool SendReplaySafeMessage(std::span<const uint8_t>) override {
     return false;
   }
+  void SetEarlyDatagramsAllowed(bool) override {}
+  void RequestPing() override {}
+  void Abort() override {}
   void BeginReceiveFlowUpdate() override {}
   void UpdateReceiveFlowIds(std::vector<uint64_t>) override {}
   bool Start(std::string*) override { return true; }

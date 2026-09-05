@@ -256,6 +256,27 @@ class RoqSessionImpl final : public RoqSession {
     return true;
   }
 
+  void SetEarlyDatagramsAllowed(bool allowed) override {
+    std::lock_guard lock(mutex_);
+    early_datagrams_allowed_ = allowed;
+    if (!allowed && !stats_.established) {
+      stats_.early_rejection_queue_drops += outgoing_.Clear();
+      purge_quiche_slot_for_binding_ = true;
+      CopyQueueStatsLocked();
+    }
+  }
+
+  void RequestPing() override {
+    std::lock_guard lock(mutex_);
+    ping_requested_ = true;
+  }
+
+  void Abort() override {
+    std::lock_guard lock(mutex_);
+    abort_requested_ = true;
+    condition_.notify_all();
+  }
+
   bool WaitUntilReliableMessagesSent(size_t count, TimeDelta timeout) override {
     std::unique_lock lock(mutex_);
     return condition_.wait_for(
@@ -565,6 +586,7 @@ class RoqSessionImpl final : public RoqSession {
       if (connection_stats.acked_bytes > last_path_acked_bytes_) {
         last_path_acked_bytes_ = connection_stats.acked_bytes;
         last_path_ack_at_ = now;
+        stats_.last_ack_monotonic_us = now.us();
       }
       const bool fresh = path.startup_exit_cwnd > 0 && path.delivery_rate > 0 &&
                          path.max_bandwidth > 0 &&
@@ -821,6 +843,11 @@ class RoqSessionImpl final : public RoqSession {
     bool close_drained = false;
     std::array<uint8_t, kPacketBufferSize> packet = {};
     while (true) {
+      {
+        std::lock_guard lock(mutex_);
+        if (abort_requested_)
+          break;
+      }
       while (true) {
         sockaddr_storage peer_address = {};
         socklen_t peer_length = sizeof(peer_address);
@@ -893,6 +920,16 @@ class RoqSessionImpl final : public RoqSession {
           UpdateDatagramLimit(connection.get());
         UpdateDatagramLimit(connection.get());
         UpdatePathStats(connection.get());
+        bool request_ping = false;
+        {
+          std::lock_guard lock(mutex_);
+          request_ping = ping_requested_;
+          ping_requested_ = false;
+        }
+        if (request_ping && quiche_conn_send_ack_eliciting(connection.get()) < 0) {
+          Fail("failed to send QUIC PING");
+          return;
+        }
         if (cache) {
           std::array<uint8_t, 1024> token = {};
           while (true) {
@@ -944,8 +981,15 @@ class RoqSessionImpl final : public RoqSession {
         }
       }
 
-      if (connection && (quiche_conn_is_established(connection.get()) ||
-                         quiche_conn_is_in_early_data(connection.get()))) {
+      bool can_send_datagram = false;
+      if (connection) {
+        std::lock_guard lock(mutex_);
+        can_send_datagram =
+            quiche_conn_is_established(connection.get()) ||
+            (early_datagrams_allowed_ &&
+             quiche_conn_is_in_early_data(connection.get()));
+      }
+      if (can_send_datagram) {
         std::optional<QueuedDatagram> outgoing;
         {
           std::lock_guard lock(mutex_);
@@ -1143,6 +1187,9 @@ class RoqSessionImpl final : public RoqSession {
   size_t quiche_oversize_drops_ = 0;
   bool session_cached_ = false;
   bool cache_dirty_ = false;
+  bool early_datagrams_allowed_ = config_.allow_early_datagrams;
+  bool ping_requested_ = false;
+  bool abort_requested_ = false;
   RoqSessionStats stats_;
   std::string error_;
   uint64_t last_path_acked_bytes_ = 0;

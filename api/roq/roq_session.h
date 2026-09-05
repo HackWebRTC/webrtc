@@ -86,6 +86,7 @@ struct RoqSessionConfig {
   std::array<uint8_t, 32> resumption_context = {};
   TimeDelta resumption_cache_max_age = TimeDelta::Seconds(24 * 60 * 60);
   std::function<Timestamp()> resumption_clock;
+  bool allow_early_datagrams = false;
   size_t maximum_udp_payload = 1350;
   uint64_t max_idle_timeout_ms = 5000;
   size_t outgoing_queue_capacity = 512;
@@ -160,6 +161,7 @@ struct RoqSessionStats {
   uint64_t startup_exit_cwnd = 0;
   size_t pmtu_bytes = 0;
   size_t dgram_lost = 0;
+  int64_t last_ack_monotonic_us = -1;
 };
 
 struct RoqBindingSendStats {
@@ -189,6 +191,9 @@ class RoqSession {
   virtual bool WaitUntilReady(TimeDelta timeout) = 0;
   virtual bool WaitUntilEstablished(TimeDelta timeout) = 0;
   virtual bool SendReplaySafeMessage(std::span<const uint8_t> message) = 0;
+  virtual void SetEarlyDatagramsAllowed(bool allowed) = 0;
+  virtual void RequestPing() = 0;
+  virtual void Abort() = 0;
   virtual bool WaitUntilReliableMessagesSent(size_t count, TimeDelta timeout) {
     (void)count;
     (void)timeout;

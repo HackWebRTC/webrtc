@@ -218,15 +218,23 @@ class ImpairmentDirection {
     DeterministicRandom random(seed_ ^ ((static_cast<uint64_t>(sequence) + 1) *
                                         0x9e3779b97f4a7c15ULL));
     const auto now = SteadyClock::now();
+    const auto profile_elapsed = now - profile_start_;
+    if (profile_ == "m5" && profile_elapsed >= std::chrono::seconds(5) &&
+        profile_elapsed < std::chrono::seconds(11)) {
+      ++result_->injected_loss;
+      event_log_->Write("injected_outage", name_, sequence);
+      return;
+    }
     const bool constrained_m4 = IsM4Constrained(now);
     const uint64_t loss_hundredths = constrained_m4 ? 200 : 100;
-    if (profile_ != "m3" && (profile_ != "m4" || constrained_m4) &&
+    if (profile_ != "m3" && profile_ != "m5" &&
+        (profile_ != "m4" || constrained_m4) &&
         random.Percent(loss_hundredths)) {
       ++result_->injected_loss;
       event_log_->Write("injected_loss", name_, sequence);
       return;
     }
-    const bool reordered = profile_ != "m3" &&
+    const bool reordered = profile_ != "m3" && profile_ != "m5" &&
                            (profile_ != "m4" || constrained_m4) &&
                            random.Percent(constrained_m4 ? 500 : 100);
     if (reordered) {
@@ -244,11 +252,14 @@ class ImpairmentDirection {
       return;
     }
     const int64_t jitter_us =
-        profile_ == "m3" || (profile_ == "m4" && !constrained_m4)
+        profile_ == "m3" || profile_ == "m5" ||
+                (profile_ == "m4" && !constrained_m4)
             ? 0
             : random.Jitter(constrained_m4 ? 20000 : kJitterUs);
     const int64_t base_delay_us =
-        profile_ == "m4" ? (constrained_m4 ? 100000 : 25000) : kBaseDelayUs;
+        profile_ == "m4" ? (constrained_m4 ? 100000 : 25000)
+                         : profile_ == "m5" ? 0
+                                            : kBaseDelayUs;
     const int64_t delay_us = std::max<int64_t>(
         0, base_delay_us + jitter_us + (reordered ? kReorderDelayUs : 0));
     std::vector<uint8_t> payload(size);
@@ -282,9 +293,14 @@ class ImpairmentDirection {
 
   bool empty() const { return queue_.empty(); }
 
+  void Clear() {
+    queue_ = {};
+    next_serialization_ = SteadyClock::now();
+  }
+
  private:
   uint64_t BandwidthBps(SteadyClock::time_point now) const {
-    if (profile_ == "m0")
+    if (profile_ == "m0" || profile_ == "m5")
       return kBitsPerSecond;
     const auto elapsed = now - profile_start_;
     if (profile_ == "m4") {
@@ -356,6 +372,19 @@ Socket BoundSocketAt(const sockaddr_in& address, std::string* error) {
     return Socket();
   }
   return socket_fd;
+}
+
+bool SameAddress(const sockaddr_in& left, const sockaddr_in& right) {
+  return left.sin_family == right.sin_family &&
+         left.sin_port == right.sin_port &&
+         left.sin_addr.s_addr == right.sin_addr.s_addr;
+}
+
+bool ContainsAddress(const std::vector<sockaddr_in>& addresses,
+                     const sockaddr_in& candidate) {
+  return std::any_of(addresses.begin(), addresses.end(), [&](const auto& item) {
+    return SameAddress(item, candidate);
+  });
 }
 
 void DrainIngress(int socket_fd, ImpairmentDirection* direction) {
@@ -536,6 +565,7 @@ UdpSelfTestResult RunUdpRelay(const std::string& listen_address,
                               &event_log, &result, profile);
   sockaddr_in client = {};
   bool have_client = false;
+  std::vector<sockaddr_in> retired_clients;
   uint32_t outbound_sequence = 0;
   uint32_t inbound_sequence = 0;
   const auto deadline = SteadyClock::now() +
@@ -545,13 +575,28 @@ UdpSelfTestResult RunUdpRelay(const std::string& listen_address,
          !inbound.empty()) {
     while (SteadyClock::now() < deadline) {
       std::array<uint8_t, kMaximumPacketSize> packet = {};
-      socklen_t client_length = sizeof(client);
+      sockaddr_in source = {};
+      socklen_t client_length = sizeof(source);
       const ssize_t received =
           recvfrom(client_side.value, packet.data(), packet.size(), 0,
-                   reinterpret_cast<sockaddr*>(&client), &client_length);
+                   reinterpret_cast<sockaddr*>(&source), &client_length);
       if (received < 0) {
         break;
       }
+      if (have_client && !SameAddress(client, source) &&
+          ContainsAddress(retired_clients, source)) {
+        continue;
+      }
+      if (have_client && !SameAddress(client, source)) {
+        retired_clients.push_back(client);
+        sockaddr_in replacement = {};
+        server_side = BoundSocket(&replacement, true, &result.error);
+        if (server_side.value < 0)
+          return result;
+        outbound.Clear();
+        inbound.Clear();
+      }
+      client = source;
       have_client = true;
       ++result.sent;
       outbound.Ingest(packet.data(), static_cast<size_t>(received),

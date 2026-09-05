@@ -233,6 +233,9 @@ class TestRoqServerImpl final : public TestRoqServer {
     reliable_messages_.push_back(std::move(framed));
     return true;
   }
+  void SetEarlyDatagramsAllowed(bool) override {}
+  void RequestPing() override {}
+  void Abort() override {}
   void BeginReceiveFlowUpdate() override {}
   void UpdateReceiveFlowIds(std::vector<uint64_t>) override {}
 
