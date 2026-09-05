@@ -266,6 +266,14 @@ class RoqSessionImpl final : public RoqSession {
     }
   }
 
+  void RequireIndependentVideoFrame(const std::string& binding_id,
+                                    uint32_t ssrc) override {
+    std::lock_guard lock(mutex_);
+    outgoing_.RequireIndependentVideoFrame(binding_id, ssrc,
+                                           config_.clock->CurrentTime());
+    CopyQueueStatsLocked();
+  }
+
   void RequestPing() override {
     std::lock_guard lock(mutex_);
     ping_requested_ = true;
@@ -579,6 +587,9 @@ class RoqSessionImpl final : public RoqSession {
       stats_.max_bandwidth_bytes_per_second = path.max_bandwidth;
       stats_.acked_bytes = connection_stats.acked_bytes;
       stats_.startup_exit_cwnd = path.startup_exit_cwnd;
+      stats_.current_cwnd_bytes = path.cwnd;
+      stats_.lost_packets = connection_stats.lost;
+      stats_.lost_bytes = connection_stats.lost_bytes;
       stats_.pmtu_bytes = path.pmtu;
       stats_.dgram_lost = path.dgram_lost;
       const Timestamp now =
@@ -893,7 +904,6 @@ class RoqSessionImpl final : public RoqSession {
         return;
       }
       if (connection && quiche_conn_is_established(connection.get())) {
-        bool first_established = false;
         {
           std::lock_guard lock(mutex_);
           if (!stats_.established) {
@@ -912,12 +922,9 @@ class RoqSessionImpl final : public RoqSession {
               quiche_conn_dgram_purge_outgoing(connection.get(), PurgeDatagram);
               CopyQueueStatsLocked();
             }
-            first_established = true;
             condition_.notify_all();
           }
         }
-        if (first_established)
-          UpdateDatagramLimit(connection.get());
         UpdateDatagramLimit(connection.get());
         UpdatePathStats(connection.get());
         bool request_ping = false;
@@ -1104,15 +1111,21 @@ class RoqSessionImpl final : public RoqSession {
                    pending_udp->bytes.size(), 0,
                    reinterpret_cast<const sockaddr*>(&pending_udp->destination),
                    pending_udp->destination_length);
-        if (sent != static_cast<ssize_t>(pending_udp->bytes.size())) {
+        const RoqUdpSendDisposition disposition = ClassifyUdpSendResult(
+            sent, pending_udp->bytes.size(), errno);
+        if (disposition == RoqUdpSendDisposition::kRetry) {
+          // The socket is nonblocking. Keep the single quiche packet pending
+          // and retry from the event loop instead of turning short-lived UDP
+          // buffer pressure into a connection failure.
+          pending_udp->send_at = now + std::chrono::milliseconds(1);
+        } else if (disposition == RoqUdpSendDisposition::kFatal) {
           Fail("UDP send failed");
           return;
-        }
-        {
+        } else {
           std::lock_guard lock(mutex_);
           ++stats_.sent_udp_packets;
+          pending_udp.reset();
         }
-        pending_udp.reset();
       }
       if (connection && !pending_udp) {
         quiche_send_info send_info = {};
@@ -1197,6 +1210,18 @@ class RoqSessionImpl final : public RoqSession {
 };
 
 }  // namespace
+
+RoqUdpSendDisposition ClassifyUdpSendResult(int64_t result,
+                                            size_t expected_bytes,
+                                            int error) {
+  if (result == static_cast<int64_t>(expected_bytes))
+    return RoqUdpSendDisposition::kSent;
+  if (result < 0 && (error == EAGAIN || error == EWOULDBLOCK ||
+                     error == ENOBUFS || error == EINTR)) {
+    return RoqUdpSendDisposition::kRetry;
+  }
+  return RoqUdpSendDisposition::kFatal;
+}
 
 std::unique_ptr<RoqSession> RoqSession::Create(
     RoqSessionConfig config,

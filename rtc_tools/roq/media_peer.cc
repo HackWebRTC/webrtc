@@ -884,6 +884,9 @@ MediaPeerResult RunMediaPeer(const MediaPeerOptions& options) {
        .primary_payload_type =
            static_cast<uint8_t>(manifest.audio.payload_type),
        .primary_ssrc = local_audio_ssrc,
+       .allow_early_publisher_media =
+           options.scenario == "early-media" &&
+           (options.role == PeerRole::kClient || server_early_media),
        .clock = &env.clock()},
       record_outgoing);
   RoqPacketTransport video_transport(
@@ -897,6 +900,9 @@ MediaPeerResult RunMediaPeer(const MediaPeerOptions& options) {
        .rtx_payload_type =
            static_cast<uint8_t>(manifest.video_rtx.payload_type),
        .rtx_ssrc = local_rtx_ssrc,
+       .allow_early_publisher_media =
+           options.scenario == "early-media" &&
+           (options.role == PeerRole::kClient || server_early_media),
        .clock = &env.clock()},
       record_outgoing);
   std::unique_ptr<RoqMediaSession> receive;

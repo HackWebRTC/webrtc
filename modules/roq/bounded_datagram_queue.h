@@ -86,6 +86,9 @@ class BoundedDatagramQueue {
   std::vector<std::function<void()>> RecoveryCallbacks(Timestamp now,
                                                        TimeDelta rtt,
                                                        bool fresh);
+  void RequireIndependentVideoFrame(const std::string& binding_id,
+                                    uint32_t ssrc,
+                                    Timestamp now);
   void RecordInvalid() { ++invalid_drops_; }
 
   size_t size() const { return queue_.size(); }

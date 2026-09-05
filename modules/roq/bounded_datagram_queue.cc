@@ -428,6 +428,15 @@ std::vector<std::function<void()>> BoundedDatagramQueue::RecoveryCallbacks(
   return callbacks;
 }
 
+void BoundedDatagramQueue::RequireIndependentVideoFrame(
+    const std::string& binding_id,
+    uint32_t ssrc,
+    Timestamp now) {
+  const auto key = std::make_pair(binding_id, ssrc);
+  broken_video_.insert(key);
+  recovery_[key].last_drop = now;
+}
+
 std::optional<Timestamp> BoundedDatagramQueue::FrameDeadline(
     const DatagramFrameId& frame_id) const {
   for (const QueuedDatagram& datagram : queue_) {

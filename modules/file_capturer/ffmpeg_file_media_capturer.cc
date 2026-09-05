@@ -97,6 +97,8 @@ struct CycleState {
   bool audio_eof = false;
   bool video_eof = false;
   int64_t last_video_pts_us = -1;
+  int64_t observed_audio_end_us = -1;
+  int64_t observed_video_end_us = -1;
   AudioState audio;
   std::optional<FileMediaAudioBlock> next_audio;
   std::optional<VideoFrame> next_video;
@@ -175,6 +177,8 @@ FileMediaTrackInfo TrackInfo(AVStream* stream) {
       .sample_rate_hz = stream->codecpar->sample_rate,
       .channels = static_cast<size_t>(stream->codecpar->ch_layout.nb_channels)};
 }
+
+bool Rewind(AVFormatContext* format, int64_t common_start_us);
 
 CodecContextPtr OpenDecoder(AVFormatContext* format,
                             int index,
@@ -314,6 +318,83 @@ class FfmpegFileMediaCapturer final : public FileMediaCapturer {
       observer_->OnTerminal(std::move(terminal));
   }
 
+  bool FreezeLoopDurationAtEof(const CycleState &cycle,
+                               FileMediaError *error) {
+    if (info_.loop_duration_us > 0)
+      return true;
+    if (info_.audio && info_.audio->duration_us <= 0) {
+      if (cycle.observed_audio_end_us <= info_.audio->start_time_us) {
+        *error = Error(FileMediaErrorCode::kInvalidTiming,
+                       "audio track has no usable interval");
+        return false;
+      }
+      info_.audio->duration_us =
+          cycle.observed_audio_end_us - info_.audio->start_time_us;
+    }
+    if (info_.video && info_.video->duration_us <= 0) {
+      if (cycle.observed_video_end_us <= info_.video->start_time_us) {
+        *error = Error(FileMediaErrorCode::kInvalidTiming,
+                       "video track has no usable interval");
+        return false;
+      }
+      info_.video->duration_us =
+          cycle.observed_video_end_us - info_.video->start_time_us;
+    }
+    int64_t end_us = std::numeric_limits<int64_t>::max();
+    if (info_.audio)
+      end_us = info_.audio->start_time_us + info_.audio->duration_us;
+    if (info_.video)
+      end_us = std::min(
+          end_us, info_.video->start_time_us + info_.video->duration_us);
+    info_.loop_duration_us = end_us - common_start_us_;
+    if (info_.audio)
+      info_.loop_duration_us =
+          info_.loop_duration_us / kAudioBlockUs * kAudioBlockUs;
+    if (info_.loop_duration_us <= 0) {
+      *error = Error(FileMediaErrorCode::kInvalidTiming,
+                     "selected tracks have no usable interval");
+      return false;
+    }
+    return true;
+  }
+
+  bool MaybeFreezeLoopDuration(const CycleState &cycle,
+                               FileMediaError *error) {
+    if (info_.loop_duration_us > 0)
+      return true;
+    if (cycle.input_eof)
+      return FreezeLoopDurationAtEof(cycle, error);
+
+    int64_t known_end_us = std::numeric_limits<int64_t>::max();
+    if (info_.audio && info_.audio->duration_us > 0) {
+      known_end_us =
+          info_.audio->start_time_us + info_.audio->duration_us;
+    }
+    if (info_.video && info_.video->duration_us > 0) {
+      known_end_us =
+          std::min(known_end_us,
+                   info_.video->start_time_us + info_.video->duration_us);
+    }
+    if (known_end_us == std::numeric_limits<int64_t>::max())
+      return true;
+    if ((info_.audio && info_.audio->duration_us <= 0 &&
+         cycle.observed_audio_end_us < known_end_us) ||
+        (info_.video && info_.video->duration_us <= 0 &&
+         cycle.observed_video_end_us < known_end_us)) {
+      return true;
+    }
+    info_.loop_duration_us = known_end_us - common_start_us_;
+    if (info_.audio)
+      info_.loop_duration_us =
+          info_.loop_duration_us / kAudioBlockUs * kAudioBlockUs;
+    if (info_.loop_duration_us <= 0) {
+      *error = Error(FileMediaErrorCode::kInvalidTiming,
+                     "selected tracks have no usable interval");
+      return false;
+    }
+    return true;
+  }
+
   bool FillLookahead(AVFormatContext* format,
                      CycleState* cycle,
                      int64_t playback_position_us,
@@ -329,7 +410,7 @@ class FfmpegFileMediaCapturer final : public FileMediaCapturer {
       const int status = av_read_frame(format, packet.get());
       if (status == AVERROR_EOF) {
         cycle->input_eof = true;
-        break;
+        return FreezeLoopDurationAtEof(*cycle, error);
       }
       if (status < 0) {
         *error = Error(FileMediaErrorCode::kDecodeFailure,
@@ -349,6 +430,13 @@ class FfmpegFileMediaCapturer final : public FileMediaCapturer {
           packet->pts != AV_NOPTS_VALUE ? packet->pts : packet->dts;
       const int64_t packet_pts_us =
           ToMicros(packet_time, stream->time_base) - common_start_us_;
+      const int64_t packet_end_us =
+          ToMicros(packet_time + std::max<int64_t>(packet->duration, 0),
+                   stream->time_base);
+      int64_t& observed_end = packet->stream_index == audio_index_
+                                  ? cycle->observed_audio_end_us
+                                  : cycle->observed_video_end_us;
+      observed_end = std::max(observed_end, packet_end_us);
       cycle->scan_frontier_us =
           std::max(cycle->scan_frontier_us, packet_pts_us);
       const size_t packet_size = static_cast<size_t>(std::max(packet->size, 0));
@@ -367,7 +455,7 @@ class FfmpegFileMediaCapturer final : public FileMediaCapturer {
       else
         cycle->video_packets.push_back(std::move(queued));
     }
-    return true;
+    return MaybeFreezeLoopDuration(*cycle, error);
   }
 
   bool ConvertVideoFrame(const AVFrame* frame,
@@ -386,7 +474,9 @@ class FfmpegFileMediaCapturer final : public FileMediaCapturer {
     }
     const int64_t cycle_pts_us =
         ToMicros(raw_pts, stream->time_base) - common_start_us_;
-    if (cycle_pts_us < 0 || cycle_pts_us >= info_.loop_duration_us)
+    if (cycle_pts_us < 0 ||
+        (info_.loop_duration_us > 0 &&
+         cycle_pts_us >= info_.loop_duration_us))
       return true;
     if (cycle->last_video_pts_us >= cycle_pts_us) {
       *error = Error(FileMediaErrorCode::kInvalidTiming,
@@ -558,7 +648,8 @@ class FfmpegFileMediaCapturer final : public FileMediaCapturer {
       QueuedPacket queued = std::move(cycle->video_packets.front());
       cycle->video_packets.pop_front();
       cycle->packet_bytes -= queued.size;
-      if (queued.pts_us >= info_.loop_duration_us) {
+      if (info_.loop_duration_us > 0 &&
+          queued.pts_us >= info_.loop_duration_us) {
         cycle->video_eof = true;
         break;
       }
@@ -586,7 +677,8 @@ class FfmpegFileMediaCapturer final : public FileMediaCapturer {
       cycle->audio.pending_start_sample += kSamplesPerBlock;
       return false;
     }
-    if (block_pts_us + kAudioBlockUs > info_.loop_duration_us) {
+    if (info_.loop_duration_us > 0 &&
+        block_pts_us + kAudioBlockUs > info_.loop_duration_us) {
       cycle->audio.pending_samples.clear();
       cycle->audio_eof = true;
       return false;
@@ -651,7 +743,8 @@ class FfmpegFileMediaCapturer final : public FileMediaCapturer {
       QueuedPacket queued = std::move(cycle->audio_packets.front());
       cycle->audio_packets.pop_front();
       cycle->packet_bytes -= queued.size;
-      if (queued.pts_us >= info_.loop_duration_us) {
+      if (info_.loop_duration_us > 0 &&
+          queued.pts_us >= info_.loop_duration_us) {
         cycle->audio.pending_samples.clear();
         cycle->audio_eof = true;
         break;
@@ -772,7 +865,7 @@ class FfmpegFileMediaCapturer final : public FileMediaCapturer {
 
   FileMediaCapturerConfig config_;
   FileMediaCapturerObserver* const observer_;
-  const FileMediaInfo info_;
+  FileMediaInfo info_;
   const int audio_index_;
   const int video_index_;
   const int64_t common_start_us_;
@@ -847,21 +940,28 @@ FileMediaCapturerCreateResult CreateFileMediaCapturer(
     info.video = TrackInfo(format->streams[video_index]);
   int64_t start_us =
       info.audio ? info.audio->start_time_us : info.video->start_time_us;
-  int64_t end_us = info.audio
-                       ? info.audio->start_time_us + info.audio->duration_us
-                       : info.video->start_time_us + info.video->duration_us;
-  if (info.video) {
+  if (info.video)
     start_us = std::max(start_us, info.video->start_time_us);
-    end_us =
-        std::min(end_us, info.video->start_time_us + info.video->duration_us);
-  }
-  info.loop_duration_us = end_us - start_us;
-  if (info.audio)
-    info.loop_duration_us =
-        info.loop_duration_us / kAudioBlockUs * kAudioBlockUs;
-  if (info.loop_duration_us <= 0) {
-    return {.error = Error(FileMediaErrorCode::kInvalidTiming,
-                           "selected tracks have no usable interval")};
+  const bool all_durations_known =
+      (!info.audio || info.audio->duration_us > 0) &&
+      (!info.video || info.video->duration_us > 0);
+  if (all_durations_known) {
+    int64_t end_us = std::numeric_limits<int64_t>::max();
+    if (info.audio)
+      end_us = info.audio->start_time_us + info.audio->duration_us;
+    if (info.video) {
+      start_us = std::max(start_us, info.video->start_time_us);
+      end_us = std::min(
+          end_us, info.video->start_time_us + info.video->duration_us);
+    }
+    info.loop_duration_us = end_us - start_us;
+    if (info.audio)
+      info.loop_duration_us =
+          info.loop_duration_us / kAudioBlockUs * kAudioBlockUs;
+    if (info.loop_duration_us <= 0) {
+      return {.error = Error(FileMediaErrorCode::kInvalidTiming,
+                             "selected tracks have no usable interval")};
+    }
   }
   return {.capturer = std::make_unique<FfmpegFileMediaCapturer>(
               std::move(config), observer, std::move(info), audio_index,

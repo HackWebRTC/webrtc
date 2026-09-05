@@ -42,6 +42,7 @@ struct RoqMediaEngineConfig {
   std::function<RoqSessionStats()> network_stats_provider;
   QuicNetworkControllerFactory::UpdateObserver network_control_observer;
   bool use_audio_device_playout = false;
+  bool use_audio_device_recording = false;
   size_t max_rtp_packet_size = 1200;
   int send_min_bitrate_bps = 1;
   int send_start_bitrate_bps = 1;
@@ -50,6 +51,7 @@ struct RoqMediaEngineConfig {
 
 struct RoqMediaBindingConfig {
   std::string binding_id;
+  std::string sync_group;
   RoqMediaKind kind = RoqMediaKind::kAudio;
   uint32_t primary_ssrc = 0;
   uint32_t rtx_ssrc = 0;
@@ -83,6 +85,12 @@ struct RoqMediaEngineStats {
   int64_t controller_padding_rate_bps = 0;
   size_t controller_probe_cluster_count = 0;
   bool controller_has_congestion_window = false;
+  bool audio_processing_active = false;
+  bool echo_cancellation_enabled = false;
+  bool noise_suppression_enabled = false;
+  bool automatic_gain_control_enabled = false;
+  bool audio_send_nack_enabled = false;
+  bool audio_receive_nack_enabled = false;
 };
 
 struct RoqMediaBindingStats {
@@ -115,6 +123,7 @@ class RoqMediaEngine {
   virtual void UpdateSendBitrateConstraints(int min_bitrate_bps,
                                             int start_bitrate_bps,
                                             int max_bitrate_bps) = 0;
+  virtual void UpdateMaxRtpPacketSize(size_t max_rtp_packet_size) = 0;
   virtual void SendVideoFrame(const std::string& binding_id,
                               scoped_refptr<I420BufferInterface> buffer,
                               int64_t pts_us) = 0;

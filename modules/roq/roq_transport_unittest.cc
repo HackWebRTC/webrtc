@@ -27,6 +27,7 @@ class FakeRoqSession final : public RoqSession {
     return false;
   }
   void SetEarlyDatagramsAllowed(bool) override {}
+  void RequireIndependentVideoFrame(const std::string&, uint32_t) override {}
   void RequestPing() override {}
   void Abort() override {}
   void BeginReceiveFlowUpdate() override {}

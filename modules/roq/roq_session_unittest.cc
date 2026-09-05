@@ -4,6 +4,8 @@
 
 #include "api/roq/roq_session.h"
 
+#include <errno.h>
+
 #include <memory>
 #include <string>
 
@@ -91,6 +93,23 @@ TEST(RoqSessionTest, ClientUsesFreshConnectionIdForEverySession) {
   second->Close();
   EXPECT_TRUE(first->WaitUntilClosed(TimeDelta::Seconds(1)));
   EXPECT_TRUE(second->WaitUntilClosed(TimeDelta::Seconds(1)));
+}
+
+TEST(RoqSessionTest, RetriesOnlyTransientUdpSendFailures) {
+  EXPECT_EQ(ClassifyUdpSendResult(-1, 1200, EAGAIN),
+            RoqUdpSendDisposition::kRetry);
+  EXPECT_EQ(ClassifyUdpSendResult(-1, 1200, EWOULDBLOCK),
+            RoqUdpSendDisposition::kRetry);
+  EXPECT_EQ(ClassifyUdpSendResult(-1, 1200, ENOBUFS),
+            RoqUdpSendDisposition::kRetry);
+  EXPECT_EQ(ClassifyUdpSendResult(-1, 1200, EINTR),
+            RoqUdpSendDisposition::kRetry);
+  EXPECT_EQ(ClassifyUdpSendResult(1200, 1200, 0),
+            RoqUdpSendDisposition::kSent);
+  EXPECT_EQ(ClassifyUdpSendResult(1000, 1200, 0),
+            RoqUdpSendDisposition::kFatal);
+  EXPECT_EQ(ClassifyUdpSendResult(-1, 1200, EBADF),
+            RoqUdpSendDisposition::kFatal);
 }
 
 }  // namespace

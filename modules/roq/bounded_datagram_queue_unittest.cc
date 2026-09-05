@@ -366,6 +366,44 @@ TEST(BoundedDatagramQueueTest, OnlyCompleteIndependentFrameRepairsBrokenChain) {
             DatagramEnqueueResult::kQueued);
 }
 
+TEST(BoundedDatagramQueueTest,
+     ExplicitRecoveryGateSuppressesDeltaUntilIndependentFrame) {
+  BoundedDatagramQueue queue(/*capacity=*/8, /*max_datagram_size=*/8);
+  constexpr Timestamp now = Timestamp::Millis(100);
+  const auto frame = [](uint32_t timestamp) {
+    return DatagramFrameId{
+        .ssrc = 7, .timestamp = timestamp, .binding_id = "video"};
+  };
+
+  queue.RequireIndependentVideoFrame("video", 7, now);
+  QueuedDatagram delta = Datagram(1, DatagramPriority::kVideoDelta, now,
+                                  TimeDelta::Seconds(1), frame(90000));
+  delta.binding_id = "video";
+  delta.frame_complete = true;
+  EXPECT_EQ(queue.Enqueue(std::move(delta), now),
+            DatagramEnqueueResult::kDropped);
+
+  QueuedDatagram recovery = Datagram(2, DatagramPriority::kVideoKey, now,
+                                     TimeDelta::Seconds(1), frame(93000));
+  recovery.binding_id = "video";
+  recovery.frame_complete = true;
+  recovery.contains_idr = true;
+  recovery.contains_sps = true;
+  recovery.contains_pps = true;
+  ASSERT_EQ(queue.Enqueue(std::move(recovery), now),
+            DatagramEnqueueResult::kQueued);
+  auto submitted = queue.Pop(now);
+  ASSERT_TRUE(submitted);
+  queue.RecordSubmitted(*submitted);
+
+  QueuedDatagram next = Datagram(3, DatagramPriority::kVideoDelta, now,
+                                 TimeDelta::Seconds(1), frame(96000));
+  next.binding_id = "video";
+  next.frame_complete = true;
+  EXPECT_EQ(queue.Enqueue(std::move(next), now),
+            DatagramEnqueueResult::kQueued);
+}
+
 TEST(BoundedDatagramQueueTest, RequestsKeyFrameAfterASettledRecoveryWindow) {
   BoundedDatagramQueue queue(/*capacity=*/8, /*max_datagram_size=*/8);
   constexpr Timestamp start = Timestamp::Millis(100);

@@ -299,6 +299,54 @@ TEST(FileMediaCapturerTest, FloorsDualTrackBoundaryToTenMilliseconds) {
   EXPECT_EQ(observer.audio_timestamps_us_.back(), 330000);
 }
 
+// Catches rejecting valid selected tracks solely because their MP4 duration
+// metadata is absent. Packet and decoded-frame timing still define a finite
+// common interval.
+TEST(FileMediaCapturerTest, DerivesBoundaryWhenTrackDurationMetadataIsMissing) {
+  RecordingObserver observer;
+  FileMediaCapturerConfig config;
+  config.input_path = Fixture("missing_duration");
+
+  FileMediaCapturerCreateResult created =
+      CreateFileMediaCapturer(std::move(config), &observer);
+  ASSERT_TRUE(created.ok()) << created.error.message;
+  EXPECT_EQ(created.capturer->media_info().loop_duration_us, 0);
+  StartAndWait(created.capturer.get(), &observer);
+
+  std::lock_guard lock(observer.mutex_);
+  EXPECT_GT(created.capturer->media_info().loop_duration_us, 0);
+  ASSERT_FALSE(observer.audio_timestamps_us_.empty());
+  ASSERT_FALSE(observer.video_timestamps_us_.empty());
+  EXPECT_EQ(observer.audio_timestamps_us_.front(), 0);
+  EXPECT_EQ(observer.video_timestamps_us_.front(), 0);
+  EXPECT_LT(observer.audio_timestamps_us_.back(),
+            created.capturer->media_info().loop_duration_us);
+  EXPECT_LT(observer.video_timestamps_us_.back(),
+            created.capturer->media_info().loop_duration_us);
+  ASSERT_EQ(observer.terminals_.size(), 1u);
+  EXPECT_EQ(observer.terminals_[0].reason, FileMediaTerminalReason::kEndOfFile);
+}
+
+TEST(FileMediaCapturerTest, DerivesUnknownTrackBeforeFreezingBoundary) {
+  RecordingObserver observer;
+  FileMediaCapturerConfig config;
+  config.input_path = Fixture("partial_missing_duration");
+
+  FileMediaCapturerCreateResult created =
+      CreateFileMediaCapturer(std::move(config), &observer);
+  ASSERT_TRUE(created.ok()) << created.error.message;
+  EXPECT_EQ(created.capturer->media_info().loop_duration_us, 0);
+  StartAndWait(created.capturer.get(), &observer);
+
+  std::lock_guard lock(observer.mutex_);
+  const FileMediaInfo info = created.capturer->media_info();
+  EXPECT_EQ(info.loop_duration_us, 300000);
+  ASSERT_FALSE(observer.audio_timestamps_us_.empty());
+  ASSERT_FALSE(observer.video_timestamps_us_.empty());
+  EXPECT_LT(observer.audio_timestamps_us_.back(), info.loop_duration_us);
+  EXPECT_LT(observer.video_timestamps_us_.back(), info.loop_duration_us);
+}
+
 // Catches Stop failing to wake a capturer that is waiting for a future PTS.
 TEST(FileMediaCapturerTest, ExternalStopTerminatesExactlyOnce) {
   RecordingObserver observer;

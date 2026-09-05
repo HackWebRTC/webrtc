@@ -175,6 +175,103 @@ TEST(RoqMediaEngineTest, StartsRecordingForTheFirstDeviceAudioPublication) {
   engine->Stop();
 }
 
+TEST(RoqMediaEngineTest, EnablesAecNoiseSuppressionAndAgcForDeviceAudio) {
+  const Environment env = CreateTestEnvironment();
+  scoped_refptr<AudioDeviceModule> audio =
+      CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_TRUE(audio);
+  ASSERT_EQ(audio->Init(), 0);
+  auto video_encoder = CreateBuiltinVideoEncoderFactory();
+  auto video_decoder = CreateBuiltinVideoDecoderFactory();
+  std::string error;
+  std::unique_ptr<RoqMediaEngine> engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = video_encoder.get(),
+       .video_decoder_factory = video_decoder.get(),
+       .use_audio_device_recording = true},
+      env, &error);
+  ASSERT_TRUE(engine) << error;
+  ASSERT_TRUE(engine->Start(&error)) << error;
+
+  const RoqMediaEngineStats stats = engine->stats();
+  EXPECT_TRUE(stats.audio_processing_active);
+  EXPECT_TRUE(stats.echo_cancellation_enabled);
+  EXPECT_TRUE(stats.noise_suppression_enabled);
+  EXPECT_TRUE(stats.automatic_gain_control_enabled);
+  engine->Stop();
+}
+
+TEST(RoqMediaEngineTest, ExternalPcmDoesNotEnableAudioProcessing) {
+  const Environment env = CreateTestEnvironment();
+  scoped_refptr<AudioDeviceModule> audio =
+      CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_TRUE(audio);
+  ASSERT_EQ(audio->Init(), 0);
+  auto video_encoder = CreateBuiltinVideoEncoderFactory();
+  auto video_decoder = CreateBuiltinVideoDecoderFactory();
+  std::string error;
+  std::unique_ptr<RoqMediaEngine> engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = video_encoder.get(),
+       .video_decoder_factory = video_decoder.get(),
+       .use_audio_device_recording = false},
+      env, &error);
+  ASSERT_TRUE(engine) << error;
+  ASSERT_TRUE(engine->Start(&error)) << error;
+
+  const RoqMediaEngineStats stats = engine->stats();
+  EXPECT_FALSE(stats.audio_processing_active);
+  EXPECT_FALSE(stats.echo_cancellation_enabled);
+  EXPECT_FALSE(stats.noise_suppression_enabled);
+  EXPECT_FALSE(stats.automatic_gain_control_enabled);
+  engine->Stop();
+}
+
+TEST(RoqMediaEngineTest, EnablesNackForOpusSendAndReceiveBindings) {
+  const Environment env = CreateTestEnvironment();
+  scoped_refptr<AudioDeviceModule> audio =
+      CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_TRUE(audio);
+  ASSERT_EQ(audio->Init(), 0);
+  auto video_encoder = CreateBuiltinVideoEncoderFactory();
+  auto video_decoder = CreateBuiltinVideoDecoderFactory();
+  NullTransport transport;
+  std::string error;
+  std::unique_ptr<RoqMediaEngine> engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = video_encoder.get(),
+       .video_decoder_factory = video_decoder.get()},
+      env, &error);
+  ASSERT_TRUE(engine) << error;
+  ASSERT_TRUE(engine->Start(&error)) << error;
+  ASSERT_TRUE(engine->AddSendBinding({.binding_id = "microphone",
+                                      .kind = RoqMediaKind::kAudio,
+                                      .primary_ssrc = 1001,
+                                      .payload_type = 111,
+                                      .transport = &transport,
+                                      .audio_bitrate_bps = 128000},
+                                     &error))
+      << error;
+  ASSERT_TRUE(engine->AddReceiveBinding({.binding_id = "speaker",
+                                         .kind = RoqMediaKind::kAudio,
+                                         .primary_ssrc = 2001,
+                                         .payload_type = 111,
+                                         .transport = &transport},
+                                        &error))
+      << error;
+
+  const RoqMediaEngineStats stats = engine->stats();
+  EXPECT_TRUE(stats.audio_send_nack_enabled);
+  EXPECT_TRUE(stats.audio_receive_nack_enabled);
+  engine->Stop();
+}
+
 TEST(RoqMediaEngineTest, StopsRecordingAfterTheLastDevicePublicationCloses) {
   const Environment env = CreateTestEnvironment();
   scoped_refptr<test::MockAudioDeviceModule> audio =
@@ -280,6 +377,73 @@ TEST(RoqMediaEngineTest, PacketizesLargeVideoFramesForTheRoqMtu) {
   }
   ASSERT_GT(transport.packets.load(), 0u);
   EXPECT_LE(transport.maximum_packet_size.load(), 1200u);
+  engine->Stop();
+}
+
+TEST(RoqMediaEngineTest, ShrinksVideoPacketizationAfterPmtuUpdate) {
+  const Environment env = CreateTestEnvironment();
+  scoped_refptr<AudioDeviceModule> audio =
+      CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_TRUE(audio);
+  ASSERT_EQ(audio->Init(), 0);
+  auto video_encoder = CreateBuiltinVideoEncoderFactory();
+  auto video_decoder = CreateBuiltinVideoDecoderFactory();
+  class MeasuringTransport final : public Transport {
+   public:
+    bool SendRtp(std::span<const uint8_t> packet,
+                 const PacketOptions&) override {
+      if (measure.load()) {
+        ++packets;
+        maximum_packet_size =
+            std::max(maximum_packet_size.load(), packet.size());
+      }
+      return true;
+    }
+    bool SendRtcp(std::span<const uint8_t>, const PacketOptions&) override {
+      return true;
+    }
+    std::atomic<bool> measure = false;
+    std::atomic<size_t> packets = 0;
+    std::atomic<size_t> maximum_packet_size = 0;
+  } transport;
+  std::string error;
+  std::unique_ptr<RoqMediaEngine> engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = video_encoder.get(),
+       .video_decoder_factory = video_decoder.get(),
+       .max_rtp_packet_size = 1200},
+      env, &error);
+  ASSERT_TRUE(engine) << error;
+  ASSERT_TRUE(engine->Start(&error)) << error;
+  ASSERT_TRUE(engine->AddSendBinding({.binding_id = "video",
+                                      .kind = RoqMediaKind::kVideo,
+                                      .primary_ssrc = 1001,
+                                      .rtx_ssrc = 1002,
+                                      .payload_type = 96,
+                                      .rtx_payload_type = 97,
+                                      .transport = &transport,
+                                      .video_min_bitrate_bps = 256000,
+                                      .video_start_bitrate_bps = 1000000,
+                                      .video_max_bitrate_bps = 2000000},
+                                     &error))
+      << error;
+
+  engine->UpdateMaxRtpPacketSize(700);
+  transport.measure.store(true);
+  auto frame = I420Buffer::Create(1920, 1080);
+  I420Buffer::SetBlack(frame.get());
+  for (int index = 0; index < 90; ++index) {
+    engine->SendVideoFrame("video", frame, index * 16667);
+    std::this_thread::sleep_for(std::chrono::milliseconds(17));
+  }
+  for (int attempt = 0; attempt < 500 && transport.packets.load() == 0;
+       ++attempt) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  ASSERT_GT(transport.packets.load(), 0u);
+  EXPECT_LE(transport.maximum_packet_size.load(), 700u);
   engine->Stop();
 }
 

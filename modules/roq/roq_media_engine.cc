@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "api/audio/audio_frame.h"
+#include "api/audio/builtin_audio_processing_builder.h"
 #include "api/roq/quic_network_controller.h"
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
@@ -77,6 +78,7 @@ struct Binding {
   VideoSendStream* video_send = nullptr;
   std::unique_ptr<PushVideoSource> video_source;
   std::optional<int64_t> video_timestamp_base_us;
+  bool audio_nack_enabled = false;
 };
 
 class RoqMediaEngineImpl final : public RoqMediaEngine {
@@ -105,6 +107,14 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
       AudioState::Config audio;
       audio.audio_mixer = AudioMixerImpl::Create();
       audio.audio_device_module = config_.audio_device_module;
+      if (config_.use_audio_device_recording) {
+        AudioProcessing::Config processing;
+        processing.echo_canceller.enabled = true;
+        processing.noise_suppression.enabled = true;
+        processing.gain_controller1.enabled = true;
+        audio.audio_processing =
+            BuiltinAudioProcessingBuilder(processing).Build(env_);
+      }
       audio_state_ = AudioState::Create(audio);
       config_.audio_device_module->RegisterAudioCallback(
           audio_state_->audio_transport());
@@ -183,12 +193,15 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         AudioReceiveStreamInterface::Config receive;
         receive.rtcp_send_transport = config.transport;
         receive.rtp.remote_ssrc = config.primary_ssrc;
+        receive.sync_group = config.sync_group;
+        receive.rtp.nack.rtp_history_ms = 1000;
         receive.decoder_factory = config_.audio_decoder_factory;
         CodecParameterMap opus_parameters = {{"stereo", "1"}};
         opus_parameters["useinbandfec"] = "1";
         receive.decoder_map = {
             {config.payload_type, {"opus", 48000, 2, opus_parameters}}};
         binding.audio = call_->CreateAudioReceiveStream(std::move(receive));
+        binding.audio_nack_enabled = true;
         if (config.audio_sink)
           binding.audio->SetSink(config.audio_sink);
         binding.audio->Start();
@@ -201,6 +214,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         VideoReceiveStreamInterface::Config receive(
             config.transport, config_.video_decoder_factory);
         receive.rtp.remote_ssrc = config.primary_ssrc;
+        receive.sync_group = config.sync_group;
         receive.rtp.nack.rtp_history_ms = 1000;
         receive.rtp.rtx_ssrc = config.rtx_ssrc;
         if (config.rtx_ssrc != 0) {
@@ -253,12 +267,14 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         opus_parameters["useinbandfec"] = "1";
         send.send_codec_spec = AudioSendStream::Config::SendCodecSpec(
             config.payload_type, {"opus", 48000, 2, opus_parameters});
+        send.send_codec_spec->nack_enabled = true;
         send.send_codec_spec->target_bitrate_bps = config.audio_bitrate_bps;
         send.min_bitrate_bps = config.audio_bitrate_bps;
         send.max_bitrate_bps = config.audio_bitrate_bps;
         send.include_in_congestion_control_allocation = true;
         send.encoder_factory = config_.audio_encoder_factory;
         binding.audio_send = call_->CreateAudioSendStream(send);
+        binding.audio_nack_enabled = true;
         binding.audio_send->Start();
         if (config.audio_input_mode == RoqAudioInputMode::kDevice)
           audio_state_->SetRecording(true);
@@ -351,6 +367,28 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
       constraints.max_bitrate_bps = max_bitrate_bps;
       call_->GetTransportControllerSend()->SetSdpBitrateParameters(constraints);
     });
+  }
+
+  void UpdateMaxRtpPacketSize(size_t max_rtp_packet_size) override {
+    if (!worker_ || !call_ || max_rtp_packet_size < 100 ||
+        max_rtp_packet_size > 1500) {
+      return;
+    }
+    max_rtp_packet_size = std::min(max_rtp_packet_size,
+                                   config_.max_rtp_packet_size);
+    auto update = [this, max_rtp_packet_size] {
+      NetworkRoute route;
+      route.connected = true;
+      route.packet_overhead =
+          static_cast<int>(1500 - max_rtp_packet_size);
+      call_->GetTransportControllerSend()->OnNetworkRouteChanged("roq",
+                                                                  route);
+    };
+    if (worker_->IsCurrent()) {
+      update();
+    } else {
+      worker_->BlockingCall(std::move(update));
+    }
   }
 
   bool HasBinding(const std::string& binding_id) const override {
@@ -458,10 +496,27 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         controller_probe_cluster_count_.load();
     result.controller_has_congestion_window =
         controller_has_congestion_window_.load();
+    if (audio_state_ && audio_state_->audio_processing()) {
+      const AudioProcessing::Config processing =
+          audio_state_->audio_processing()->GetConfig();
+      result.audio_processing_active = true;
+      result.echo_cancellation_enabled = processing.echo_canceller.enabled;
+      result.noise_suppression_enabled =
+          processing.noise_suppression.enabled;
+      result.automatic_gain_control_enabled =
+          processing.gain_controller1.enabled ||
+          processing.gain_controller2.enabled;
+    }
     if (!worker_ || !call_)
       return result;
     worker_->BlockingCall([&] {
       for (const auto& [id, binding] : bindings_) {
+        if (binding.audio)
+          result.audio_receive_nack_enabled =
+              result.audio_receive_nack_enabled || binding.audio_nack_enabled;
+        if (binding.audio_send)
+          result.audio_send_nack_enabled =
+              result.audio_send_nack_enabled || binding.audio_nack_enabled;
         if (binding.audio) {
           const auto audio = binding.audio->GetStats();
           result.received_audio_packets += audio.packets_received;

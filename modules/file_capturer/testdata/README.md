@@ -17,6 +17,8 @@ rate choices directly in each command. `SHA256SUMS` pins the resulting bytes.
 | `video_shorter.mp4` | video-defined common boundary |
 | `nonzero_start.mp4` | edit-list/non-zero PTS normalization |
 | `non_aligned.mp4` | loop duration flooring to 10 ms |
+| `missing_duration.mp4` | valid sample timing with zero selected-track duration metadata |
+| `partial_missing_duration.mp4` | audio duration present while the shorter video duration metadata is zero |
 | `gap_over_2s.mp4` | a video gap beyond the lookahead horizon |
 | `no_common_interval.mp4` | invalid disjoint track intervals |
 | `two_audio_tracks.mp4` | explicit stream selection |

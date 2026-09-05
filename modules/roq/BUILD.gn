@@ -34,6 +34,7 @@ rtc_library("roq_core") {
     "../../api:call_api",
     "../../api:scoped_refptr",
     "../../api/audio:audio_frame_api",
+    "../../api/audio:builtin_audio_processing_builder",
     "../../api/audio:audio_mixer_api",
     "../../api/audio_codecs:audio_codecs_api",
     "../../api/environment",

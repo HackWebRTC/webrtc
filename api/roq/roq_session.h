@@ -30,6 +30,10 @@ enum class RoqSendResult {
   kClosed
 };
 enum class RoqMediaType { kAudio, kVideo, kRtcp };
+enum class RoqUdpSendDisposition { kSent, kRetry, kFatal };
+RoqUdpSendDisposition ClassifyUdpSendResult(int64_t result,
+                                            size_t expected_bytes,
+                                            int error);
 enum class RoqDatagramPriority {
   kPeriodicRtcp,
   kVideoDelta,
@@ -159,6 +163,9 @@ struct RoqSessionStats {
   uint64_t max_bandwidth_bytes_per_second = 0;
   uint64_t acked_bytes = 0;
   uint64_t startup_exit_cwnd = 0;
+  uint64_t current_cwnd_bytes = 0;
+  uint64_t lost_packets = 0;
+  uint64_t lost_bytes = 0;
   size_t pmtu_bytes = 0;
   size_t dgram_lost = 0;
   int64_t last_ack_monotonic_us = -1;
@@ -192,6 +199,8 @@ class RoqSession {
   virtual bool WaitUntilEstablished(TimeDelta timeout) = 0;
   virtual bool SendReplaySafeMessage(std::span<const uint8_t> message) = 0;
   virtual void SetEarlyDatagramsAllowed(bool allowed) = 0;
+  virtual void RequireIndependentVideoFrame(const std::string& binding_id,
+                                            uint32_t ssrc) = 0;
   virtual void RequestPing() = 0;
   virtual void Abort() = 0;
   virtual bool WaitUntilReliableMessagesSent(size_t count, TimeDelta timeout) {

@@ -38,6 +38,13 @@ common_output=(
   -ac 2 -c:a aac -b:a 64k "${common_output[@]}" \
   "$SCRIPT_DIR/audio_video.mp4"
 
+# Preserve valid sample tables while zeroing both mdhd durations so the
+# capturer must derive the usable boundary from packet/frame timing.
+cp "$SCRIPT_DIR/audio_video.mp4" "$SCRIPT_DIR/missing_duration.mp4"
+perl -0777 -pi -e \
+  's/(mdhd\x00\x00\x00\x00.{12})\x00\x00\x14\x00/$1\x00\x00\x00\x00/s; s/(mdhd\x00\x00\x00\x00.{12})\x00\x00\x52\xc0/$1\x00\x00\x00\x00/s' \
+  "$SCRIPT_DIR/missing_duration.mp4"
+
 "$FFMPEG" -hide_banner -loglevel error -y \
   -f lavfi -i "testsrc2=size=64x48:rate=10:duration=0.42" \
   -f lavfi -i "sine=frequency=330:sample_rate=48000:duration=0.42" \
@@ -51,6 +58,11 @@ common_output=(
   -map 0:v:0 -map 1:a:0 "${common_video[@]}" \
   -ac 2 -c:a aac -b:a 64k "${common_output[@]}" \
   "$SCRIPT_DIR/audio_shorter.mp4"
+
+cp "$SCRIPT_DIR/video_shorter.mp4" "$SCRIPT_DIR/partial_missing_duration.mp4"
+perl -0777 -pi -e \
+  's/(mdhd\x00\x00\x00\x00.{12})\x00\x0c\x00/$1\x00\x00\x00\x00/s' \
+  "$SCRIPT_DIR/partial_missing_duration.mp4"
 
 "$FFMPEG" -hide_banner -loglevel error -y \
   -f lavfi -i "testsrc2=size=64x48:rate=10:duration=0.30" \

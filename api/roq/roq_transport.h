@@ -29,6 +29,7 @@ struct RoqPacketTransportConfig {
   uint32_t primary_ssrc = 0;
   uint8_t rtx_payload_type = 0;
   uint32_t rtx_ssrc = 0;
+  bool allow_early_publisher_media = false;
   Clock* clock = nullptr;
   TimeDelta critical_rtcp_deadline = TimeDelta::Millis(50);
   TimeDelta audio_deadline = TimeDelta::Millis(60);
