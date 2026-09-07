@@ -32,6 +32,7 @@ namespace webrtc::roq {
 
 enum class RoqMediaKind { kAudio, kVideo };
 enum class RoqAudioInputMode { kExternalPcm, kDevice };
+enum class RoqKeyFrameRequestMethod { kPli, kFir };
 
 struct RoqMediaEngineConfig {
   scoped_refptr<AudioDeviceModule> audio_device_module;
@@ -61,6 +62,9 @@ struct RoqMediaBindingConfig {
   AudioSinkInterface* audio_sink = nullptr;
   VideoSinkInterface<VideoFrame>* video_sink = nullptr;
   RoqAudioInputMode audio_input_mode = RoqAudioInputMode::kExternalPcm;
+  RoqKeyFrameRequestMethod keyframe_request_method =
+      RoqKeyFrameRequestMethod::kPli;
+  bool enable_nack = true;
   int audio_bitrate_bps = 0;
   int video_min_bitrate_bps = 0;
   int video_start_bitrate_bps = 0;
@@ -70,8 +74,16 @@ struct RoqMediaBindingConfig {
 struct RoqMediaEngineStats {
   int64_t sent_audio_packets = 0;
   int64_t sent_video_frames = 0;
+  int audio_target_bitrate_bps = 0;
+  int video_target_bitrate_bps = 0;
+  int video_media_bitrate_bps = 0;
+  uint32_t video_frames_encoded = 0;
+  uint32_t video_frames_dropped = 0;
   uint32_t received_audio_packets = 0;
   uint64_t received_audio_samples = 0;
+  uint64_t audio_fec_packets_received = 0;
+  uint64_t audio_fec_packets_discarded = 0;
+  float audio_secondary_decoded_rate = 0.0f;
   int audio_decoding_normal = 0;
   uint32_t decoded_video_frames = 0;
   uint32_t pli_sent = 0;
@@ -79,7 +91,9 @@ struct RoqMediaEngineStats {
   uint32_t nack_sent = 0;
   uint32_t nack_received = 0;
   uint64_t retransmitted_packets_sent = 0;
+  uint64_t retransmitted_bytes_sent = 0;
   uint64_t network_control_updates = 0;
+  int64_t call_target_rate_bps = 0;
   int64_t controller_target_rate_bps = 0;
   int64_t controller_pacer_rate_bps = 0;
   int64_t controller_padding_rate_bps = 0;
@@ -91,6 +105,7 @@ struct RoqMediaEngineStats {
   bool automatic_gain_control_enabled = false;
   bool audio_send_nack_enabled = false;
   bool audio_receive_nack_enabled = false;
+  bool opus_inband_fec = false;
 };
 
 struct RoqMediaBindingStats {

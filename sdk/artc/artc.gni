@@ -1,0 +1,7 @@
+# Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+
+declare_args() {
+  # Source inputs supplied by the outer artc superbuild.
+  artc_native_source_root = ""
+  artc_generated_source_root = ""
+}

@@ -272,6 +272,38 @@ TEST(RoqMediaEngineTest, EnablesNackForOpusSendAndReceiveBindings) {
   engine->Stop();
 }
 
+TEST(RoqMediaEngineTest, AllowsAudioReceiveNackToBeDisabled) {
+  const Environment env = CreateTestEnvironment();
+  scoped_refptr<AudioDeviceModule> audio =
+      CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_TRUE(audio);
+  ASSERT_EQ(audio->Init(), 0);
+  auto video_encoder = CreateBuiltinVideoEncoderFactory();
+  auto video_decoder = CreateBuiltinVideoDecoderFactory();
+  NullTransport transport;
+  std::string error;
+  std::unique_ptr<RoqMediaEngine> engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = video_encoder.get(),
+       .video_decoder_factory = video_decoder.get()},
+      env, &error);
+  ASSERT_TRUE(engine) << error;
+  ASSERT_TRUE(engine->Start(&error)) << error;
+
+  ASSERT_TRUE(engine->AddReceiveBinding({.binding_id = "speaker",
+                                         .kind = RoqMediaKind::kAudio,
+                                         .primary_ssrc = 2001,
+                                         .payload_type = 111,
+                                         .transport = &transport,
+                                         .enable_nack = false},
+                                        &error));
+
+  EXPECT_FALSE(engine->stats().audio_receive_nack_enabled);
+  engine->Stop();
+}
+
 TEST(RoqMediaEngineTest, StopsRecordingAfterTheLastDevicePublicationCloses) {
   const Environment env = CreateTestEnvironment();
   scoped_refptr<test::MockAudioDeviceModule> audio =
@@ -377,6 +409,10 @@ TEST(RoqMediaEngineTest, PacketizesLargeVideoFramesForTheRoqMtu) {
   }
   ASSERT_GT(transport.packets.load(), 0u);
   EXPECT_LE(transport.maximum_packet_size.load(), 1200u);
+  const RoqMediaEngineStats stats = engine->stats();
+  EXPECT_GT(stats.video_frames_encoded, 0u);
+  EXPECT_GT(stats.video_target_bitrate_bps, 0);
+  EXPECT_GT(stats.video_media_bitrate_bps, 0);
   engine->Stop();
 }
 
@@ -679,6 +715,7 @@ TEST(RoqMediaEngineTest, DynamicSendBitrateConstraintsReachQuicController) {
   }
   EXPECT_EQ(stats.controller_target_rate_bps, 1128000);
   EXPECT_EQ(stats.controller_pacer_rate_bps, 1128000);
+  EXPECT_EQ(stats.call_target_rate_bps, 1128000);
   engine->Stop();
 }
 

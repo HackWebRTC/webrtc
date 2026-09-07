@@ -16,7 +16,7 @@ group("rtc_tools") {
   testonly = true
 
   deps = [ ":video_file_reader" ]
-  if (is_mac && target_cpu == "arm64" && roq_repo_root != "" &&
+  if (is_mac && target_cpu == "arm64" && rtc_enable_artc_sdk &&
       rtc_enable_file_capturer) {
     deps += [ "roq:roq_test_peer" ]
   }

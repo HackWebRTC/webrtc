@@ -194,14 +194,14 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         receive.rtcp_send_transport = config.transport;
         receive.rtp.remote_ssrc = config.primary_ssrc;
         receive.sync_group = config.sync_group;
-        receive.rtp.nack.rtp_history_ms = 1000;
+        receive.rtp.nack.rtp_history_ms = config.enable_nack ? 1000 : 0;
         receive.decoder_factory = config_.audio_decoder_factory;
         CodecParameterMap opus_parameters = {{"stereo", "1"}};
         opus_parameters["useinbandfec"] = "1";
         receive.decoder_map = {
             {config.payload_type, {"opus", 48000, 2, opus_parameters}}};
         binding.audio = call_->CreateAudioReceiveStream(std::move(receive));
-        binding.audio_nack_enabled = true;
+        binding.audio_nack_enabled = config.enable_nack;
         if (config.audio_sink)
           binding.audio->SetSink(config.audio_sink);
         binding.audio->Start();
@@ -221,6 +221,11 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
           receive.rtp.rtx_associated_payload_types[config.rtx_payload_type] =
               config.payload_type;
         }
+        receive.rtp.rtcp_mode = RtcpMode::kCompound;
+        receive.rtp.keyframe_method =
+            config.keyframe_request_method == RoqKeyFrameRequestMethod::kPli
+                ? KeyFrameReqMethod::kPliRtcp
+                : KeyFrameReqMethod::kFirRtcp;
         receive.renderer = config.video_sink;
         receive.decoders.emplace_back(
             SdpVideoFormat("H264", {{"profile-level-id", "42e02a"},
@@ -374,15 +379,13 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         max_rtp_packet_size > 1500) {
       return;
     }
-    max_rtp_packet_size = std::min(max_rtp_packet_size,
-                                   config_.max_rtp_packet_size);
+    max_rtp_packet_size =
+        std::min(max_rtp_packet_size, config_.max_rtp_packet_size);
     auto update = [this, max_rtp_packet_size] {
       NetworkRoute route;
       route.connected = true;
-      route.packet_overhead =
-          static_cast<int>(1500 - max_rtp_packet_size);
-      call_->GetTransportControllerSend()->OnNetworkRouteChanged("roq",
-                                                                  route);
+      route.packet_overhead = static_cast<int>(1500 - max_rtp_packet_size);
+      call_->GetTransportControllerSend()->OnNetworkRouteChanged("roq", route);
     };
     if (worker_->IsCurrent()) {
       update();
@@ -501,8 +504,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
           audio_state_->audio_processing()->GetConfig();
       result.audio_processing_active = true;
       result.echo_cancellation_enabled = processing.echo_canceller.enabled;
-      result.noise_suppression_enabled =
-          processing.noise_suppression.enabled;
+      result.noise_suppression_enabled = processing.noise_suppression.enabled;
       result.automatic_gain_control_enabled =
           processing.gain_controller1.enabled ||
           processing.gain_controller2.enabled;
@@ -510,6 +512,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
     if (!worker_ || !call_)
       return result;
     worker_->BlockingCall([&] {
+      result.call_target_rate_bps = call_->GetStats().send_bandwidth_bps;
       for (const auto& [id, binding] : bindings_) {
         if (binding.audio)
           result.audio_receive_nack_enabled =
@@ -521,6 +524,9 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
           const auto audio = binding.audio->GetStats();
           result.received_audio_packets += audio.packets_received;
           result.received_audio_samples += audio.total_samples_received;
+          result.audio_fec_packets_received += audio.fec_packets_received;
+          result.audio_fec_packets_discarded += audio.fec_packets_discarded;
+          result.audio_secondary_decoded_rate += audio.secondary_decoded_rate;
           result.audio_decoding_normal += audio.decoding_normal;
         }
         if (binding.video) {
@@ -530,16 +536,32 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
           result.fir_sent += video.rtcp_packet_type_counts.fir_packets;
           result.nack_sent += video.rtcp_packet_type_counts.nack_packets;
         }
-        if (binding.audio_send)
-          result.sent_audio_packets +=
-              binding.audio_send->GetStats().packets_sent;
+        if (binding.audio_send) {
+          const auto audio = binding.audio_send->GetStats();
+          result.sent_audio_packets += audio.packets_sent;
+          result.audio_target_bitrate_bps +=
+              static_cast<int>(audio.target_bitrate_bps);
+          result.opus_inband_fec = true;
+        }
         if (binding.video_send) {
           const auto video = binding.video_send->GetStats();
           result.sent_video_frames += video.frames_sent;
+          result.video_target_bitrate_bps += video.target_media_bitrate_bps;
+          result.video_media_bitrate_bps += video.media_bitrate_bps;
+          result.video_frames_encoded += video.frames_encoded;
+          result.video_frames_dropped +=
+              video.frames_dropped_by_capturer +
+              video.frames_dropped_by_bad_timestamp +
+              video.frames_dropped_by_encoder_queue +
+              video.frames_dropped_by_rate_limiter +
+              video.frames_dropped_by_congestion_window +
+              video.frames_dropped_by_encoder;
           for (const auto& [ssrc, stream] : video.substreams) {
             result.nack_received += stream.rtcp_packet_type_counts.nack_packets;
             result.retransmitted_packets_sent +=
                 stream.rtp_stats.retransmitted.packets;
+            result.retransmitted_bytes_sent +=
+                stream.rtp_stats.retransmitted.TotalBytes();
           }
         }
       }
@@ -662,8 +684,9 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         result.fir_sent = video.rtcp_packet_type_counts.fir_packets;
         result.nack_sent = video.rtcp_packet_type_counts.nack_packets;
       }
-      if (binding.audio_send)
+      if (binding.audio_send) {
         result.sent_audio_packets = binding.audio_send->GetStats().packets_sent;
+      }
       if (binding.video_send) {
         const auto video = binding.video_send->GetStats();
         result.sent_video_frames = video.frames_sent;

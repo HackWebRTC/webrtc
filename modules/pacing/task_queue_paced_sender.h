@@ -89,7 +89,6 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
 
   // Sets the pacing rates. Must be called once before packets can be sent.
   void SetConfig(const PacerConfig& pacer_config) override;
-  std::optional<PacerConfig> GetConfig() const override;
 
   // Currently audio traffic is not accounted for by pacer and passed through.
   // With the introduction of audio BWE, audio traffic will be accounted for
@@ -128,7 +127,6 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
     DataSize queue_size;
     TimeDelta expected_queue_time;
     std::optional<Timestamp> first_sent_packet_time;
-    std::optional<PacerConfig> pacer_config;
   };
   void OnStatsUpdated(const Stats& stats);
 

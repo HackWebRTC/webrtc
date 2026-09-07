@@ -109,7 +109,6 @@ class RtpTransportControllerSend final
   void OnNetworkAvailability(bool network_available) override;
   NetworkLinkRtcpObserver* GetRtcpObserver() override;
   int64_t GetPacerQueuingDelayMs() const override;
-  std::optional<PacerConfig> GetPacerConfig() const override;
   std::optional<Timestamp> GetFirstPacketTime() const override;
   void EnablePeriodicAlrProbing(bool enable) override;
   void OnSentPacket(const SentPacketInfo& sent_packet) override;

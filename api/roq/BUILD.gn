@@ -7,7 +7,6 @@ rtc_source_set("roq_api") {
   sources = [
     "quic_network_controller.h",
     "roq_media_engine.h",
-    "roq_media_session.h",
     "roq_session.h",
     "roq_transport.h",
   ]

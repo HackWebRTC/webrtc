@@ -3,8 +3,16 @@
 import("../../roq.gni")
 import("../../webrtc.gni")
 
-assert(roq_repo_root != "",
-       "roq_repo_root must point to the parent artc checkout")
+assert(rtc_enable_artc_sdk,
+       "rtc_enable_artc_sdk must be true to build RoQ targets")
+assert(roq_quiche_include_dir != "",
+       "roq_quiche_include_dir must point to the quiche C headers")
+assert(roq_quiche_library != "", "roq_quiche_library must point to libquiche")
+
+config("quiche") {
+  include_dirs = [ roq_quiche_include_dir ]
+  libs = [ roq_quiche_library ]
+}
 
 rtc_library("roq_core") {
   visibility = [ "*" ]
@@ -18,10 +26,9 @@ rtc_library("roq_core") {
     "receive_flow_registry.h",
     "reliable_message_framer.cc",
     "reliable_message_framer.h",
-    "roq_media_session.cc",
-    "roq_media_engine.cc",
     "resumption_cache.cc",
     "resumption_cache.h",
+    "roq_media_engine.cc",
     "roq_session.cc",
     "roq_transport.cc",
     "roq_wire.cc",
@@ -29,13 +36,13 @@ rtc_library("roq_core") {
     "rtp_packet_metadata.cc",
     "rtp_packet_metadata.h",
   ]
-  include_dirs = [ "$roq_repo_root/quiche/quiche/include" ]
+  public_configs = [ ":quiche" ]
   deps = [
     "../../api:call_api",
     "../../api:scoped_refptr",
     "../../api/audio:audio_frame_api",
-    "../../api/audio:builtin_audio_processing_builder",
     "../../api/audio:audio_mixer_api",
+    "../../api/audio:builtin_audio_processing_builder",
     "../../api/audio_codecs:audio_codecs_api",
     "../../api/environment",
     "../../api/roq:roq_api",
@@ -61,22 +68,16 @@ rtc_library("roq_core") {
     "../../rtc_base:crypto_random",
     "../../rtc_base:logging",
     "../../rtc_base:network_route",
-    "../../rtc_base:timeutils",
     "../../rtc_base:threading",
+    "../../rtc_base:timeutils",
     "../../rtc_base/network:sent_packet",
     "../../rtc_base/synchronization:mutex",
     "../../video/config:encoder_config",
     "//third_party/boringssl",
   ]
-  libs = [ "$roq_repo_root/out/quiche/release/libquiche.a" ]
 }
 
 if (rtc_include_tests) {
-  group("m3_unittests") {
-    testonly = true
-    deps = [ "//modules/roq:roq_sdk_unittests" ]
-  }
-
   rtc_test("roq_sdk_unittests") {
     testonly = true
     sources = [
@@ -85,8 +86,8 @@ if (rtc_include_tests) {
       "quic_network_controller_unittest.cc",
       "receive_flow_registry_unittest.cc",
       "reliable_message_framer_unittest.cc",
-      "roq_media_engine_unittest.cc",
       "resumption_cache_unittest.cc",
+      "roq_media_engine_unittest.cc",
       "roq_session_unittest.cc",
       "roq_transport_unittest.cc",
       "rtp_packet_metadata_unittest.cc",

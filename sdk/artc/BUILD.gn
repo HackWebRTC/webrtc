@@ -1,0 +1,153 @@
+# Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+
+import("../../roq.gni")
+import("../../webrtc.gni")
+import("artc.gni")
+
+assert(rtc_enable_artc_sdk,
+       "rtc_enable_artc_sdk must be true to build the artc SDK")
+assert(artc_native_source_root != "",
+       "artc_native_source_root must point to the artc native sources")
+assert(artc_generated_source_root != "",
+       "artc_generated_source_root must point to generated protocol sources")
+assert(is_mac && target_cpu == "arm64",
+       "the artc SDK currently supports macOS arm64 only")
+assert(rtc_enable_file_capturer,
+       "rtc_enable_file_capturer must be true to build the artc SDK")
+assert(rtc_enable_protobuf,
+       "rtc_enable_protobuf must be true to build the artc SDK")
+
+_artc_source_include_dir = "$artc_native_source_root/../.."
+
+group("artc_sdk") {
+  deps = [ ":artc" ]
+}
+
+rtc_library("artc_proto") {
+  sources = [ "$artc_generated_source_root/livekit_roq.pb.cc" ]
+  include_dirs = [ artc_generated_source_root ]
+  deps = [ "//third_party/protobuf:protobuf_lite" ]
+  cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
+}
+
+rtc_library("artc_device") {
+  sources = [ "$artc_native_source_root/client_device_mac.mm" ]
+  include_dirs = [ _artc_source_include_dir ]
+  deps = [
+    "//api/video:video_frame",
+    "//sdk:base_objc",
+    "//sdk:metal_objc",
+    "//sdk:native_api",
+    "//sdk:videocapture_objc",
+  ]
+  frameworks = [ "AVFoundation.framework" ]
+}
+
+rtc_shared_library("artc") {
+  output_name = "artc"
+  inputs = [ "$artc_native_source_root/artc.exports" ]
+  ldflags = [
+    "-Wl,-install_name,@rpath/libartc.dylib",
+    "-Wl,-exported_symbols_list," +
+        rebase_path("$artc_native_source_root/artc.exports",
+                    root_build_dir),
+  ]
+  if (use_lld) {
+    ldflags += [ "-Wl,--read-workers=1" ]
+  }
+  sources = [
+    "$artc_native_source_root/client_c_api.cc",
+    "$artc_native_source_root/client_media.cc",
+    "$artc_native_source_root/client_protocol.cc",
+    "$artc_native_source_root/client_session.cc",
+  ]
+  include_dirs = [
+    _artc_source_include_dir,
+    artc_generated_source_root,
+  ]
+  deps = [
+    ":artc_device",
+    ":artc_proto",
+    "//api/audio:create_audio_device_module",
+    "//api/audio_codecs:builtin_audio_decoder_factory",
+    "//api/audio_codecs:builtin_audio_encoder_factory",
+    "//api/environment:environment_factory",
+    "//api/file_capturer:file_capturer_api",
+    "//api/roq:roq_api",
+    "//api/units:time_delta",
+    "//api/units:timestamp",
+    "//api/video_codecs:builtin_video_decoder_factory",
+    "//api/video_codecs:builtin_video_encoder_factory",
+    "//modules/file_capturer:file_media_capturer",
+    "//modules/roq:roq_core",
+    "//rtc_base:crypto_random",
+    "//system_wrappers",
+    "//third_party/protobuf:protobuf_lite",
+  ]
+  cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
+  frameworks = [ "AVFoundation.framework" ]
+}
+
+if (rtc_include_tests) {
+  rtc_test("artc_protocol_unittests") {
+    testonly = true
+    sources = [
+      "$artc_native_source_root/client_protocol.cc",
+      "$artc_native_source_root/client_protocol_test.cc",
+    ]
+    include_dirs = [
+      _artc_source_include_dir,
+      artc_generated_source_root,
+    ]
+    deps = [
+      ":artc_proto",
+      "//test:test_support",
+      "//testing/gtest",
+      "//third_party/protobuf:protobuf_lite",
+    ]
+    cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
+  }
+
+  rtc_test("artc_unittests") {
+    testonly = true
+    if (use_lld) {
+      ldflags = [ "-Wl,--read-workers=1" ]
+    }
+    sources = [
+      "$artc_native_source_root/client_c_api.cc",
+      "$artc_native_source_root/client_c_api_test.cc",
+      "$artc_native_source_root/client_media.cc",
+      "$artc_native_source_root/client_protocol.cc",
+      "$artc_native_source_root/client_protocol_test.cc",
+      "$artc_native_source_root/client_session.cc",
+    ]
+    include_dirs = [
+      _artc_source_include_dir,
+      artc_generated_source_root,
+    ]
+    deps = [
+      ":artc_device",
+      ":artc_proto",
+      "//api/audio:create_audio_device_module",
+      "//api/audio_codecs:builtin_audio_decoder_factory",
+      "//api/audio_codecs:builtin_audio_encoder_factory",
+      "//api/environment:environment_factory",
+      "//api/environment:force_test_environment",
+      "//api/file_capturer:file_capturer_api",
+      "//api/roq:roq_api",
+      "//api/units:time_delta",
+      "//api/units:timestamp",
+      "//api/video_codecs:builtin_video_decoder_factory",
+      "//api/video_codecs:builtin_video_encoder_factory",
+      "//modules/file_capturer:file_media_capturer",
+      "//modules/roq:roq_core",
+      "//rtc_base:crypto_random",
+      "//system_wrappers",
+      "//test:test_support",
+      "//testing/gtest",
+      "//third_party/protobuf:protobuf_lite",
+    ]
+    cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
+    frameworks = [ "AVFoundation.framework" ]
+  }
+}

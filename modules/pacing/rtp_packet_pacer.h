@@ -39,9 +39,6 @@ class RtpPacketPacer {
   // Sets the pacing rates. Must be called once before packets can be sent.
   virtual void SetConfig(const PacerConfig& pacer_config) = 0;
 
-  // Returns the most recently applied pacing configuration.
-  virtual std::optional<PacerConfig> GetConfig() const = 0;
-
   // Time since the oldest packet currently in the queue was added.
   virtual TimeDelta OldestPacketWaitTime() const = 0;
 
