@@ -30,6 +30,8 @@
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/nack.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/network/sent_packet.h"
@@ -68,6 +70,21 @@ SdpVideoFormat H264Format() {
   return SdpVideoFormat("H264", {{"profile-level-id", "42e02a"},
                                  {"level-asymmetry-allowed", "1"},
                                  {"packetization-mode", "1"}});
+}
+
+uint32_t CountNackPackets(std::span<const uint8_t> packet) {
+  uint32_t count = 0;
+  while (!packet.empty()) {
+    rtcp::CommonHeader header;
+    if (!header.Parse(packet.data(), packet.size()))
+      return 0;
+    if (header.type() == rtcp::Nack::kPacketType &&
+        header.fmt() == rtcp::Nack::kFeedbackMessageType) {
+      ++count;
+    }
+    packet = packet.subspan(header.packet_size());
+  }
+  return count;
 }
 
 struct Binding {
@@ -356,6 +373,92 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
     return true;
   }
 
+  bool SuspendReceiveBinding(const std::string& binding_id) override {
+    auto it = bindings_.find(binding_id);
+    if (it == bindings_.end() || (!it->second.audio && !it->second.video))
+      return false;
+    terminal_stats_[binding_id] = ReadBindingStats(it->second);
+    worker_->BlockingCall([&] {
+      if (it->second.audio) {
+        it->second.audio->Stop();
+        call_->DestroyAudioReceiveStream(it->second.audio);
+        it->second.audio = nullptr;
+      }
+      if (it->second.video) {
+        it->second.video->Stop();
+        call_->DestroyVideoReceiveStream(it->second.video);
+        it->second.video = nullptr;
+      }
+    });
+    UpdateAudioDeviceState();
+    return true;
+  }
+
+  bool ResumeReceiveBinding(const std::string& binding_id,
+                            std::string* error) override {
+    auto it = bindings_.find(binding_id);
+    if (it == bindings_.end())
+      return false;
+    if (it->second.audio || it->second.video) {
+      error->clear();
+      return true;
+    }
+    Binding replacement{.config = it->second.config};
+    worker_->BlockingCall([&] {
+      const RoqMediaBindingConfig& config = replacement.config;
+      if (config.kind == RoqMediaKind::kAudio) {
+        AudioReceiveStreamInterface::Config receive;
+        receive.rtcp_send_transport = config.transport;
+        receive.rtp.remote_ssrc = config.primary_ssrc;
+        receive.sync_group = config.sync_group;
+        receive.rtp.nack.rtp_history_ms = config.enable_nack ? 1000 : 0;
+        receive.decoder_factory = config_.audio_decoder_factory;
+        CodecParameterMap opus_parameters = {{"stereo", "1"}};
+        opus_parameters["useinbandfec"] = "1";
+        receive.decoder_map = {
+            {config.payload_type, {"opus", 48000, 2, opus_parameters}}};
+        replacement.audio =
+            call_->CreateAudioReceiveStream(std::move(receive));
+        replacement.audio_nack_enabled = config.enable_nack;
+        if (config.audio_sink)
+          replacement.audio->SetSink(config.audio_sink);
+        replacement.audio->Start();
+      } else {
+        VideoReceiveStreamInterface::Config receive(
+            config.transport, config_.video_decoder_factory);
+        receive.rtp.remote_ssrc = config.primary_ssrc;
+        receive.sync_group = config.sync_group;
+        receive.rtp.nack.rtp_history_ms = config.enable_nack ? 1000 : 0;
+        receive.rtp.rtx_ssrc = config.rtx_ssrc;
+        if (config.rtx_ssrc != 0)
+          receive.rtp.rtx_associated_payload_types[config.rtx_payload_type] =
+              config.payload_type;
+        receive.rtp.rtcp_mode = RtcpMode::kCompound;
+        receive.rtp.keyframe_method =
+            config.keyframe_request_method == RoqKeyFrameRequestMethod::kPli
+                ? KeyFrameReqMethod::kPliRtcp
+                : KeyFrameReqMethod::kFirRtcp;
+        receive.renderer = config.video_sink;
+        receive.decoders.emplace_back(
+            SdpVideoFormat("H264", {{"profile-level-id", "42e02a"},
+                                    {"level-asymmetry-allowed", "1"},
+                                    {"packetization-mode", "1"}}),
+            config.payload_type);
+        replacement.video =
+            call_->CreateVideoReceiveStream(std::move(receive));
+        replacement.video->Start();
+      }
+    });
+    if (!replacement.audio && !replacement.video) {
+      *error = "failed to resume receive binding";
+      return false;
+    }
+    it->second = std::move(replacement);
+    terminal_stats_.erase(binding_id);
+    error->clear();
+    return true;
+  }
+
   void UpdateSendBitrateConstraints(int min_bitrate_bps,
                                     int start_bitrate_bps,
                                     int max_bitrate_bps) override {
@@ -455,8 +558,14 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
 
   void DeliverRtcp(const std::string& binding_id,
                    std::span<const uint8_t> packet) override {
-    if (!bindings_.contains(binding_id) || !worker_ || !call_)
+    const auto binding = bindings_.find(binding_id);
+    if (binding == bindings_.end() || !worker_ || !call_)
       return;
+    const uint32_t nack_packets = CountNackPackets(packet);
+    if (binding->second.config.kind == RoqMediaKind::kAudio)
+      audio_nack_received_.fetch_add(nack_packets);
+    else
+      video_nack_received_.fetch_add(nack_packets);
     worker_->PostTask([this, bytes = CopyOnWriteBuffer(packet)]() mutable {
       call_->Receiver()->DeliverRtcpPacket(std::move(bytes));
     });
@@ -478,19 +587,10 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         [stream = it->second.video] { stream->GenerateKeyFrame(); });
   }
 
-  void PullAudio(const std::string& binding_id) override {
-    auto it = bindings_.find(binding_id);
-    if (it == bindings_.end() || !it->second.audio)
-      return;
-    worker_->BlockingCall([stream = it->second.audio] {
-      AudioFrame frame;
-      static_cast<AudioReceiveStreamImpl*>(stream)->GetAudioFrameWithInfo(
-          48000, &frame);
-    });
-  }
-
   RoqMediaEngineStats stats() override {
     RoqMediaEngineStats result;
+    result.audio_nack_received = audio_nack_received_.load();
+    result.video_nack_received = video_nack_received_.load();
     result.network_control_updates = network_control_updates_.load();
     result.controller_target_rate_bps = controller_target_rate_bps_.load();
     result.controller_pacer_rate_bps = controller_pacer_rate_bps_.load();
@@ -539,6 +639,8 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         if (binding.audio_send) {
           const auto audio = binding.audio_send->GetStats();
           result.sent_audio_packets += audio.packets_sent;
+          result.audio_retransmitted_packets_sent +=
+              audio.retransmitted_packets_sent;
           result.audio_target_bitrate_bps +=
               static_cast<int>(audio.target_bitrate_bps);
           result.opus_inband_fec = true;
@@ -560,6 +662,8 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
             result.nack_received += stream.rtcp_packet_type_counts.nack_packets;
             result.retransmitted_packets_sent +=
                 stream.rtp_stats.retransmitted.packets;
+            result.video_retransmitted_packets_sent +=
+                stream.rtp_stats.retransmitted.packets;
             result.retransmitted_bytes_sent +=
                 stream.rtp_stats.retransmitted.TotalBytes();
           }
@@ -576,7 +680,16 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         result.nack_received += terminal.nack_received;
         result.retransmitted_packets_sent +=
             terminal.retransmitted_packets_sent;
+        result.audio_retransmitted_packets_sent +=
+            terminal.audio_retransmitted_packets_sent;
+        result.video_retransmitted_packets_sent +=
+            terminal.video_retransmitted_packets_sent;
       }
+      result.nack_received =
+          result.audio_nack_received + result.video_nack_received;
+      result.retransmitted_packets_sent =
+          result.audio_retransmitted_packets_sent +
+          result.video_retransmitted_packets_sent;
     });
     return result;
   }
@@ -668,38 +781,48 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
     bindings_.emplace(config.binding_id, std::move(binding));
   }
 
-  RoqMediaBindingStats ReadBindingStats(const Binding& binding) {
+  RoqMediaBindingStats ReadBindingStatsOnWorker(const Binding& binding) {
     RoqMediaBindingStats result;
     if (!worker_ || !call_)
       return result;
-    worker_->BlockingCall([&] {
-      if (binding.audio) {
-        result.received_audio_packets =
-            binding.audio->GetStats().packets_received;
+    if (binding.audio) {
+      result.received_audio_packets = binding.audio->GetStats().packets_received;
+    }
+    if (binding.video) {
+      const auto video = binding.video->GetStats();
+      result.decoded_video_frames = video.frames_decoded;
+      result.pli_sent = video.rtcp_packet_type_counts.pli_packets;
+      result.fir_sent = video.rtcp_packet_type_counts.fir_packets;
+      result.nack_sent = video.rtcp_packet_type_counts.nack_packets;
+    }
+    if (binding.audio_send) {
+      const auto audio = binding.audio_send->GetStats();
+      result.sent_audio_packets = audio.packets_sent;
+      result.audio_retransmitted_packets_sent = audio.retransmitted_packets_sent;
+    }
+    if (binding.video_send) {
+      const auto video = binding.video_send->GetStats();
+      result.sent_video_frames = video.frames_sent;
+      for (const auto& [ssrc, stream] : video.substreams) {
+        result.nack_received += stream.rtcp_packet_type_counts.nack_packets;
+        result.nack_requests_received +=
+            stream.rtcp_packet_type_counts.nack_requests;
+        result.retransmitted_packets_sent +=
+            stream.rtp_stats.retransmitted.packets;
+        result.video_retransmitted_packets_sent +=
+            stream.rtp_stats.retransmitted.packets;
       }
-      if (binding.video) {
-        const auto video = binding.video->GetStats();
-        result.decoded_video_frames = video.frames_decoded;
-        result.pli_sent = video.rtcp_packet_type_counts.pli_packets;
-        result.fir_sent = video.rtcp_packet_type_counts.fir_packets;
-        result.nack_sent = video.rtcp_packet_type_counts.nack_packets;
-      }
-      if (binding.audio_send) {
-        result.sent_audio_packets = binding.audio_send->GetStats().packets_sent;
-      }
-      if (binding.video_send) {
-        const auto video = binding.video_send->GetStats();
-        result.sent_video_frames = video.frames_sent;
-        for (const auto& [ssrc, stream] : video.substreams) {
-          result.nack_received += stream.rtcp_packet_type_counts.nack_packets;
-          result.nack_requests_received +=
-              stream.rtcp_packet_type_counts.nack_requests;
-          result.retransmitted_packets_sent +=
-              stream.rtp_stats.retransmitted.packets;
-        }
-      }
-    });
+    }
     return result;
+  }
+
+  RoqMediaBindingStats ReadBindingStats(const Binding& binding) {
+    if (!worker_ || !call_)
+      return {};
+    if (worker_->IsCurrent())
+      return ReadBindingStatsOnWorker(binding);
+    return worker_->BlockingCall(
+        [&] { return ReadBindingStatsOnWorker(binding); });
   }
 
   void Destroy(Binding& binding) {
@@ -739,6 +862,8 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
   std::map<std::string, RoqMediaBindingStats> terminal_stats_;
   std::set<uint32_t> ssrcs_;
   std::atomic<uint64_t> network_control_updates_ = 0;
+  std::atomic<uint32_t> audio_nack_received_ = 0;
+  std::atomic<uint32_t> video_nack_received_ = 0;
   std::atomic<int64_t> controller_target_rate_bps_ = 0;
   std::atomic<int64_t> controller_pacer_rate_bps_ = 0;
   std::atomic<int64_t> controller_padding_rate_bps_ = 0;

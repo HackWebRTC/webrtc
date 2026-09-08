@@ -42,6 +42,12 @@ enum class RoqDatagramPriority {
   kRtcp,
 };
 enum class RoqReceiveFlowPolicy { kDeliver, kDiscard };
+enum class RoqSessionLifecycleState { kReady, kEstablished, kClosed };
+
+struct RoqSessionLifecycleEvent {
+  RoqSessionLifecycleState state = RoqSessionLifecycleState::kReady;
+  std::string error;
+};
 
 struct RoqFlowConfig {
   uint64_t flow_id = 0;
@@ -96,6 +102,7 @@ struct RoqSessionConfig {
   size_t outgoing_queue_capacity = 512;
   size_t outgoing_queue_byte_capacity = 512 * 1024;
   Clock* clock = Clock::GetRealTimeClock();
+  std::function<void(RoqSessionLifecycleEvent)> lifecycle_callback;
   std::vector<uint64_t> allowed_flow_ids;
   std::vector<uint64_t> receive_flow_ids;
 };
@@ -141,6 +148,8 @@ struct RoqSessionStats {
   size_t peak_quiche_queue_size = 0;
   size_t peak_queue_size = 0;
   size_t peak_queue_bytes = 0;
+  size_t queued_packets = 0;
+  size_t queued_bytes = 0;
   int64_t max_queue_delay_us = 0;
   size_t dropped_periodic_rtcp = 0;
   size_t dropped_video_delta = 0;

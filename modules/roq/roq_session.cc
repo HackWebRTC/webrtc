@@ -493,11 +493,21 @@ class RoqSessionImpl final : public RoqSession {
 
  private:
   void Fail(std::string error) {
-    std::lock_guard lock(mutex_);
-    if (error_.empty())
-      error_ = std::move(error);
-    closed_ = true;
-    condition_.notify_all();
+    std::string failure;
+    {
+      std::lock_guard lock(mutex_);
+      if (error_.empty())
+        error_ = std::move(error);
+      failure = error_;
+      closed_ = true;
+      condition_.notify_all();
+    }
+    NotifyLifecycle(RoqSessionLifecycleState::kClosed, std::move(failure));
+  }
+
+  void NotifyLifecycle(RoqSessionLifecycleState state, std::string error = {}) {
+    if (config_.lifecycle_callback)
+      config_.lifecycle_callback({.state = state, .error = std::move(error)});
   }
 
   ConfigPtr CreateConfig(std::string* error) {
@@ -551,6 +561,8 @@ class RoqSessionImpl final : public RoqSession {
     stats_.invalid_drops = outgoing_.invalid_drops();
     stats_.peak_queue_size = outgoing_.peak_size();
     stats_.peak_queue_bytes = outgoing_.peak_byte_size();
+    stats_.queued_packets = outgoing_.size();
+    stats_.queued_bytes = outgoing_.byte_size();
     stats_.max_queue_delay_us = outgoing_.max_queue_delay().us();
     stats_.dropped_periodic_rtcp =
         outgoing_.dropped_by_priority(DatagramPriority::kPeriodicRtcp);
@@ -848,6 +860,7 @@ class RoqSessionImpl final : public RoqSession {
       ready_ = true;
       condition_.notify_all();
     }
+    NotifyLifecycle(RoqSessionLifecycleState::kReady);
 
     std::optional<PendingUdpPacket> pending_udp;
     bool local_close_sent = false;
@@ -904,9 +917,11 @@ class RoqSessionImpl final : public RoqSession {
         return;
       }
       if (connection && quiche_conn_is_established(connection.get())) {
+        bool became_established = false;
         {
           std::lock_guard lock(mutex_);
           if (!stats_.established) {
+            became_established = true;
             stats_.established = true;
             stats_.session_resumed = quiche_conn_is_resumed(connection.get());
             stats_.early_data_reason =
@@ -925,6 +940,8 @@ class RoqSessionImpl final : public RoqSession {
             condition_.notify_all();
           }
         }
+        if (became_established)
+          NotifyLifecycle(RoqSessionLifecycleState::kEstablished);
         UpdateDatagramLimit(connection.get());
         UpdatePathStats(connection.get());
         bool request_ping = false;
@@ -933,7 +950,8 @@ class RoqSessionImpl final : public RoqSession {
           request_ping = ping_requested_;
           ping_requested_ = false;
         }
-        if (request_ping && quiche_conn_send_ack_eliciting(connection.get()) < 0) {
+        if (request_ping &&
+            quiche_conn_send_ack_eliciting(connection.get()) < 0) {
           Fail("failed to send QUIC PING");
           return;
         }
@@ -991,10 +1009,9 @@ class RoqSessionImpl final : public RoqSession {
       bool can_send_datagram = false;
       if (connection) {
         std::lock_guard lock(mutex_);
-        can_send_datagram =
-            quiche_conn_is_established(connection.get()) ||
-            (early_datagrams_allowed_ &&
-             quiche_conn_is_in_early_data(connection.get()));
+        can_send_datagram = quiche_conn_is_established(connection.get()) ||
+                            (early_datagrams_allowed_ &&
+                             quiche_conn_is_in_early_data(connection.get()));
       }
       if (can_send_datagram) {
         std::optional<QueuedDatagram> outgoing;
@@ -1111,8 +1128,8 @@ class RoqSessionImpl final : public RoqSession {
                    pending_udp->bytes.size(), 0,
                    reinterpret_cast<const sockaddr*>(&pending_udp->destination),
                    pending_udp->destination_length);
-        const RoqUdpSendDisposition disposition = ClassifyUdpSendResult(
-            sent, pending_udp->bytes.size(), errno);
+        const RoqUdpSendDisposition disposition =
+            ClassifyUdpSendResult(sent, pending_udp->bytes.size(), errno);
         if (disposition == RoqUdpSendDisposition::kRetry) {
           // The socket is nonblocking. Keep the single quiche packet pending
           // and retry from the event loop instead of turning short-lived UDP
@@ -1172,6 +1189,7 @@ class RoqSessionImpl final : public RoqSession {
       closed_ = true;
       condition_.notify_all();
     }
+    NotifyLifecycle(RoqSessionLifecycleState::kClosed);
   }
 
   const RoqSessionConfig config_;

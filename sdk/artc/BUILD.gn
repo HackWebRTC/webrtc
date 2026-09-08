@@ -57,6 +57,10 @@ rtc_shared_library("artc") {
   }
   sources = [
     "$artc_native_source_root/client_c_api.cc",
+    "$artc_native_source_root/client_core.cc",
+    "$artc_native_source_root/client_event_queue.cc",
+    "$artc_native_source_root/client_runtime.cc",
+    "$artc_native_source_root/client_source.cc",
     "$artc_native_source_root/client_media.cc",
     "$artc_native_source_root/client_protocol.cc",
     "$artc_native_source_root/client_session.cc",
@@ -74,6 +78,7 @@ rtc_shared_library("artc") {
     "//api/environment:environment_factory",
     "//api/file_capturer:file_capturer_api",
     "//api/roq:roq_api",
+    "//api/task_queue:default_task_queue_factory",
     "//api/units:time_delta",
     "//api/units:timestamp",
     "//api/video_codecs:builtin_video_decoder_factory",
@@ -86,6 +91,50 @@ rtc_shared_library("artc") {
   ]
   cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
   frameworks = [ "AVFoundation.framework" ]
+}
+
+if (rtc_include_tests) {
+  rtc_shared_library("artc_test_support") {
+    testonly = true
+    output_name = "artc_test_support"
+    sources = [
+      "$artc_native_source_root/client_c_api.cc",
+      "$artc_native_source_root/client_core.cc",
+      "$artc_native_source_root/client_event_queue.cc",
+      "$artc_native_source_root/client_media.cc",
+      "$artc_native_source_root/client_protocol.cc",
+      "$artc_native_source_root/client_runtime.cc",
+      "$artc_native_source_root/client_session.cc",
+      "$artc_native_source_root/client_source.cc",
+    ]
+    include_dirs = [
+      _artc_source_include_dir,
+      artc_generated_source_root,
+    ]
+    deps = [
+      ":artc_device",
+      ":artc_proto",
+      "//api/audio:create_audio_device_module",
+      "//api/audio_codecs:builtin_audio_decoder_factory",
+      "//api/audio_codecs:builtin_audio_encoder_factory",
+      "//api/environment:environment_factory",
+      "//api/file_capturer:file_capturer_api",
+      "//api/roq:roq_api",
+      "//api/task_queue:default_task_queue_factory",
+      "//api/units:time_delta",
+      "//api/units:timestamp",
+      "//api/video_codecs:builtin_video_decoder_factory",
+      "//api/video_codecs:builtin_video_encoder_factory",
+      "//modules/file_capturer:file_media_capturer",
+      "//modules/roq:roq_core",
+      "//rtc_base:crypto_random",
+      "//system_wrappers",
+      "//third_party/protobuf:protobuf_lite",
+    ]
+    cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
+    defines = [ "ARTC_ENABLE_LEGACY_TEST_API=1" ]
+    frameworks = [ "AVFoundation.framework" ]
+  }
 }
 
 if (rtc_include_tests) {
@@ -114,6 +163,12 @@ if (rtc_include_tests) {
       ldflags = [ "-Wl,--read-workers=1" ]
     }
     sources = [
+      "$artc_native_source_root/client_core.cc",
+      "$artc_native_source_root/client_control_core_test.cc",
+      "$artc_native_source_root/client_event_queue.cc",
+      "$artc_native_source_root/client_event_queue_test.cc",
+      "$artc_native_source_root/client_runtime.cc",
+      "$artc_native_source_root/client_source.cc",
       "$artc_native_source_root/client_c_api.cc",
       "$artc_native_source_root/client_c_api_test.cc",
       "$artc_native_source_root/client_media.cc",
@@ -135,6 +190,7 @@ if (rtc_include_tests) {
       "//api/environment:force_test_environment",
       "//api/file_capturer:file_capturer_api",
       "//api/roq:roq_api",
+      "//api/task_queue:default_task_queue_factory",
       "//api/units:time_delta",
       "//api/units:timestamp",
       "//api/video_codecs:builtin_video_decoder_factory",
@@ -148,6 +204,7 @@ if (rtc_include_tests) {
       "//third_party/protobuf:protobuf_lite",
     ]
     cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
+    defines = [ "ARTC_ENABLE_LEGACY_TEST_API=1" ]
     frameworks = [ "AVFoundation.framework" ]
   }
 }

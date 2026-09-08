@@ -108,6 +108,7 @@ if (rtc_include_tests) {
       "../../api/video_codecs:builtin_video_decoder_factory",
       "../../api/video_codecs:builtin_video_encoder_factory",
       "../../modules/audio_device:mock_audio_device",
+      "../../modules/rtp_rtcp:rtp_rtcp_format",
       "../../system_wrappers",
       "../../test:create_test_environment",
       "../../test:test_support",

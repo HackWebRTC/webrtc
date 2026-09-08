@@ -19,6 +19,7 @@
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "modules/audio_device/include/mock_audio_device.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/nack.h"
 #include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -301,6 +302,71 @@ TEST(RoqMediaEngineTest, AllowsAudioReceiveNackToBeDisabled) {
                                         &error));
 
   EXPECT_FALSE(engine->stats().audio_receive_nack_enabled);
+  engine->Stop();
+}
+
+TEST(RoqMediaEngineTest, CountsAudioAndVideoSenderNackStats) {
+  const Environment env = CreateTestEnvironment();
+  scoped_refptr<AudioDeviceModule> audio =
+      CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_TRUE(audio);
+  ASSERT_EQ(audio->Init(), 0);
+  auto video_encoder = CreateBuiltinVideoEncoderFactory();
+  auto video_decoder = CreateBuiltinVideoDecoderFactory();
+  NullTransport transport;
+  std::string error;
+  std::unique_ptr<RoqMediaEngine> engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = video_encoder.get(),
+       .video_decoder_factory = video_decoder.get()},
+      env, &error);
+  ASSERT_TRUE(engine) << error;
+  ASSERT_TRUE(engine->Start(&error)) << error;
+  ASSERT_TRUE(engine->AddSendBinding({.binding_id = "microphone",
+                                      .kind = RoqMediaKind::kAudio,
+                                      .primary_ssrc = 1001,
+                                      .payload_type = 111,
+                                      .transport = &transport,
+                                      .audio_bitrate_bps = 128000},
+                                     &error));
+  ASSERT_TRUE(engine->AddSendBinding({.binding_id = "camera",
+                                      .kind = RoqMediaKind::kVideo,
+                                      .primary_ssrc = 2001,
+                                      .rtx_ssrc = 2002,
+                                      .payload_type = 96,
+                                      .rtx_payload_type = 97,
+                                      .transport = &transport,
+                                      .video_min_bitrate_bps = 256000,
+                                      .video_start_bitrate_bps = 1000000,
+                                      .video_max_bitrate_bps = 2000000},
+                                     &error));
+
+  rtcp::Nack audio_nack;
+  audio_nack.SetSenderSsrc(3001);
+  audio_nack.SetMediaSsrc(1001);
+  audio_nack.SetPacketIds(std::vector<uint16_t>{1});
+  const Buffer audio_packet = audio_nack.Build();
+  engine->DeliverRtcp("microphone", audio_packet);
+  rtcp::Nack video_nack;
+  video_nack.SetSenderSsrc(3002);
+  video_nack.SetMediaSsrc(2001);
+  video_nack.SetPacketIds(std::vector<uint16_t>{1});
+  const Buffer video_packet = video_nack.Build();
+  engine->DeliverRtcp("camera", video_packet);
+  engine->DeliverRtcp("camera", video_packet);
+
+  RoqMediaEngineStats stats;
+  for (int attempt = 0; attempt < 100; ++attempt) {
+    stats = engine->stats();
+    if (stats.audio_nack_received == 1 && stats.video_nack_received == 2)
+      break;
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_EQ(stats.nack_received, 3u);
+  EXPECT_EQ(stats.audio_nack_received, 1u);
+  EXPECT_EQ(stats.video_nack_received, 2u);
   engine->Stop();
 }
 
@@ -823,6 +889,70 @@ TEST(RoqMediaEngineTest, RetainsTerminalBindingStatsAfterRemoval) {
   EXPECT_FALSE(engine->HasBinding("subscription"));
   EXPECT_EQ(engine->binding_count(), 0u);
   EXPECT_TRUE(engine->binding_stats("subscription").has_value());
+  engine->Stop();
+}
+
+TEST(RoqMediaEngineTest, SuspendsReceiveBindingWithoutRemovingIt) {
+  const Environment env = CreateTestEnvironment();
+  scoped_refptr<AudioDeviceModule> audio =
+      CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_TRUE(audio);
+  ASSERT_EQ(audio->Init(), 0);
+  auto video_encoder = CreateBuiltinVideoEncoderFactory();
+  auto video_decoder = CreateBuiltinVideoDecoderFactory();
+  NullTransport transport;
+  std::string error;
+  std::unique_ptr<RoqMediaEngine> engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = video_encoder.get(),
+       .video_decoder_factory = video_decoder.get()},
+      env, &error);
+  ASSERT_TRUE(engine) << error;
+  ASSERT_TRUE(engine->Start(&error)) << error;
+  ASSERT_TRUE(engine->AddReceiveBinding({.binding_id = "subscription",
+                                         .kind = RoqMediaKind::kAudio,
+                                         .primary_ssrc = 1001,
+                                         .payload_type = 111,
+                                         .transport = &transport},
+                                        &error));
+
+  EXPECT_TRUE(engine->SuspendReceiveBinding("subscription"));
+  EXPECT_TRUE(engine->HasBinding("subscription"));
+  EXPECT_EQ(engine->binding_count(), 1u);
+  engine->Stop();
+}
+
+TEST(RoqMediaEngineTest, ResumesSuspendedReceiveBinding) {
+  const Environment env = CreateTestEnvironment();
+  scoped_refptr<AudioDeviceModule> audio =
+      CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_TRUE(audio);
+  ASSERT_EQ(audio->Init(), 0);
+  auto video_encoder = CreateBuiltinVideoEncoderFactory();
+  auto video_decoder = CreateBuiltinVideoDecoderFactory();
+  NullTransport transport;
+  std::string error;
+  std::unique_ptr<RoqMediaEngine> engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = video_encoder.get(),
+       .video_decoder_factory = video_decoder.get()},
+      env, &error);
+  ASSERT_TRUE(engine) << error;
+  ASSERT_TRUE(engine->Start(&error)) << error;
+  ASSERT_TRUE(engine->AddReceiveBinding({.binding_id = "subscription",
+                                         .kind = RoqMediaKind::kAudio,
+                                         .primary_ssrc = 1001,
+                                         .payload_type = 111,
+                                         .transport = &transport},
+                                        &error));
+  ASSERT_TRUE(engine->SuspendReceiveBinding("subscription"));
+
+  EXPECT_TRUE(engine->ResumeReceiveBinding("subscription", &error)) << error;
+  EXPECT_TRUE(engine->HasBinding("subscription"));
   engine->Stop();
 }
 

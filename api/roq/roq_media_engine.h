@@ -74,6 +74,10 @@ struct RoqMediaBindingConfig {
 struct RoqMediaEngineStats {
   int64_t sent_audio_packets = 0;
   int64_t sent_video_frames = 0;
+  uint32_t audio_nack_received = 0;
+  uint64_t audio_retransmitted_packets_sent = 0;
+  uint32_t video_nack_received = 0;
+  uint64_t video_retransmitted_packets_sent = 0;
   int audio_target_bitrate_bps = 0;
   int video_target_bitrate_bps = 0;
   int video_media_bitrate_bps = 0;
@@ -111,6 +115,8 @@ struct RoqMediaEngineStats {
 struct RoqMediaBindingStats {
   int64_t sent_audio_packets = 0;
   int64_t sent_video_frames = 0;
+  uint64_t audio_retransmitted_packets_sent = 0;
+  uint64_t video_retransmitted_packets_sent = 0;
   uint32_t received_audio_packets = 0;
   uint32_t decoded_video_frames = 0;
   uint32_t pli_sent = 0;
@@ -135,6 +141,9 @@ class RoqMediaEngine {
   virtual bool AddSendBinding(RoqMediaBindingConfig config,
                               std::string* error) = 0;
   virtual bool RemoveBinding(const std::string& binding_id) = 0;
+  virtual bool SuspendReceiveBinding(const std::string& binding_id) = 0;
+  virtual bool ResumeReceiveBinding(const std::string& binding_id,
+                                    std::string* error) = 0;
   virtual void UpdateSendBitrateConstraints(int min_bitrate_bps,
                                             int start_bitrate_bps,
                                             int max_bitrate_bps) = 0;
@@ -151,7 +160,6 @@ class RoqMediaEngine {
                            std::span<const uint8_t> packet) = 0;
   virtual void GenerateSenderKeyFrame(const std::string& binding_id) = 0;
   virtual void RequestReceiverKeyFrame(const std::string& binding_id) = 0;
-  virtual void PullAudio(const std::string& binding_id) = 0;
   virtual void NotifyPacketAccepted(const PacketOptions& options,
                                     size_t packet_size) = 0;
   virtual RoqMediaEngineStats stats() = 0;
