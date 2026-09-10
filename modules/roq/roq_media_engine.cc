@@ -67,7 +67,7 @@ class PushVideoSource final : public VideoSourceInterface<VideoFrame> {
 };
 
 SdpVideoFormat H264Format() {
-  return SdpVideoFormat("H264", {{"profile-level-id", "42e02a"},
+  return SdpVideoFormat("H264", {{"profile-level-id", "42e034"},
                                  {"level-asymmetry-allowed", "1"},
                                  {"packetization-mode", "1"}});
 }
@@ -215,8 +215,10 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         receive.decoder_factory = config_.audio_decoder_factory;
         CodecParameterMap opus_parameters = {{"stereo", "1"}};
         opus_parameters["useinbandfec"] = "1";
+        opus_parameters["usedtx"] = "1";
         receive.decoder_map = {
-            {config.payload_type, {"opus", 48000, 2, opus_parameters}}};
+            {config.payload_type, {"red", 48000, 2, {{"", "112/112"}}}},
+            {112, {"opus", 48000, 2, opus_parameters}}};
         binding.audio = call_->CreateAudioReceiveStream(std::move(receive));
         binding.audio_nack_enabled = config.enable_nack;
         if (config.audio_sink)
@@ -245,7 +247,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
                 : KeyFrameReqMethod::kFirRtcp;
         receive.renderer = config.video_sink;
         receive.decoders.emplace_back(
-            SdpVideoFormat("H264", {{"profile-level-id", "42e02a"},
+            SdpVideoFormat("H264", {{"profile-level-id", "42e034"},
                                     {"level-asymmetry-allowed", "1"},
                                     {"packetization-mode", "1"}}),
             config.payload_type);
@@ -287,8 +289,10 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         send.rtcp_report_interval_ms = 500;
         CodecParameterMap opus_parameters = {{"stereo", "1"}};
         opus_parameters["useinbandfec"] = "1";
+        opus_parameters["usedtx"] = "1";
         send.send_codec_spec = AudioSendStream::Config::SendCodecSpec(
-            config.payload_type, {"opus", 48000, 2, opus_parameters});
+            112, {"opus", 48000, 2, opus_parameters});
+        send.send_codec_spec->red_payload_type = config.payload_type;
         send.send_codec_spec->nack_enabled = true;
         send.send_codec_spec->target_bitrate_bps = config.audio_bitrate_bps;
         send.min_bitrate_bps = config.audio_bitrate_bps;
@@ -339,7 +343,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         encoder.simulcast_layers[0].max_bitrate_bps =
             config.video_max_bitrate_bps;
         encoder.simulcast_layers[0].bitrate_priority = 1.0;
-        encoder.simulcast_layers[0].max_framerate = 60;
+        encoder.simulcast_layers[0].max_framerate = 30;
         encoder.simulcast_layers[0].scale_resolution_down_by = 1.0;
         binding.video_source = std::make_unique<PushVideoSource>();
         binding.video_send =
@@ -415,8 +419,10 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         receive.decoder_factory = config_.audio_decoder_factory;
         CodecParameterMap opus_parameters = {{"stereo", "1"}};
         opus_parameters["useinbandfec"] = "1";
+        opus_parameters["usedtx"] = "1";
         receive.decoder_map = {
-            {config.payload_type, {"opus", 48000, 2, opus_parameters}}};
+            {config.payload_type, {"red", 48000, 2, {{"", "112/112"}}}},
+            {112, {"opus", 48000, 2, opus_parameters}}};
         replacement.audio =
             call_->CreateAudioReceiveStream(std::move(receive));
         replacement.audio_nack_enabled = config.enable_nack;
@@ -440,7 +446,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
                 : KeyFrameReqMethod::kFirRtcp;
         receive.renderer = config.video_sink;
         receive.decoders.emplace_back(
-            SdpVideoFormat("H264", {{"profile-level-id", "42e02a"},
+            SdpVideoFormat("H264", {{"profile-level-id", "42e034"},
                                     {"level-asymmetry-allowed", "1"},
                                     {"packetization-mode", "1"}}),
             config.payload_type);
