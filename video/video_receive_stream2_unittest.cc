@@ -856,6 +856,73 @@ TEST_P(VideoReceiveStream2Test, PassesFrameWhenEncodedFramesCallbackSet) {
   video_receive_stream_->Stop();
 }
 
+TEST_P(VideoReceiveStream2Test, ReportsOnlyFirstKeyFrameReadyForDecode) {
+  int callbacks = 0;
+  uint32_t ssrc = 0;
+  uint32_t rtp_timestamp = 0;
+  uint16_t first_received_sequence_number = 0;
+  Timestamp first_packet_received_time = Timestamp::MinusInfinity();
+  Timestamp frame_ready_for_decode_time = Timestamp::MinusInfinity();
+  config_.frame_ready_for_decode_callback =
+      [&](const RtpPacketInfo& first_received_packet,
+          Timestamp callback_frame_ready_for_decode_time) {
+        ++callbacks;
+        ssrc = first_received_packet.ssrc();
+        rtp_timestamp = first_received_packet.rtp_timestamp();
+        first_received_sequence_number =
+            first_received_packet.sequence_number();
+        first_packet_received_time = first_received_packet.receive_time();
+        frame_ready_for_decode_time = callback_frame_ready_for_decode_time;
+      };
+  RecreateReceiveStream();
+  video_receive_stream_->Start();
+
+  auto delta_before_key = MakeFrame(VideoFrameType::kVideoFrameDelta, 0);
+  delta_before_key->SetRtpTimestamp(RtpTimestampForFrame(0));
+  video_receive_stream_->OnCompleteFrame(std::move(delta_before_key));
+  time_controller_.AdvanceTime(TimeDelta::Zero());
+  auto key = MakeFrame(VideoFrameType::kVideoFrameKey, 1);
+  key->SetRtpTimestamp(RtpTimestampForFrame(1));
+  const Timestamp expected_ready_time = env_.clock().CurrentTime();
+  const Timestamp expected_first_packet_time =
+      expected_ready_time - TimeDelta::Millis(7);
+  RtpPacketInfos::vector_type packet_infos;
+  RtpPacketInfo later_packet;
+  later_packet.set_ssrc(2222);
+  later_packet.set_sequence_number(43);
+  later_packet.set_rtp_timestamp(RtpTimestampForFrame(1));
+  later_packet.set_receive_time(expected_ready_time - TimeDelta::Millis(2));
+  packet_infos.push_back(later_packet);
+  RtpPacketInfo first_packet;
+  first_packet.set_ssrc(2222);
+  first_packet.set_sequence_number(42);
+  first_packet.set_rtp_timestamp(RtpTimestampForFrame(1));
+  first_packet.set_receive_time(expected_first_packet_time);
+  packet_infos.push_back(first_packet);
+  key->SetPacketInfos(RtpPacketInfos(std::move(packet_infos)));
+  video_receive_stream_->OnCompleteFrame(std::move(key));
+  EXPECT_THAT(fake_renderer_.WaitForFrame(kDefaultTimeOut), RenderedFrame());
+  auto second_key = MakeFrame(VideoFrameType::kVideoFrameKey, 2);
+  second_key->SetRtpTimestamp(RtpTimestampForFrame(2));
+  RtpPacketInfo second_key_packet;
+  second_key_packet.set_ssrc(2222);
+  second_key_packet.set_sequence_number(44);
+  second_key_packet.set_rtp_timestamp(RtpTimestampForFrame(2));
+  second_key_packet.set_receive_time(env_.clock().CurrentTime());
+  second_key->SetPacketInfos(
+      RtpPacketInfos(RtpPacketInfos::vector_type{second_key_packet}));
+  video_receive_stream_->OnCompleteFrame(std::move(second_key));
+  EXPECT_THAT(fake_renderer_.WaitForFrame(kDefaultTimeOut), RenderedFrame());
+
+  EXPECT_EQ(callbacks, 1);
+  EXPECT_EQ(ssrc, 2222u);
+  EXPECT_EQ(rtp_timestamp, RtpTimestampForFrame(1));
+  EXPECT_EQ(first_received_sequence_number, 42u);
+  EXPECT_EQ(first_packet_received_time, expected_first_packet_time);
+  EXPECT_EQ(frame_ready_for_decode_time, expected_ready_time);
+  video_receive_stream_->Stop();
+}
+
 TEST_P(VideoReceiveStream2Test, MovesEncodedFrameDispatchStateWhenReCreating) {
   testing::MockFunction<void(const RecordableEncodedFrame&)> callback;
   video_receive_stream_->Start();

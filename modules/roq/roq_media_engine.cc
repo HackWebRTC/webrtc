@@ -246,6 +246,8 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
                 ? KeyFrameReqMethod::kPliRtcp
                 : KeyFrameReqMethod::kFirRtcp;
         receive.renderer = config.video_sink;
+        receive.frame_ready_for_decode_callback =
+            config.video_frame_ready_for_decode;
         receive.decoders.emplace_back(
             SdpVideoFormat("H264", {{"profile-level-id", "42e034"},
                                     {"level-asymmetry-allowed", "1"},
@@ -343,7 +345,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         encoder.simulcast_layers[0].max_bitrate_bps =
             config.video_max_bitrate_bps;
         encoder.simulcast_layers[0].bitrate_priority = 1.0;
-        encoder.simulcast_layers[0].max_framerate = 30;
+        encoder.simulcast_layers[0].max_framerate = 60;
         encoder.simulcast_layers[0].scale_resolution_down_by = 1.0;
         binding.video_source = std::make_unique<PushVideoSource>();
         binding.video_send =
@@ -445,6 +447,8 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
                 ? KeyFrameReqMethod::kPliRtcp
                 : KeyFrameReqMethod::kFirRtcp;
         receive.renderer = config.video_sink;
+        receive.frame_ready_for_decode_callback =
+            config.video_frame_ready_for_decode;
         receive.decoders.emplace_back(
             SdpVideoFormat("H264", {{"profile-level-id", "42e034"},
                                     {"level-asymmetry-allowed", "1"},

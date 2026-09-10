@@ -20,11 +20,13 @@
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "api/call/transport.h"
 #include "api/crypto/crypto_options.h"
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/frame_transformer_interface.h"
 #include "api/rtp_headers.h"
+#include "api/rtp_packet_info.h"
 #include "api/scoped_refptr.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -276,6 +278,12 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
 
     // Must always be set.
     VideoSinkInterface<VideoFrame>* renderer = nullptr;
+
+    // Called immediately before the first complete key frame is handed to the
+    // decoder. The callback must not block the decode queue.
+    std::function<void(const RtpPacketInfo& first_received_packet,
+                       Timestamp frame_ready_for_decode_time)>
+        frame_ready_for_decode_callback;
 
     // Expected delay needed by the renderer, i.e. the frame will be delivered
     // this many milliseconds, if possible, earlier than the ideal render time.

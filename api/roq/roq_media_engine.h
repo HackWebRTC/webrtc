@@ -21,6 +21,7 @@
 #include "api/environment/environment.h"
 #include "api/roq/quic_network_controller.h"
 #include "api/roq/roq_session.h"
+#include "api/rtp_packet_info.h"
 #include "api/scoped_refptr.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_frame_buffer.h"
@@ -61,6 +62,8 @@ struct RoqMediaBindingConfig {
   Transport* transport = nullptr;
   AudioSinkInterface* audio_sink = nullptr;
   VideoSinkInterface<VideoFrame>* video_sink = nullptr;
+  std::function<void(const RtpPacketInfo&, Timestamp)>
+      video_frame_ready_for_decode;
   RoqAudioInputMode audio_input_mode = RoqAudioInputMode::kExternalPcm;
   RoqKeyFrameRequestMethod keyframe_request_method =
       RoqKeyFrameRequestMethod::kPli;

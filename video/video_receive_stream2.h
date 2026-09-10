@@ -271,6 +271,8 @@ class VideoReceiveStream2
 
   TransportAdapter transport_adapter_;
   const VideoReceiveStreamInterface::Config config_;
+  bool frame_ready_for_decode_reported_
+      RTC_GUARDED_BY(decode_sequence_checker_) = false;
   const int num_cpu_cores_;
   Call* const call_;
 

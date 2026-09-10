@@ -12,6 +12,7 @@ rtc_source_set("roq_api") {
   ]
   deps = [
     "..:call_api",
+    "..:rtp_packet_info",
     "../:scoped_refptr",
     "../:transport_api",
     "../../system_wrappers",

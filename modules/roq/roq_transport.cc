@@ -33,10 +33,10 @@ bool RoqPacketTransport::Send(uint64_t flow_id,
                               std::span<const uint8_t> packet,
                               const PacketOptions& options) {
   const Timestamp now = config_.clock->CurrentTime();
-  bool complete_idr = false;
-  uint32_t complete_idr_ssrc = 0;
-  uint32_t complete_idr_timestamp = 0;
-  uint16_t complete_idr_sequence = 0;
+  bool key_frame_marker = false;
+  uint32_t key_frame_ssrc = 0;
+  uint32_t key_frame_timestamp = 0;
+  uint16_t key_frame_sequence = 0;
   RoqDatagramMetadata datagram = {.binding_id = config_.binding_id,
                                   .media_type = config_.media_type,
                                   .enqueue_time = now};
@@ -80,18 +80,10 @@ bool RoqPacketTransport::Send(uint64_t flow_id,
       datagram.contains_sps = metadata.contains_sps;
       datagram.contains_pps = metadata.contains_pps;
       datagram.request_key_frame = config_.request_key_frame;
-      if (idr_timestamp_ != metadata.timestamp) {
-        idr_timestamp_ = metadata.timestamp;
-        idr_contains_idr_ = idr_contains_sps_ = idr_contains_pps_ = false;
-      }
-      idr_contains_idr_ = idr_contains_idr_ || metadata.contains_idr;
-      idr_contains_sps_ = idr_contains_sps_ || metadata.contains_sps;
-      idr_contains_pps_ = idr_contains_pps_ || metadata.contains_pps;
-      complete_idr = metadata.marker && idr_contains_idr_ &&
-                     idr_contains_sps_ && idr_contains_pps_;
-      complete_idr_ssrc = metadata.ssrc;
-      complete_idr_timestamp = metadata.timestamp;
-      complete_idr_sequence = metadata.sequence_number;
+      key_frame_marker = metadata.marker && key;
+      key_frame_ssrc = metadata.ssrc;
+      key_frame_timestamp = metadata.timestamp;
+      key_frame_sequence = metadata.sequence_number;
     } else if (ParseRtpPacketMetadata(packet, &metadata) &&
                metadata.payload_type == config_.rtx_payload_type &&
                metadata.ssrc == config_.rtx_ssrc) {
@@ -108,23 +100,26 @@ bool RoqPacketTransport::Send(uint64_t flow_id,
     }
   }
   PacketAcceptedCallback accepted = packet_accepted_;
-  auto complete_idr_submitted =
-      complete_idr ? config_.complete_idr_submitted : nullptr;
+  auto key_frame_submitted =
+      key_frame_marker ? config_.key_frame_submitted : nullptr;
+  auto key_frame_submitted_flag = key_frame_submitted_;
   std::shared_ptr<std::atomic<uint64_t>> accepted_rtp_packets =
       flow_id == config_.rtp_flow_id ? accepted_rtp_packets_ : nullptr;
   std::vector<uint8_t> accepted_packet(packet.begin(), packet.end());
   const RoqSendResult result = config_.session->SendMedia(
       flow_id, packet, std::move(datagram),
       [accepted = std::move(accepted), accepted_rtp_packets, flow_id,
-       packet = std::move(accepted_packet), options, complete_idr_submitted,
-       complete_idr_ssrc, complete_idr_timestamp, complete_idr_sequence] {
+       packet = std::move(accepted_packet), options, key_frame_submitted,
+       key_frame_submitted_flag,
+       key_frame_ssrc, key_frame_timestamp, key_frame_sequence] {
         if (accepted_rtp_packets)
           ++*accepted_rtp_packets;
         if (accepted)
           accepted(flow_id, packet, options);
-        if (complete_idr_submitted)
-          complete_idr_submitted(complete_idr_ssrc, complete_idr_timestamp,
-                                 complete_idr_sequence);
+        if (key_frame_submitted &&
+            !key_frame_submitted_flag->exchange(true))
+          key_frame_submitted(key_frame_ssrc, key_frame_timestamp,
+                              key_frame_sequence);
       });
   if (result != RoqSendResult::kQueued && result != RoqSendResult::kDropped) {
     return false;

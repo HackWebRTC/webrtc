@@ -33,8 +33,11 @@ class NullTransport final : public Transport {
     return true;
   }
   bool SendRtcp(std::span<const uint8_t>, const PacketOptions&) override {
+    ++rtcp_packets;
     return true;
   }
+
+  std::atomic<size_t> rtcp_packets = 0;
 };
 
 TEST(RoqMediaEngineTest, StartsPlayoutForTheFirstAudioSubscription) {
@@ -302,6 +305,45 @@ TEST(RoqMediaEngineTest, AllowsAudioReceiveNackToBeDisabled) {
                                         &error));
 
   EXPECT_FALSE(engine->stats().audio_receive_nack_enabled);
+  engine->Stop();
+}
+
+TEST(RoqMediaEngineTest, ExplicitVideoKeyFrameRequestSendsRtcpImmediately) {
+  const Environment env = CreateTestEnvironment();
+  scoped_refptr<AudioDeviceModule> audio =
+      CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_TRUE(audio);
+  ASSERT_EQ(audio->Init(), 0);
+  auto video_encoder = CreateBuiltinVideoEncoderFactory();
+  auto video_decoder = CreateBuiltinVideoDecoderFactory();
+  NullTransport transport;
+  std::string error;
+  std::unique_ptr<RoqMediaEngine> engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = video_encoder.get(),
+       .video_decoder_factory = video_decoder.get()},
+      env, &error);
+  ASSERT_TRUE(engine) << error;
+  ASSERT_TRUE(engine->Start(&error)) << error;
+  ASSERT_TRUE(engine->AddReceiveBinding({.binding_id = "camera",
+                                         .kind = RoqMediaKind::kVideo,
+                                         .primary_ssrc = 2001,
+                                         .rtx_ssrc = 2002,
+                                         .payload_type = 96,
+                                         .rtx_payload_type = 97,
+                                         .transport = &transport},
+                                        &error))
+      << error;
+
+  engine->RequestReceiverKeyFrame("camera");
+
+  for (int attempt = 0; attempt < 100 && transport.rtcp_packets.load() == 0;
+       ++attempt) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  EXPECT_GT(transport.rtcp_packets.load(), 0u);
   engine->Stop();
 }
 

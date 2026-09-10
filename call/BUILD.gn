@@ -459,6 +459,7 @@ rtc_library("video_receive_stream_api") {
     ":rtp_interfaces",
     "../api:frame_transformer_interface",
     "../api:rtp_headers",
+    "../api:rtp_packet_info",
     "../api:scoped_refptr",
     "../api:transport_api",
     "../api/crypto:frame_decryptor_interface",

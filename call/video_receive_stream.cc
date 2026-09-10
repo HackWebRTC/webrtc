@@ -187,6 +187,7 @@ VideoReceiveStreamInterface::Config VideoReceiveStreamInterface::Config::Copy()
   config_copy.decoders = decoders;
   config_copy.rtp = rtp;
   config_copy.renderer = renderer;
+  config_copy.frame_ready_for_decode_callback = frame_ready_for_decode_callback;
   config_copy.render_delay_ms = render_delay_ms;
   config_copy.enable_prerenderer_smoothing = enable_prerenderer_smoothing;
   config_copy.sync_group = sync_group;

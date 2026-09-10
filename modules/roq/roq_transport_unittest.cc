@@ -109,6 +109,31 @@ TEST(RoqPacketTransportTest, ClassifiesKeyVideoFrame) {
             (RoqPacketId{.ssrc = 22222222, .sequence_number = 42}));
 }
 
+TEST(RoqPacketTransportTest, ReportsOnlyTheFirstSubmittedKeyVideoFrame) {
+  SimulatedClock clock(Timestamp::Millis(100));
+  FakeRoqSession session;
+  int submitted_key_frames = 0;
+  RoqPacketTransportConfig config = VideoConfig(&session, &clock);
+  config.key_frame_submitted =
+      [&](uint32_t, uint32_t, uint16_t) { ++submitted_key_frames; };
+  RoqPacketTransport transport(std::move(config));
+  constexpr std::array<uint8_t, 14> first = {
+      0x80, 0xe0, 0x00, 0x2a, 0x00, 0x01, 0x5f,
+      0x90, 0x01, 0x53, 0x15, 0x8e, 0x65, 0xaa};
+  constexpr std::array<uint8_t, 14> second = {
+      0x80, 0xe0, 0x00, 0x2b, 0x00, 0x02, 0xbf,
+      0x20, 0x01, 0x53, 0x15, 0x8e, 0x65, 0xbb};
+
+  ASSERT_TRUE(transport.SendRtp(first, PacketOptions()));
+  ASSERT_TRUE(session.on_submitted_);
+  session.on_submitted_();
+  ASSERT_TRUE(transport.SendRtp(second, PacketOptions()));
+  ASSERT_TRUE(session.on_submitted_);
+  session.on_submitted_();
+
+  EXPECT_EQ(submitted_key_frames, 1);
+}
+
 TEST(RoqPacketTransportTest, AllowsDeadlinePolicyOverrides) {
   SimulatedClock clock(Timestamp::Millis(100));
   FakeRoqSession session;

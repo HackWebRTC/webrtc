@@ -37,7 +37,7 @@ struct RoqPacketTransportConfig {
   TimeDelta video_key_deadline = TimeDelta::Millis(150);
   TimeDelta periodic_rtcp_deadline = TimeDelta::Millis(250);
   std::function<void()> request_key_frame;
-  std::function<void(uint32_t, uint32_t, uint16_t)> complete_idr_submitted;
+  std::function<void(uint32_t, uint32_t, uint16_t)> key_frame_submitted;
 };
 
 class RoqPacketTransport final : public Transport {
@@ -63,12 +63,10 @@ class RoqPacketTransport final : public Transport {
 
   PacketAcceptedCallback packet_accepted_;
   const RoqPacketTransportConfig config_;
-  uint32_t idr_timestamp_ = 0;
-  bool idr_contains_idr_ = false;
-  bool idr_contains_sps_ = false;
-  bool idr_contains_pps_ = false;
   std::shared_ptr<std::atomic<uint64_t>> accepted_rtp_packets_ =
       std::make_shared<std::atomic<uint64_t>>(0);
+  std::shared_ptr<std::atomic<bool>> key_frame_submitted_ =
+      std::make_shared<std::atomic<bool>>(false);
 };
 
 }  // namespace webrtc::roq

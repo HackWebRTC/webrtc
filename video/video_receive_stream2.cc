@@ -981,6 +981,21 @@ int VideoReceiveStream2::DecodeAndMaybeDispatchEncodedFrame(
       encoded_frame_buffer_function_ != nullptr &&
       buffered_encoded_frames_.size() < kBufferedEncodedFramesMaxSize;
   EncodedFrame* frame_ptr = frame.get();
+  if (!frame_ready_for_decode_reported_ && frame_ptr->IsKey() &&
+      config_.frame_ready_for_decode_callback) {
+    const RtpPacketInfos& packet_infos = frame_ptr->PacketInfos();
+    const auto first_received_packet = std::min_element(
+        packet_infos.begin(), packet_infos.end(),
+        [](const RtpPacketInfo& lhs, const RtpPacketInfo& rhs) {
+          return lhs.receive_time() < rhs.receive_time();
+        });
+    if (first_received_packet != packet_infos.end() &&
+        first_received_packet->receive_time().IsFinite()) {
+      frame_ready_for_decode_reported_ = true;
+      config_.frame_ready_for_decode_callback(*first_received_packet,
+                                              env_.clock().CurrentTime());
+    }
+  }
   if (encoded_frame_output_enabled) {
     // If we receive a key frame with unset resolution, hold on dispatching the
     // frame and following ones until we know a resolution of the stream.
