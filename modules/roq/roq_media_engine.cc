@@ -72,6 +72,10 @@ SdpVideoFormat H264Format() {
                                  {"packetization-mode", "1"}});
 }
 
+SdpVideoFormat VideoFormat(VideoCodecType codec) {
+  return codec == kVideoCodecH265 ? SdpVideoFormat::H265() : H264Format();
+}
+
 uint32_t CountNackPackets(std::span<const uint8_t> packet) {
   uint32_t count = 0;
   while (!packet.empty()) {
@@ -248,11 +252,8 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         receive.renderer = config.video_sink;
         receive.frame_ready_for_decode_callback =
             config.video_frame_ready_for_decode;
-        receive.decoders.emplace_back(
-            SdpVideoFormat("H264", {{"profile-level-id", "42e034"},
-                                    {"level-asymmetry-allowed", "1"},
-                                    {"packetization-mode", "1"}}),
-            config.payload_type);
+        receive.decoders.emplace_back(VideoFormat(config.video_codec),
+                                      config.payload_type);
         binding.video = call_->CreateVideoReceiveStream(std::move(receive));
         binding.video->Start();
       }
@@ -320,7 +321,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         }
         VideoSendStream::Config send(config.transport);
         send.rtp.ssrcs = {config.primary_ssrc};
-        send.rtp.payload_name = "H264";
+        send.rtp.payload_name = CodecTypeToPayloadString(config.video_codec);
         send.rtp.payload_type = config.payload_type;
         send.rtp.nack.rtp_history_ms = 1000;
         send.rtp.rtx.payload_type = config.rtx_payload_type;
@@ -331,8 +332,8 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         send.encoder_settings.bitrate_allocator_factory =
             bitrate_allocator_factory_.get();
         VideoEncoderConfig encoder;
-        encoder.codec_type = kVideoCodecH264;
-        encoder.video_format = H264Format();
+        encoder.codec_type = config.video_codec;
+        encoder.video_format = VideoFormat(config.video_codec);
         encoder.number_of_streams = 1;
         encoder.max_bitrate_bps = config.video_max_bitrate_bps;
         encoder.bitrate_priority = 1.0;
@@ -450,11 +451,8 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         receive.renderer = config.video_sink;
         receive.frame_ready_for_decode_callback =
             config.video_frame_ready_for_decode;
-        receive.decoders.emplace_back(
-            SdpVideoFormat("H264", {{"profile-level-id", "42e034"},
-                                    {"level-asymmetry-allowed", "1"},
-                                    {"packetization-mode", "1"}}),
-            config.payload_type);
+        receive.decoders.emplace_back(VideoFormat(config.video_codec),
+                                      config.payload_type);
         replacement.video =
             call_->CreateVideoReceiveStream(std::move(receive));
         replacement.video->Start();

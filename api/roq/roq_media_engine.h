@@ -26,6 +26,7 @@
 #include "api/video/video_frame.h"
 #include "api/video/video_frame_buffer.h"
 #include "api/video/video_sink_interface.h"
+#include "api/video/video_codec_type.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
 
@@ -55,6 +56,7 @@ struct RoqMediaBindingConfig {
   std::string binding_id;
   std::string sync_group;
   RoqMediaKind kind = RoqMediaKind::kAudio;
+  VideoCodecType video_codec = VideoCodecType::kVideoCodecH264;
   uint32_t primary_ssrc = 0;
   uint32_t rtx_ssrc = 0;
   int payload_type = 0;

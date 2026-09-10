@@ -15,6 +15,7 @@
 
 #include "api/call/transport.h"
 #include "api/roq/roq_session.h"
+#include "api/video/video_codec_type.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc::roq {
@@ -23,6 +24,7 @@ struct RoqPacketTransportConfig {
   RoqSession* session = nullptr;
   std::string binding_id;
   RoqMediaType media_type = RoqMediaType::kVideo;
+  VideoCodecType video_codec = VideoCodecType::kVideoCodecH264;
   uint64_t rtp_flow_id = 0;
   uint64_t rtcp_flow_id = 0;
   uint8_t primary_payload_type = 0;

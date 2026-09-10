@@ -19,6 +19,10 @@
 #endif
 #import "RTCCodecSpecificInfoH264.h"
 #import "RTCH264ProfileLevelId.h"
+#if defined(RTC_ENABLE_H265)
+#import "RTCCodecSpecificInfoH265.h"
+#import "RTCH265ProfileLevelId.h"
+#endif
 #import "api/peerconnection/RTCVideoCodecInfo+Private.h"
 #import "base/RTCCodecSpecificInfo.h"
 #import "base/RTCI420Buffer.h"
@@ -31,6 +35,9 @@
 #include "api/video/video_timing.h"
 #include "api/video_codecs/h264_profile_level_id.h"
 #include "common_video/h264/h264_bitstream_parser.h"
+#if defined(RTC_ENABLE_H265)
+#include "common_video/h265/h265_bitstream_parser.h"
+#endif
 #include "common_video/include/bitrate_adjuster.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/buffer.h"
@@ -70,7 +77,7 @@ const OSType kNV12PixelFormat = kCVPixelFormatType_420YpCbCr8BiPlanarFullRange;
 // in the encoder callback.
 struct RTCFrameEncodeParams {
   RTCFrameEncodeParams(RTC_OBJC_TYPE(RTCVideoEncoderH264) * e,
-                       RTC_OBJC_TYPE(RTCCodecSpecificInfoH264) * csi,
+                       id<RTC_OBJC_TYPE(RTCCodecSpecificInfo)> csi,
                        int32_t w,
                        int32_t h,
                        int64_t rtms,
@@ -82,16 +89,11 @@ struct RTCFrameEncodeParams {
         render_time_ms(rtms),
         timestamp(ts),
         rotation(r) {
-    if (csi) {
-      codecSpecificInfo = csi;
-    } else {
-      codecSpecificInfo =
-          [[RTC_OBJC_TYPE(RTCCodecSpecificInfoH264) alloc] init];
-    }
+    codecSpecificInfo = csi;
   }
 
   RTC_OBJC_TYPE(RTCVideoEncoderH264) * encoder;
-  RTC_OBJC_TYPE(RTCCodecSpecificInfoH264) * codecSpecificInfo;
+  id<RTC_OBJC_TYPE(RTCCodecSpecificInfo)> codecSpecificInfo;
   int32_t width;
   int32_t height;
   int64_t render_time_ms;
@@ -353,6 +355,9 @@ NSUInteger GetMaxSampleRate(
   RTCVideoCodecMode _mode;
 
   webrtc::H264BitstreamParser _h264BitstreamParser;
+#if defined(RTC_ENABLE_H265)
+  webrtc::H265BitstreamParser _h265BitstreamParser;
+#endif
   std::vector<uint8_t> _frameScaleBuffer;
 }
 
@@ -395,12 +400,19 @@ NSUInteger GetMaxSampleRate(
     _bitrateAdjuster = std::make_unique<webrtc::BitrateAdjuster>(
         webrtc::Clock::GetRealTimeClock(), .5, .95);
     _packetizationMode = RTCH264PacketizationModeNonInterleaved;
-    _profile_level_id = webrtc::ParseSdpForH264ProfileLevelId(
-        [codecInfo nativeSdpVideoFormat].parameters);
-    RTC_DCHECK(_profile_level_id);
-    RTC_LOG(LS_INFO) << "Using profile "
-                     << CFStringToString(ExtractProfile(*_profile_level_id));
+    if ([codecInfo.name isEqualToString:kRTCVideoCodecH264Name]) {
+      _profile_level_id = webrtc::ParseSdpForH264ProfileLevelId(
+          [codecInfo nativeSdpVideoFormat].parameters);
+      RTC_DCHECK(_profile_level_id);
+      RTC_LOG(LS_INFO) << "Using profile "
+                       << CFStringToString(ExtractProfile(*_profile_level_id));
+    }
+#if defined(RTC_ENABLE_H265)
+    RTC_CHECK([codecInfo.name isEqualToString:kRTCVideoCodecH264Name] ||
+              [codecInfo.name isEqualToString:kRTCVideoCodecH265Name]);
+#else
     RTC_CHECK([codecInfo.name isEqualToString:kRTCVideoCodecH264Name]);
+#endif
   }
   return self;
 }
@@ -413,7 +425,7 @@ NSUInteger GetMaxSampleRate(
                  (RTC_OBJC_TYPE(RTCVideoEncoderSettings) *)settings
                        numberOfCores:(int)numberOfCores {
   RTC_DCHECK(settings);
-  RTC_DCHECK([settings.name isEqualToString:kRTCVideoCodecH264Name]);
+  RTC_DCHECK([settings.name isEqualToString:_codecInfo.name]);
 
   _width = settings.width;
   _height = settings.height;
@@ -421,13 +433,18 @@ NSUInteger GetMaxSampleRate(
 
   uint32_t aligned_width = (((_width + 15) >> 4) << 4);
   uint32_t aligned_height = (((_height + 15) >> 4) << 4);
-  _maxAllowedFrameRate = static_cast<uint32_t>(
-      GetMaxSampleRate(*_profile_level_id) / (aligned_width * aligned_height));
+  _maxAllowedFrameRate = _profile_level_id
+                             ? static_cast<uint32_t>(
+                                   GetMaxSampleRate(*_profile_level_id) /
+                                   (aligned_width * aligned_height))
+                             : 0;
 
   // We can only set average bitrate on the HW encoder.
   _targetBitrateBps = settings.startBitrate * 1000;  // startBitrate is in kbps.
   _bitrateAdjuster->SetTargetBitrateBps(_targetBitrateBps);
-  _encoderFrameRate = MIN(settings.maxFramerate, _maxAllowedFrameRate);
+  _encoderFrameRate = _maxAllowedFrameRate > 0
+                          ? MIN(settings.maxFramerate, _maxAllowedFrameRate)
+                          : settings.maxFramerate;
   if (settings.maxFramerate > _maxAllowedFrameRate &&
       _maxAllowedFrameRate > 0) {
     RTC_LOG(LS_WARNING) << "Initial encoder frame rate setting "
@@ -530,15 +547,30 @@ NSUInteger GetMaxSampleRate(
   }
 
   std::unique_ptr<RTCFrameEncodeParams> encodeParams;
+  id<RTC_OBJC_TYPE(RTCCodecSpecificInfo)> resolvedCodecInfo =
+      codecSpecificInfo;
+  if (!resolvedCodecInfo) {
+#if defined(RTC_ENABLE_H265)
+    if ([_codecInfo.name isEqualToString:kRTCVideoCodecH265Name]) {
+      resolvedCodecInfo =
+          [[RTC_OBJC_TYPE(RTCCodecSpecificInfoH265) alloc] init];
+    } else
+#endif
+    {
+      RTC_OBJC_TYPE(RTCCodecSpecificInfoH264) *h264 =
+          [[RTC_OBJC_TYPE(RTCCodecSpecificInfoH264) alloc] init];
+      h264.packetizationMode = _packetizationMode;
+      resolvedCodecInfo = h264;
+    }
+  }
   encodeParams.reset(new RTCFrameEncodeParams(
       self,
-      codecSpecificInfo,
+      resolvedCodecInfo,
       _width,
       _height,
       frame.timeStampNs / webrtc::kNumNanosecsPerMillisec,
       frame.timeStamp,
       frame.rotation));
-  encodeParams->codecSpecificInfo.packetizationMode = _packetizationMode;
 
   // Update the bitrate if needed.
   [self setBitrateBps:_bitrateAdjuster->GetAdjustedBitrateBps()
@@ -593,7 +625,9 @@ NSUInteger GetMaxSampleRate(
                         << "maximal allowed frame rate " << _maxAllowedFrameRate
                         << ".";
   }
-  framerate = MIN(framerate, _maxAllowedFrameRate);
+  if (_maxAllowedFrameRate > 0) {
+    framerate = MIN(framerate, _maxAllowedFrameRate);
+  }
   [self setBitrateBps:_bitrateAdjuster->GetAdjustedBitrateBps()
             frameRate:framerate];
   return WEBRTC_VIDEO_CODEC_OK;
@@ -713,7 +747,9 @@ NSUInteger GetMaxSampleRate(
       nullptr,  // use default allocator
       _width,
       _height,
-      kCMVideoCodecType_H264,
+      [_codecInfo.name isEqualToString:kRTCVideoCodecH264Name]
+          ? kCMVideoCodecType_H264
+          : kCMVideoCodecType_HEVC,
       (__bridge CFDictionaryRef)
           encoder_specs,  // use hardware accelerated encoder if available
       (__bridge CFDictionaryRef)sourceAttributes,
@@ -747,9 +783,11 @@ NSUInteger GetMaxSampleRate(
   RTC_DCHECK(_compressionSession);
   SetVTSessionProperty(
       _compressionSession, kVTCompressionPropertyKey_RealTime, true);
-  SetVTSessionProperty(_compressionSession,
-                       kVTCompressionPropertyKey_ProfileLevel,
-                       ExtractProfile(*_profile_level_id));
+  if (_profile_level_id) {
+    SetVTSessionProperty(_compressionSession,
+                         kVTCompressionPropertyKey_ProfileLevel,
+                         ExtractProfile(*_profile_level_id));
+  }
   SetVTSessionProperty(_compressionSession,
                        kVTCompressionPropertyKey_AllowFrameReordering,
                        false);
@@ -878,8 +916,16 @@ NSUInteger GetMaxSampleRate(
 
   __block std::unique_ptr<webrtc::Buffer> buffer =
       std::make_unique<webrtc::Buffer>();
-  if (!webrtc::H264CMSampleBufferToAnnexBBuffer(
-          sampleBuffer, isKeyframe, buffer.get())) {
+  const bool converted =
+#if defined(RTC_ENABLE_H265)
+      [_codecInfo.name isEqualToString:kRTCVideoCodecH265Name]
+          ? webrtc::H265CMSampleBufferToAnnexBBuffer(sampleBuffer, isKeyframe,
+                                                     buffer.get())
+          :
+#endif
+            webrtc::H264CMSampleBufferToAnnexBBuffer(
+                sampleBuffer, isKeyframe, buffer.get());
+  if (!converted) {
     return;
   }
 
@@ -905,8 +951,16 @@ NSUInteger GetMaxSampleRate(
       RTCVideoContentTypeUnspecified;
   frame.flags = webrtc::VideoSendTiming::kInvalid;
 
-  _h264BitstreamParser.ParseBitstream(*buffer);
-  frame.qp = @(_h264BitstreamParser.GetLastSliceQp().value_or(-1));
+#if defined(RTC_ENABLE_H265)
+  if ([_codecInfo.name isEqualToString:kRTCVideoCodecH265Name]) {
+    _h265BitstreamParser.ParseBitstream(*buffer);
+    frame.qp = @(_h265BitstreamParser.GetLastSliceQp().value_or(-1));
+  } else
+#endif
+  {
+    _h264BitstreamParser.ParseBitstream(*buffer);
+    frame.qp = @(_h264BitstreamParser.GetLastSliceQp().value_or(-1));
+  }
 
   BOOL res = callback(frame, codecSpecificInfo);
   if (!res) {

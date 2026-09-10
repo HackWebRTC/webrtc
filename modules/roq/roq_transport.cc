@@ -21,7 +21,7 @@ struct RoqPacketTransport::KeyFrameSubmissionState {
     size_t registered_packets = 0;
     size_t submitted_packets = 0;
     bool marker_seen = false;
-    bool contains_idr = false;
+    bool is_key = false;
     uint32_t ssrc = 0;
     uint16_t marker_sequence = 0;
   };
@@ -32,7 +32,7 @@ struct RoqPacketTransport::KeyFrameSubmissionState {
       frames.erase(frames.begin());
     Frame& frame = frames[metadata.timestamp];
     ++frame.registered_packets;
-    frame.contains_idr |= metadata.contains_idr;
+    frame.is_key |= metadata.is_key;
     frame.ssrc = metadata.ssrc;
     if (metadata.marker) {
       frame.marker_seen = true;
@@ -47,13 +47,15 @@ struct RoqPacketTransport::KeyFrameSubmissionState {
     uint16_t sequence = 0;
     {
       std::lock_guard lock(mutex);
+      submitted_vps |= metadata.contains_vps;
       submitted_sps |= metadata.contains_sps;
       submitted_pps |= metadata.contains_pps;
       Frame& frame = frames[metadata.timestamp];
       ++frame.submitted_packets;
       if (frame.marker_seen &&
           frame.submitted_packets == frame.registered_packets) {
-        if (frame.contains_idr && submitted_sps && submitted_pps) {
+        if (frame.is_key && submitted_sps && submitted_pps &&
+            (video_codec != kVideoCodecH265 || submitted_vps)) {
           callback = on_submitted;
           ssrc = frame.ssrc;
           timestamp = metadata.timestamp;
@@ -68,6 +70,8 @@ struct RoqPacketTransport::KeyFrameSubmissionState {
 
   std::mutex mutex;
   std::map<uint32_t, Frame> frames;
+  VideoCodecType video_codec = kVideoCodecH264;
+  bool submitted_vps = false;
   bool submitted_sps = false;
   bool submitted_pps = false;
   std::function<void(uint32_t, uint32_t, uint16_t)> on_submitted;
@@ -79,6 +83,7 @@ RoqPacketTransport::RoqPacketTransport(RoqPacketTransportConfig config,
       config_(std::move(config)),
       key_frame_submission_state_(
           std::make_shared<KeyFrameSubmissionState>()) {
+  key_frame_submission_state_->video_codec = config_.video_codec;
   key_frame_submission_state_->on_submitted = config_.key_frame_submitted;
 }
 
@@ -106,6 +111,8 @@ bool RoqPacketTransport::ReserveRtpBatch(const RtpPacketBatch& batch) {
                                   : RoqDatagramPriority::kVideoDelta,
       .frame_id = RoqFrameId{batch.ssrc, batch.timestamp, config_.binding_id},
       .frame_complete = true,
+      .video_codec = config_.video_codec,
+      .is_key = batch.key_frame,
       .request_key_frame = config_.request_key_frame,
   };
   return config_.session->ReserveMediaBatch(metadata, batch.packet_count,
@@ -120,7 +127,8 @@ bool RoqPacketTransport::Send(uint64_t flow_id,
   RtpPacketMetadata submitted_metadata;
   RoqDatagramMetadata datagram = {.binding_id = config_.binding_id,
                                   .media_type = config_.media_type,
-                                  .enqueue_time = now};
+                                  .enqueue_time = now,
+                                  .video_codec = config_.video_codec};
   if (flow_id == config_.rtcp_flow_id) {
     bool critical = false;
     if (!ClassifyRtcpPacket(packet, &critical)) {
@@ -144,11 +152,12 @@ bool RoqPacketTransport::Send(uint64_t flow_id,
       datagram.priority = RoqDatagramPriority::kAudio;
       datagram.deadline = now + config_.audio_deadline;
       datagram.packet_id = RoqPacketId{metadata.ssrc, metadata.sequence_number};
-    } else if (ParseH264RtpPacketMetadata(packet, &metadata) &&
+    } else if (ParseVideoRtpPacketMetadata(packet, config_.video_codec,
+                                           &metadata) &&
                metadata.payload_type == config_.primary_payload_type &&
                metadata.ssrc == config_.primary_ssrc) {
-      const bool key = metadata.contains_idr || metadata.contains_sps ||
-                       metadata.contains_pps;
+      const bool key = metadata.is_key || metadata.contains_vps ||
+                       metadata.contains_sps || metadata.contains_pps;
       datagram.priority = key ? RoqDatagramPriority::kVideoKey
                               : RoqDatagramPriority::kVideoDelta;
       datagram.deadline = now + (key ? config_.video_key_deadline
@@ -157,7 +166,8 @@ bool RoqPacketTransport::Send(uint64_t flow_id,
           RoqFrameId{metadata.ssrc, metadata.timestamp, config_.binding_id};
       datagram.packet_id = RoqPacketId{metadata.ssrc, metadata.sequence_number};
       datagram.frame_complete = metadata.marker;
-      datagram.contains_idr = metadata.contains_idr;
+      datagram.is_key = metadata.is_key;
+      datagram.contains_vps = metadata.contains_vps;
       datagram.contains_sps = metadata.contains_sps;
       datagram.contains_pps = metadata.contains_pps;
       datagram.request_key_frame = config_.request_key_frame;

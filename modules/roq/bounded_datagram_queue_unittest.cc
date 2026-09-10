@@ -402,7 +402,7 @@ TEST(BoundedDatagramQueueTest, AcceptsLatePacketAfterReservedFrameStarts) {
                                    TimeDelta::Millis(100), frame);
   marker.binding_id = "video";
   marker.contains_pps = true;
-  marker.contains_idr = true;
+  marker.is_key = true;
   marker.frame_complete = true;
   EXPECT_EQ(queue.Enqueue(std::move(marker),
                           start + TimeDelta::Millis(101)),
@@ -452,7 +452,7 @@ TEST(BoundedDatagramQueueTest, ReservedKeyFrameRepairsBrokenChainOnMarker) {
   QueuedDatagram marker = Datagram(2, DatagramPriority::kVideoKey, start,
                                    TimeDelta::Millis(150), frame);
   marker.binding_id = "video";
-  marker.contains_idr = true;
+  marker.is_key = true;
   marker.contains_sps = true;
   marker.contains_pps = true;
   marker.frame_complete = true;
@@ -588,7 +588,7 @@ TEST(BoundedDatagramQueueTest, OnlyCompleteIndependentFrameRepairsBrokenChain) {
   QueuedDatagram idr = Datagram(2, DatagramPriority::kVideoKey, start,
                                 TimeDelta::Seconds(1), frame(93000));
   idr.binding_id = "video";
-  idr.contains_idr = true;
+  idr.is_key = true;
   idr.frame_complete = true;
   EXPECT_EQ(queue.Enqueue(std::move(idr), start),
             DatagramEnqueueResult::kQueued);
@@ -605,7 +605,7 @@ TEST(BoundedDatagramQueueTest, OnlyCompleteIndependentFrameRepairsBrokenChain) {
   QueuedDatagram recovery = Datagram(4, DatagramPriority::kVideoKey, start,
                                      TimeDelta::Seconds(1), frame(99000));
   recovery.binding_id = "video";
-  recovery.contains_idr = true;
+  recovery.is_key = true;
   recovery.contains_sps = true;
   recovery.contains_pps = true;
   recovery.frame_complete = true;
@@ -643,7 +643,7 @@ TEST(BoundedDatagramQueueTest,
                                      TimeDelta::Seconds(1), frame(93000));
   recovery.binding_id = "video";
   recovery.frame_complete = true;
-  recovery.contains_idr = true;
+  recovery.is_key = true;
   recovery.contains_sps = true;
   recovery.contains_pps = true;
   ASSERT_EQ(queue.Enqueue(std::move(recovery), now),
@@ -659,6 +659,51 @@ TEST(BoundedDatagramQueueTest,
   EXPECT_EQ(queue.Enqueue(std::move(next), now),
             DatagramEnqueueResult::kQueued);
 }
+
+#if defined(RTC_ENABLE_H265)
+TEST(BoundedDatagramQueueTest, H265RecoveryRequiresInBandVps) {
+  BoundedDatagramQueue queue(/*capacity=*/8, /*max_datagram_size=*/8);
+  constexpr Timestamp now = Timestamp::Millis(100);
+  const auto frame = [](uint32_t timestamp) {
+    return DatagramFrameId{
+        .ssrc = 7, .timestamp = timestamp, .binding_id = "video"};
+  };
+  queue.RequireIndependentVideoFrame("video", 7, now);
+
+  QueuedDatagram without_vps = Datagram(1, DatagramPriority::kVideoKey, now,
+                                        TimeDelta::Seconds(1), frame(90000));
+  without_vps.binding_id = "video";
+  without_vps.video_codec = kVideoCodecH265;
+  without_vps.frame_complete = true;
+  without_vps.is_key = true;
+  without_vps.contains_sps = true;
+  without_vps.contains_pps = true;
+  EXPECT_EQ(queue.Enqueue(std::move(without_vps), now),
+            DatagramEnqueueResult::kQueued);
+  auto incomplete = queue.Pop(now);
+  ASSERT_TRUE(incomplete);
+  queue.RecordSubmitted(*incomplete, now);
+  QueuedDatagram suppressed = Datagram(3, DatagramPriority::kVideoDelta, now,
+                                       TimeDelta::Seconds(1), frame(92000));
+  suppressed.binding_id = "video";
+  suppressed.video_codec = kVideoCodecH265;
+  suppressed.frame_complete = true;
+  EXPECT_EQ(queue.Enqueue(std::move(suppressed), now),
+            DatagramEnqueueResult::kDropped);
+
+  QueuedDatagram recovery = Datagram(4, DatagramPriority::kVideoKey, now,
+                                     TimeDelta::Seconds(1), frame(93000));
+  recovery.binding_id = "video";
+  recovery.video_codec = kVideoCodecH265;
+  recovery.frame_complete = true;
+  recovery.is_key = true;
+  recovery.contains_vps = true;
+  recovery.contains_sps = true;
+  recovery.contains_pps = true;
+  EXPECT_EQ(queue.Enqueue(std::move(recovery), now),
+            DatagramEnqueueResult::kQueued);
+}
+#endif
 
 TEST(BoundedDatagramQueueTest, RequestsKeyFrameAfterASettledRecoveryWindow) {
   BoundedDatagramQueue queue(/*capacity=*/8, /*max_datagram_size=*/8);
@@ -789,7 +834,7 @@ TEST(BoundedDatagramQueueTest, DoesNotReorderLaterKeyFrameAheadOfDelta) {
                                 TimeDelta::Seconds(1), frame(93000));
   key.binding_id = "video";
   key.frame_complete = true;
-  key.contains_idr = key.contains_sps = key.contains_pps = true;
+  key.is_key = key.contains_sps = key.contains_pps = true;
   ASSERT_EQ(queue.Enqueue(std::move(delta), now),
             DatagramEnqueueResult::kQueued);
   ASSERT_EQ(queue.Enqueue(std::move(key), now),

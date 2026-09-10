@@ -8,6 +8,10 @@
 #include <cstdint>
 #include <span>
 
+#include "common_video/h265/h265_common.h"
+#include "modules/rtp_rtcp/source/create_video_rtp_depacketizer.h"
+#include "rtc_base/copy_on_write_buffer.h"
+
 namespace webrtc::roq {
 namespace {
 
@@ -22,7 +26,7 @@ uint32_t ReadU32(std::span<const uint8_t> bytes, size_t offset) {
 }
 
 void RecordNaluType(uint8_t nalu_type, RtpPacketMetadata* metadata) {
-  metadata->contains_idr |= nalu_type == 5;
+  metadata->is_key |= nalu_type == 5;
   metadata->contains_sps |= nalu_type == 7;
   metadata->contains_pps |= nalu_type == 8;
 }
@@ -100,6 +104,43 @@ bool ParseH264RtpPacketMetadata(std::span<const uint8_t> packet,
     return true;
   }
   return true;
+}
+
+bool ParseVideoRtpPacketMetadata(std::span<const uint8_t> packet,
+                                 VideoCodecType codec,
+                                 RtpPacketMetadata* metadata) {
+  if (codec == kVideoCodecH264)
+    return ParseH264RtpPacketMetadata(packet, metadata);
+#if defined(RTC_ENABLE_H265)
+  if (codec == kVideoCodecH265) {
+    size_t payload_offset = 0;
+    size_t payload_end = 0;
+    if (!ParseRtpHeader(packet, metadata, &payload_offset, &payload_end) ||
+        payload_offset >= payload_end) {
+      return false;
+    }
+    std::unique_ptr<VideoRtpDepacketizer> depacketizer =
+        CreateVideoRtpDepacketizer(kVideoCodecH265);
+    std::optional<VideoRtpDepacketizer::ParsedRtpPayload> parsed =
+        depacketizer->Parse(
+            CopyOnWriteBuffer(packet.subspan(payload_offset,
+                                              payload_end - payload_offset)));
+    if (!parsed)
+      return false;
+    metadata->is_key =
+        parsed->video_header.frame_type == VideoFrameType::kVideoFrameKey;
+    for (const H265::NaluIndex& index :
+         H265::FindNaluIndices(parsed->video_payload)) {
+      const H265::NaluType type = H265::ParseNaluType(
+          parsed->video_payload[index.payload_start_offset]);
+      metadata->contains_vps |= type == H265::NaluType::kVps;
+      metadata->contains_sps |= type == H265::NaluType::kSps;
+      metadata->contains_pps |= type == H265::NaluType::kPps;
+    }
+    return true;
+  }
+#endif
+  return false;
 }
 
 bool ParseRtpPacketMetadata(std::span<const uint8_t> packet,

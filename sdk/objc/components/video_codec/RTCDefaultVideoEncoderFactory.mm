@@ -12,6 +12,10 @@
 
 #import "RTCH264ProfileLevelId.h"
 #import "RTCVideoEncoderH264.h"
+#if defined(RTC_ENABLE_H265)
+#import "RTCH265ProfileLevelId.h"
+#import "RTCVideoEncoderH265.h"
+#endif
 #import "api/peerconnection/RTCVideoCodecInfo+Private.h"
 #import "api/video_codec/RTCVideoCodecConstants.h"
 #import "api/video_codec/RTCVideoEncoderVP8.h"
@@ -36,6 +40,10 @@
 
   [result
       addObjectsFromArray:[RTC_OBJC_TYPE(RTCVideoEncoderH264) supportedCodecs]];
+#if defined(RTC_ENABLE_H265)
+  [result
+      addObjectsFromArray:[RTC_OBJC_TYPE(RTCVideoEncoderH265) supportedCodecs]];
+#endif
   [result
       addObjectsFromArray:[RTC_OBJC_TYPE(RTCVideoEncoderVP8) supportedCodecs]];
 
@@ -60,6 +68,11 @@
              [RTC_OBJC_TYPE(RTCVideoEncoderVP9) isSupported]) {
     return [RTC_OBJC_TYPE(RTCVideoEncoderVP9) vp9Encoder];
   }
+#if defined(RTC_ENABLE_H265)
+  if ([info.name isEqualToString:kRTCVideoCodecH265Name]) {
+    return [[RTC_OBJC_TYPE(RTCVideoEncoderH265) alloc] initWithCodecInfo:info];
+  }
+#endif
 
 #if defined(RTC_USE_LIBAOM_AV1_ENCODER)
   if ([info.name isEqualToString:kRTCVideoCodecAv1Name]) {
@@ -98,6 +111,14 @@
     }
   }
   webrtc::SdpVideoFormat format = [info nativeSdpVideoFormat];
+#if defined(RTC_ENABLE_H265)
+  if ([info.name isEqualToString:kRTCVideoCodecH265Name]) {
+    return [[RTC_OBJC_TYPE(RTCVideoEncoderCodecSupport) alloc]
+        initWithSupported:[RTC_OBJC_TYPE(RTCVideoEncoderH265) isSupported]
+        isPowerEfficient:[RTC_OBJC_TYPE(RTCVideoEncoderH265)
+                             isHardwareAccelerated]];
+  }
+#endif
   for (RTC_OBJC_TYPE(RTCVideoCodecInfo) *
        supportedCodec in [[self class] supportedCodecs]) {
     webrtc::SdpVideoFormat supportedFormat =

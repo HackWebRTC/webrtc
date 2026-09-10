@@ -85,6 +85,26 @@ RoqPacketTransportConfig VideoConfig(FakeRoqSession* session, Clock* clock) {
           .clock = clock};
 }
 
+#if defined(RTC_ENABLE_H265)
+TEST(RoqPacketTransportTest, ClassifiesH265UsingConfiguredCodec) {
+  SimulatedClock clock(Timestamp::Millis(100));
+  FakeRoqSession session;
+  RoqPacketTransportConfig config = VideoConfig(&session, &clock);
+  config.video_codec = kVideoCodecH265;
+  config.primary_payload_type = 116;
+  config.rtx_payload_type = 117;
+  RoqPacketTransport transport(std::move(config));
+  constexpr std::array<uint8_t, 15> packet = {
+      0x80, 0xf4, 0x00, 0x2a, 0x00, 0x01, 0x5f, 0x90,
+      0x01, 0x53, 0x15, 0x8e, 0x26, 0x02, 0xff};
+
+  ASSERT_TRUE(transport.SendRtp(packet, PacketOptions()));
+  EXPECT_EQ(session.metadata_.video_codec, kVideoCodecH265);
+  EXPECT_TRUE(session.metadata_.is_key);
+  EXPECT_EQ(session.metadata_.priority, RoqDatagramPriority::kVideoKey);
+}
+#endif
+
 TEST(RoqPacketTransportTest, DefersAcceptedCallbackUntilQuicheSubmission) {
   SimulatedClock clock(Timestamp::Millis(100));
   FakeRoqSession session;

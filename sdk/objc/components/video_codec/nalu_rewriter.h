@@ -20,6 +20,9 @@
 #include <vector>
 
 #include "common_video/h264/h264_common.h"
+#if defined(RTC_ENABLE_H265)
+#include "common_video/h265/h265_common.h"
+#endif
 #include "rtc_base/buffer.h"
 
 using webrtc::H264::NaluIndex;
@@ -50,6 +53,19 @@ bool H264AnnexBBufferToCMSampleBuffer(std::span<const uint8_t> annexb_buffer,
 CMVideoFormatDescriptionRef CreateVideoFormatDescription(
     std::span<const uint8_t> annexb_buffer);
 
+#if defined(RTC_ENABLE_H265)
+bool H265CMSampleBufferToAnnexBBuffer(CMSampleBufferRef hvcc_sample_buffer,
+                                      bool is_keyframe,
+                                      webrtc::Buffer* annexb_buffer);
+bool H265AnnexBBufferToCMSampleBuffer(
+    std::span<const uint8_t> annexb_buffer,
+    CMVideoFormatDescriptionRef video_format,
+    CMSampleBufferRef* out_sample_buffer,
+    CMMemoryPoolRef memory_pool);
+CMVideoFormatDescriptionRef CreateH265VideoFormatDescription(
+    std::span<const uint8_t> annexb_buffer);
+#endif
+
 // Helper class for reading NALUs from an RTP Annex B buffer.
 class AnnexBBufferReader final {
  public:
@@ -74,6 +90,9 @@ class AnnexBBufferReader final {
   // Return true if a NALU of the desired type is found, false if we
   // reached the end instead
   bool SeekToNextNaluOfType(H264::NaluType type);
+#if defined(RTC_ENABLE_H265)
+  bool SeekToNextNaluOfType(H265::NaluType type);
+#endif
 
  private:
   // Returns the the next offset that contains NALU data.

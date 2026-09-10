@@ -17,6 +17,7 @@
 
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "api/video/video_codec_type.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc::roq {
@@ -85,7 +86,9 @@ struct RoqDatagramMetadata {
   std::optional<RoqPacketId> packet_id;
   std::optional<RoqPacketId> original_packet_id;
   bool frame_complete = false;
-  bool contains_idr = false;
+  VideoCodecType video_codec = VideoCodecType::kVideoCodecGeneric;
+  bool is_key = false;
+  bool contains_vps = false;
   bool contains_sps = false;
   bool contains_pps = false;
   std::function<void()> request_key_frame;

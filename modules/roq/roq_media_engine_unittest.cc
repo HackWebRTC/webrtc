@@ -18,6 +18,7 @@
 #include "api/video/i420_buffer.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
+#include "media/engine/fake_video_codec_factory.h"
 #include "modules/audio_device/include/mock_audio_device.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/nack.h"
 #include "test/create_test_environment.h"
@@ -39,6 +40,87 @@ class NullTransport final : public Transport {
 
   std::atomic<size_t> rtcp_packets = 0;
 };
+
+class H265RecordingEncoderFactory final : public FakeVideoEncoderFactory {
+ public:
+  std::vector<SdpVideoFormat> GetSupportedFormats() const override {
+    return {SdpVideoFormat::H265()};
+  }
+  std::unique_ptr<VideoEncoder> Create(const Environment& env,
+                                       const SdpVideoFormat& format) override {
+    created_format = format;
+    return FakeVideoEncoderFactory::Create(env, format);
+  }
+  std::optional<SdpVideoFormat> created_format;
+};
+
+class H265RecordingDecoderFactory final : public FakeVideoDecoderFactory {
+ public:
+  std::vector<SdpVideoFormat> GetSupportedFormats() const override {
+    return {SdpVideoFormat::H265()};
+  }
+  std::unique_ptr<VideoDecoder> Create(const Environment& env,
+                                       const SdpVideoFormat& format) override {
+    created_format = format;
+    return FakeVideoDecoderFactory::Create(env, format);
+  }
+  std::optional<SdpVideoFormat> created_format;
+};
+
+TEST(RoqMediaEngineTest, RoutesH265BindingsToCanonicalH265Factories) {
+  const Environment env = CreateTestEnvironment();
+  scoped_refptr<AudioDeviceModule> audio =
+      CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_TRUE(audio);
+  ASSERT_EQ(audio->Init(), 0);
+  H265RecordingEncoderFactory video_encoder;
+  H265RecordingDecoderFactory video_decoder;
+  NullTransport transport;
+  std::string error;
+  std::unique_ptr<RoqMediaEngine> engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = &video_encoder,
+       .video_decoder_factory = &video_decoder},
+      env, &error);
+  ASSERT_TRUE(engine) << error;
+  ASSERT_TRUE(engine->Start(&error)) << error;
+
+  ASSERT_TRUE(engine->AddReceiveBinding({.binding_id = "receive-h265",
+                                         .kind = RoqMediaKind::kVideo,
+                                         .video_codec = kVideoCodecH265,
+                                         .primary_ssrc = 2001,
+                                         .rtx_ssrc = 2002,
+                                         .payload_type = 116,
+                                         .rtx_payload_type = 117,
+                                         .transport = &transport},
+                                        &error))
+      << error;
+  ASSERT_TRUE(engine->AddSendBinding({.binding_id = "send-h265",
+                                      .kind = RoqMediaKind::kVideo,
+                                      .video_codec = kVideoCodecH265,
+                                      .primary_ssrc = 3001,
+                                      .rtx_ssrc = 3002,
+                                      .payload_type = 116,
+                                      .rtx_payload_type = 117,
+                                      .transport = &transport,
+                                      .video_min_bitrate_bps = 256000,
+                                      .video_start_bitrate_bps = 1000000,
+                                      .video_max_bitrate_bps = 2000000},
+                                     &error))
+      << error;
+  auto frame = I420Buffer::Create(64, 48);
+  I420Buffer::SetBlack(frame.get());
+  engine->SendVideoFrame("send-h265", frame, 0);
+  for (int attempt = 0; attempt < 100 && !video_encoder.created_format;
+       ++attempt)
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+  ASSERT_TRUE(video_encoder.created_format.has_value());
+  EXPECT_EQ(*video_encoder.created_format, SdpVideoFormat::H265());
+  engine->Stop();
+}
 
 TEST(RoqMediaEngineTest, StartsPlayoutForTheFirstAudioSubscription) {
   const Environment env = CreateTestEnvironment();

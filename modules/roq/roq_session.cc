@@ -383,7 +383,9 @@ class RoqSessionImpl final : public RoqSession {
         .packet_id = metadata.packet_id,
         .original_packet_id = metadata.original_packet_id,
         .frame_complete = metadata.frame_complete,
-        .contains_idr = metadata.contains_idr,
+        .video_codec = metadata.video_codec,
+        .is_key = metadata.is_key,
+        .contains_vps = metadata.contains_vps,
         .contains_sps = metadata.contains_sps,
         .contains_pps = metadata.contains_pps,
         .request_key_frame = std::move(metadata.request_key_frame),
@@ -428,11 +430,15 @@ class RoqSessionImpl final : public RoqSession {
         .priority = metadata.priority,
         .frame_id = metadata.frame_id,
         .frame_complete = true,
-        .contains_idr = metadata.contains_idr,
+        .video_codec = metadata.video_codec,
+        .is_key = metadata.is_key,
+        .contains_vps = metadata.contains_vps,
         .contains_sps = metadata.contains_sps,
         .contains_pps = metadata.contains_pps,
-        .independent_frame = metadata.contains_idr && metadata.contains_sps &&
-                             metadata.contains_pps,
+        .independent_frame =
+            metadata.is_key && metadata.contains_sps && metadata.contains_pps &&
+            (metadata.video_codec != VideoCodecType::kVideoCodecH265 ||
+             metadata.contains_vps),
         .request_key_frame = metadata.request_key_frame,
     };
     const bool reserved = outgoing_.ReserveVideoFrame(

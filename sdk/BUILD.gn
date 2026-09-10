@@ -724,6 +724,15 @@ if (is_ios || is_mac) {
         "objc/components/video_codec/RTCH264ProfileLevelId.h",
         "objc/components/video_codec/RTCH264ProfileLevelId.mm",
       ]
+      if (rtc_use_h265) {
+        sources += [
+          "objc/components/video_codec/RTCCodecSpecificInfoH265+Private.h",
+          "objc/components/video_codec/RTCCodecSpecificInfoH265.h",
+          "objc/components/video_codec/RTCCodecSpecificInfoH265.mm",
+          "objc/components/video_codec/RTCH265ProfileLevelId.h",
+          "objc/components/video_codec/RTCH265ProfileLevelId.mm",
+        ]
+      }
       if (is_ios) {
         sources += [
           "objc/components/video_codec/UIDevice+H264Profile.h",
@@ -1792,6 +1801,14 @@ if (is_ios || is_mac) {
         "objc/components/video_codec/RTCVideoEncoderH264.h",
         "objc/components/video_codec/RTCVideoEncoderH264.mm",
       ]
+      if (rtc_use_h265) {
+        sources += [
+          "objc/components/video_codec/RTCVideoDecoderH265.h",
+          "objc/components/video_codec/RTCVideoDecoderH265.mm",
+          "objc/components/video_codec/RTCVideoEncoderH265.h",
+          "objc/components/video_codec/RTCVideoEncoderH265.mm",
+        ]
+      }
 
       configs += [
         "..:common_objc",

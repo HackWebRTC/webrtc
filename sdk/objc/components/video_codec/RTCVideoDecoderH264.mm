@@ -12,6 +12,9 @@
 #import "RTCVideoDecoderH264.h"
 
 #import "RTCH264ProfileLevelId.h"
+#if defined(RTC_ENABLE_H265)
+#import "RTCH265ProfileLevelId.h"
+#endif
 
 #import <VideoToolbox/VideoToolbox.h>
 
@@ -83,6 +86,7 @@ void decompressionOutputCallback(void *decoderRef,
   VTDecompressionSessionRef _decompressionSession;
   RTCVideoDecoderCallback _callback;
   OSStatus _error;
+  RTC_OBJC_TYPE(RTCVideoCodecInfo) *_codecInfo;
 }
 
 + (NSArray<RTC_OBJC_TYPE(RTCVideoCodecInfo) *> *)supportedCodecs {
@@ -110,9 +114,16 @@ void decompressionOutputCallback(void *decoderRef,
 }
 
 - (instancetype)init {
+  return [self initWithCodecInfo:[[RTC_OBJC_TYPE(RTCVideoCodecInfo) alloc]
+                                     initWithName:kRTCVideoCodecH264Name]];
+}
+
+- (instancetype)initWithCodecInfo:
+    (RTC_OBJC_TYPE(RTCVideoCodecInfo) *)codecInfo {
   self = [super init];
   if (self) {
     _memoryPool = CMMemoryPoolCreate(nil);
+    _codecInfo = codecInfo;
   }
   return self;
 }
@@ -141,10 +152,17 @@ void decompressionOutputCallback(void *decoderRef,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
+  std::span<const uint8_t> encoded(
+      static_cast<const uint8_t *>(inputImage.buffer.bytes),
+      inputImage.buffer.length);
   webrtc::ScopedCFTypeRef<CMVideoFormatDescriptionRef> inputFormat =
       webrtc::ScopedCF(
-          webrtc::CreateVideoFormatDescription(std::span<const uint8_t>(
-              (uint8_t *)inputImage.buffer.bytes, inputImage.buffer.length)));
+#if defined(RTC_ENABLE_H265)
+          [_codecInfo.name isEqualToString:kRTCVideoCodecH265Name]
+              ? webrtc::CreateH265VideoFormatDescription(encoded)
+              :
+#endif
+                webrtc::CreateVideoFormatDescription(encoded));
   if (inputFormat) {
     // Check if the video format has changed, and reinitialize decoder if
     // needed.
@@ -166,12 +184,16 @@ void decompressionOutputCallback(void *decoderRef,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   CMSampleBufferRef sampleBuffer = nullptr;
-  if (!webrtc::H264AnnexBBufferToCMSampleBuffer(
-          std::span<const uint8_t>((uint8_t *)inputImage.buffer.bytes,
-                                   inputImage.buffer.length),
-          _videoFormat,
-          &sampleBuffer,
-          _memoryPool)) {
+  const bool converted =
+#if defined(RTC_ENABLE_H265)
+      [_codecInfo.name isEqualToString:kRTCVideoCodecH265Name]
+          ? webrtc::H265AnnexBBufferToCMSampleBuffer(
+                encoded, _videoFormat, &sampleBuffer, _memoryPool)
+          :
+#endif
+            webrtc::H264AnnexBBufferToCMSampleBuffer(
+                encoded, _videoFormat, &sampleBuffer, _memoryPool);
+  if (!converted) {
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   RTC_DCHECK(sampleBuffer);

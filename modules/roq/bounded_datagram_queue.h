@@ -46,7 +46,9 @@ struct QueuedDatagram {
   std::optional<DatagramPacketId> packet_id;
   std::optional<DatagramPacketId> original_packet_id;
   bool frame_complete = false;
-  bool contains_idr = false;
+  VideoCodecType video_codec = VideoCodecType::kVideoCodecGeneric;
+  bool is_key = false;
+  bool contains_vps = false;
   bool contains_sps = false;
   bool contains_pps = false;
   bool independent_frame = false;
@@ -140,7 +142,9 @@ class BoundedDatagramQueue {
     size_t remaining_bytes = 0;
     DatagramPriority priority = DatagramPriority::kVideoDelta;
     Timestamp deadline = Timestamp::PlusInfinity();
-    bool contains_idr = false;
+    VideoCodecType video_codec = VideoCodecType::kVideoCodecGeneric;
+    bool is_key = false;
+    bool contains_vps = false;
     bool contains_sps = false;
     bool contains_pps = false;
     std::function<void()> request_key_frame;

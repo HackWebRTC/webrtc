@@ -20,6 +20,9 @@
 #include <vector>
 
 #include "common_video/h264/h264_common.h"
+#if defined(RTC_ENABLE_H265)
+#include "common_video/h265/h265_common.h"
+#endif
 #include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -322,5 +325,152 @@ bool AvccBufferWriter::WriteNalu(std::span<const uint8_t> data) {
 size_t AvccBufferWriter::BytesRemaining() const {
   return buffer_.size();
 }
+
+#if defined(RTC_ENABLE_H265)
+bool H265CMSampleBufferToAnnexBBuffer(CMSampleBufferRef sample_buffer,
+                                      bool is_keyframe,
+                                      Buffer* annexb_buffer) {
+  if (!sample_buffer || !annexb_buffer)
+    return false;
+  CMVideoFormatDescriptionRef description =
+      CMSampleBufferGetFormatDescription(sample_buffer);
+  if (!description)
+    return false;
+  int header_size = 0;
+  size_t parameter_set_count = 0;
+  OSStatus status = CMVideoFormatDescriptionGetHEVCParameterSetAtIndex(
+      description, 0, nullptr, nullptr, &parameter_set_count, &header_size);
+  if (status != noErr || header_size != static_cast<int>(kAvccHeaderByteSize))
+    return false;
+  annexb_buffer->SetSize(0);
+  if (is_keyframe) {
+    for (size_t index = 0; index < parameter_set_count; ++index) {
+      const uint8_t* data = nullptr;
+      size_t size = 0;
+      status = CMVideoFormatDescriptionGetHEVCParameterSetAtIndex(
+          description, index, &data, &size, nullptr, nullptr);
+      if (status != noErr || !data || size < H265::kNaluHeaderSize)
+        return false;
+      annexb_buffer->AppendData(kAnnexBHeaderBytes, sizeof(kAnnexBHeaderBytes));
+      annexb_buffer->AppendData(data, size);
+    }
+  }
+  CMBlockBufferRef source = CMSampleBufferGetDataBuffer(sample_buffer);
+  if (!source)
+    return false;
+  size_t size = CMBlockBufferGetDataLength(source);
+  std::vector<uint8_t> bytes(size);
+  if (CMBlockBufferCopyDataBytes(source, 0, size, bytes.data()) != noErr)
+    return false;
+  size_t offset = 0;
+  while (offset < bytes.size()) {
+    if (bytes.size() - offset < kAvccHeaderByteSize)
+      return false;
+    uint32_t big_endian_size = 0;
+    memcpy(&big_endian_size, bytes.data() + offset, sizeof(big_endian_size));
+    const size_t nalu_size = CFSwapInt32BigToHost(big_endian_size);
+    offset += kAvccHeaderByteSize;
+    if (nalu_size < H265::kNaluHeaderSize || nalu_size > bytes.size() - offset)
+      return false;
+    annexb_buffer->AppendData(kAnnexBHeaderBytes, sizeof(kAnnexBHeaderBytes));
+    annexb_buffer->AppendData(bytes.data() + offset, nalu_size);
+    offset += nalu_size;
+  }
+  return offset == bytes.size();
+}
+
+CMVideoFormatDescriptionRef CreateH265VideoFormatDescription(
+    std::span<const uint8_t> annexb_buffer) {
+  std::span<const uint8_t> parameter_sets[3];
+  bool found[3] = {false, false, false};
+  AnnexBBufferReader reader(annexb_buffer);
+  std::span<const uint8_t> nalu;
+  while (reader.ReadNalu(nalu)) {
+    if (nalu.size() < H265::kNaluHeaderSize)
+      continue;
+    const H265::NaluType type = H265::ParseNaluType(nalu[0]);
+    int index = type == H265::NaluType::kVps
+                    ? 0
+                    : type == H265::NaluType::kSps
+                          ? 1
+                          : type == H265::NaluType::kPps ? 2 : -1;
+    if (index >= 0 && !found[index]) {
+      parameter_sets[index] = nalu;
+      found[index] = true;
+    }
+  }
+  if (!found[0] || !found[1] || !found[2])
+    return nullptr;
+  const uint8_t* pointers[3] = {parameter_sets[0].data(),
+                                parameter_sets[1].data(),
+                                parameter_sets[2].data()};
+  const size_t sizes[3] = {parameter_sets[0].size(), parameter_sets[1].size(),
+                           parameter_sets[2].size()};
+  CMVideoFormatDescriptionRef description = nullptr;
+  OSStatus status = CMVideoFormatDescriptionCreateFromHEVCParameterSets(
+      kCFAllocatorDefault, 3, pointers, sizes, kAvccHeaderByteSize, nullptr,
+      &description);
+  return status == noErr ? description : nullptr;
+}
+
+bool H265AnnexBBufferToCMSampleBuffer(
+    std::span<const uint8_t> annexb_buffer,
+    CMVideoFormatDescriptionRef video_format,
+    CMSampleBufferRef* out_sample_buffer,
+    CMMemoryPoolRef memory_pool) {
+  if (!video_format || !out_sample_buffer || !memory_pool)
+    return false;
+  *out_sample_buffer = nullptr;
+  AnnexBBufferReader reader(annexb_buffer);
+  std::vector<std::vector<uint8_t>> media_nalus;
+  size_t output_size = 0;
+  std::span<const uint8_t> nalu;
+  while (reader.ReadNalu(nalu)) {
+    if (nalu.size() < H265::kNaluHeaderSize)
+      return false;
+    const H265::NaluType type = H265::ParseNaluType(nalu[0]);
+    if (type == H265::NaluType::kVps || type == H265::NaluType::kSps ||
+        type == H265::NaluType::kPps) {
+      continue;
+    }
+    media_nalus.emplace_back(nalu.begin(), nalu.end());
+    output_size += kAvccHeaderByteSize + nalu.size();
+  }
+  if (media_nalus.empty())
+    return false;
+  CFAllocatorRef allocator = CMMemoryPoolGetAllocator(memory_pool);
+  CMBlockBufferRef block = nullptr;
+  OSStatus status = CMBlockBufferCreateWithMemoryBlock(
+      kCFAllocatorDefault, nullptr, output_size, allocator, nullptr, 0,
+      output_size, kCMBlockBufferAssureMemoryNowFlag, &block);
+  if (status != noErr)
+    return false;
+  std::vector<uint8_t> output(output_size);
+  AvccBufferWriter writer(output);
+  for (const auto& value : media_nalus) {
+    if (!writer.WriteNalu(value)) {
+      CFRelease(block);
+      return false;
+    }
+  }
+  status = CMBlockBufferReplaceDataBytes(output.data(), block, 0, output.size());
+  if (status == noErr) {
+    status = CMSampleBufferCreate(kCFAllocatorDefault, block, true, nullptr,
+                                  nullptr, video_format, 1, 0, nullptr, 0,
+                                  nullptr, out_sample_buffer);
+  }
+  CFRelease(block);
+  return status == noErr && *out_sample_buffer;
+}
+
+bool AnnexBBufferReader::SeekToNextNaluOfType(H265::NaluType type) {
+  for (; offset_ != offsets_.end(); ++offset_) {
+    if (offset_->payload_size >= H265::kNaluHeaderSize &&
+        H265::ParseNaluType(buffer_[offset_->payload_start_offset]) == type)
+      return true;
+  }
+  return false;
+}
+#endif
 
 }  // namespace webrtc

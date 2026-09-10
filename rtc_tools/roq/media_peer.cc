@@ -620,7 +620,7 @@ void RoutePacket(MediaState* state, RoqReceivedPacket received) {
         }
         state->has_buffered_video = true;
         state->buffered_video_timestamp = metadata.timestamp;
-        state->buffered_video_is_idr |= metadata.contains_idr;
+        state->buffered_video_is_idr |= metadata.is_key;
         state->buffered_video_has_sps |= metadata.contains_sps;
         state->buffered_video_has_pps |= metadata.contains_pps;
         state->buffered_video_packets.push_back(std::move(received.packet));

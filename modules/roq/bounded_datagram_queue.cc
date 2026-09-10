@@ -99,7 +99,9 @@ bool BoundedDatagramQueue::ReserveVideoFrame(QueuedDatagram frame,
        .remaining_bytes = byte_size,
        .priority = frame.priority,
        .deadline = frame.deadline,
-       .contains_idr = frame.contains_idr,
+       .video_codec = frame.video_codec,
+       .is_key = frame.is_key,
+       .contains_vps = frame.contains_vps,
        .contains_sps = frame.contains_sps,
        .contains_pps = frame.contains_pps,
        .request_key_frame = std::move(frame.request_key_frame)});
@@ -264,35 +266,44 @@ DatagramEnqueueResult BoundedDatagramQueue::Enqueue(QueuedDatagram datagram,
     }
   }
   if (datagram.frame_id) {
-    bool contains_idr = datagram.contains_idr;
+    bool is_key = datagram.is_key;
+    bool contains_vps = datagram.contains_vps;
     bool contains_sps = datagram.contains_sps;
     bool contains_pps = datagram.contains_pps;
     if (reservation != frame_reservations_.end()) {
-      reservation->contains_idr |= contains_idr;
+      reservation->is_key |= is_key;
+      reservation->contains_vps |= contains_vps;
       reservation->contains_sps |= contains_sps;
       reservation->contains_pps |= contains_pps;
-      contains_idr = reservation->contains_idr;
+      is_key = reservation->is_key;
+      contains_vps = reservation->contains_vps;
       contains_sps = reservation->contains_sps;
       contains_pps = reservation->contains_pps;
     }
     for (const QueuedDatagram& queued : queue_) {
       if (queued.frame_id == datagram.frame_id) {
-        contains_idr |= queued.contains_idr;
+        is_key |= queued.is_key;
+        contains_vps |= queued.contains_vps;
         contains_sps |= queued.contains_sps;
         contains_pps |= queued.contains_pps;
       }
     }
-    const bool independent = datagram.independent_frame ||
-                             (contains_idr && contains_sps && contains_pps);
+    const bool independent =
+        datagram.independent_frame ||
+        (is_key && contains_sps && contains_pps &&
+         (datagram.video_codec != VideoCodecType::kVideoCodecH265 ||
+          contains_vps));
     for (QueuedDatagram& queued : queue_) {
       if (queued.frame_id == datagram.frame_id) {
-        queued.contains_idr = contains_idr;
+        queued.is_key = is_key;
+        queued.contains_vps = contains_vps;
         queued.contains_sps = contains_sps;
         queued.contains_pps = contains_pps;
         queued.independent_frame = independent;
       }
     }
-    datagram.contains_idr = contains_idr;
+    datagram.is_key = is_key;
+    datagram.contains_vps = contains_vps;
     datagram.contains_sps = contains_sps;
     datagram.contains_pps = contains_pps;
     datagram.independent_frame = independent;
@@ -540,9 +551,7 @@ void BoundedDatagramQueue::RecordSubmitted(const QueuedDatagram& datagram,
                                       .frame_id = datagram.frame_id});
   }
   if (datagram.frame_id && datagram.frame_complete &&
-      (datagram.independent_frame ||
-       (datagram.contains_idr && datagram.contains_sps &&
-        datagram.contains_pps))) {
+      datagram.independent_frame) {
     const auto key =
         std::make_pair(datagram.frame_id->binding_id, datagram.frame_id->ssrc);
     broken_video_.erase(key);

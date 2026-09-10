@@ -21,7 +21,7 @@ TEST(RtpPacketMetadataTest, ParsesSingleNalIdrAndRtpHeader) {
   EXPECT_EQ(metadata.sequence_number, 42);
   EXPECT_EQ(metadata.timestamp, 90000u);
   EXPECT_TRUE(metadata.marker);
-  EXPECT_TRUE(metadata.contains_idr);
+  EXPECT_TRUE(metadata.is_key);
   EXPECT_FALSE(metadata.contains_sps);
 }
 
@@ -31,7 +31,7 @@ TEST(RtpPacketMetadataTest, ParsesFuAStartForIdr) {
                                               0x15, 0x8e, 0x7c, 0x85, 0xbb};
   RtpPacketMetadata metadata;
   ASSERT_TRUE(ParseH264RtpPacketMetadata(packet, &metadata));
-  EXPECT_TRUE(metadata.contains_idr);
+  EXPECT_TRUE(metadata.is_key);
 }
 
 TEST(RtpPacketMetadataTest, ParsesStapAParameterSets) {
@@ -42,7 +42,7 @@ TEST(RtpPacketMetadataTest, ParsesStapAParameterSets) {
   ASSERT_TRUE(ParseH264RtpPacketMetadata(packet, &metadata));
   EXPECT_TRUE(metadata.contains_sps);
   EXPECT_TRUE(metadata.contains_pps);
-  EXPECT_FALSE(metadata.contains_idr);
+  EXPECT_FALSE(metadata.is_key);
 }
 
 TEST(RtpPacketMetadataTest, RejectsTruncatedStapA) {
@@ -52,6 +52,47 @@ TEST(RtpPacketMetadataTest, RejectsTruncatedStapA) {
   RtpPacketMetadata metadata;
   EXPECT_FALSE(ParseH264RtpPacketMetadata(packet, &metadata));
 }
+
+#if defined(RTC_ENABLE_H265)
+TEST(RtpPacketMetadataTest, ParsesH265IdrUsingWebRtcDepacketizerSemantics) {
+  const std::array<uint8_t, 15> packet = {
+      0x80, 0xf4, 0x00, 0x2a, 0x00, 0x01, 0x5f, 0x90,
+      0x01, 0x53, 0x15, 0x8e, 0x26, 0x02, 0xff};
+  RtpPacketMetadata metadata;
+
+  ASSERT_TRUE(ParseVideoRtpPacketMetadata(packet, kVideoCodecH265, &metadata));
+  EXPECT_TRUE(metadata.is_key);
+  EXPECT_FALSE(metadata.contains_vps);
+  EXPECT_FALSE(metadata.contains_sps);
+  EXPECT_FALSE(metadata.contains_pps);
+}
+
+TEST(RtpPacketMetadataTest, ParsesH265ParameterSetsFromAggregationPacket) {
+  const std::array<uint8_t, 29> packet = {
+      0x80, 0xf4, 0x00, 0x2a, 0x00, 0x01, 0x5f, 0x90,
+      0x01, 0x53, 0x15, 0x8e,
+      0x60, 0x02,
+      0x00, 0x03, 0x40, 0x02, 0x01,
+      0x00, 0x03, 0x42, 0x02, 0x01,
+      0x00, 0x03, 0x44, 0x02, 0x01};
+  RtpPacketMetadata metadata;
+
+  ASSERT_TRUE(ParseVideoRtpPacketMetadata(packet, kVideoCodecH265, &metadata));
+  EXPECT_FALSE(metadata.is_key);
+  EXPECT_TRUE(metadata.contains_vps);
+  EXPECT_TRUE(metadata.contains_sps);
+  EXPECT_TRUE(metadata.contains_pps);
+}
+
+TEST(RtpPacketMetadataTest, RejectsMalformedH265AggregationPacket) {
+  const std::array<uint8_t, 17> packet = {
+      0x80, 0xf4, 0x00, 0x2a, 0x00, 0x01, 0x5f, 0x90,
+      0x01, 0x53, 0x15, 0x8e, 0x60, 0x02, 0x00, 0x04, 0x40};
+  RtpPacketMetadata metadata;
+
+  EXPECT_FALSE(ParseVideoRtpPacketMetadata(packet, kVideoCodecH265, &metadata));
+}
+#endif
 
 TEST(RtpPacketMetadataTest, ParsesGenericAudioRtpHeader) {
   constexpr std::array<uint8_t, 13> packet = {0x80, 0xef, 0xff, 0xff, 0x00,
