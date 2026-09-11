@@ -79,6 +79,7 @@ void RtpSenderEgress::NonPacedPacketSender::EnqueuePackets(
     PrepareForSend(packet.get());
     sender_->SendPacket(std::move(packet), PacedPacketInfo());
   }
+  sender_->OnBatchComplete();
   auto fec_packets = sender_->FetchFecPackets();
   if (!fec_packets.empty()) {
     EnqueuePackets(std::move(fec_packets));

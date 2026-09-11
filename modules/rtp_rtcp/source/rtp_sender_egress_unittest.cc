@@ -226,6 +226,30 @@ TEST_F(RtpSenderEgressTest, CollectsPacketsWhenBatchingWithVideo) {
   sender.OnBatchComplete();
 }
 
+TEST_F(RtpSenderEgressTest, NonPacedSenderFlushesCompleteVideoBatch) {
+  auto config = DefaultConfig();
+  config.enable_send_packet_batching = true;
+  RtpSenderEgress sender(env_, config, &packet_history_);
+  PacketSequencer sequencer(kSsrc, kRtxSsrc,
+                            /*require_marker_before_media_padding=*/true,
+                            time_controller_.GetClock());
+  RtpSenderEgress::NonPacedPacketSender non_paced_sender(
+      *TaskQueueBase::Current(), &sender, &sequencer);
+
+  std::vector<std::unique_ptr<RtpPacketToSend>> packets;
+  packets.push_back(BuildRtpPacket());
+  packets.push_back(BuildRtpPacket());
+  InSequence s;
+  EXPECT_CALL(transport_,
+              SentRtp(AllOf(Field(&PacketOptions::last_packet_in_batch, false),
+                            Field(&PacketOptions::batchable, true))));
+  EXPECT_CALL(transport_,
+              SentRtp(AllOf(Field(&PacketOptions::last_packet_in_batch, true),
+                            Field(&PacketOptions::batchable, true))));
+
+  non_paced_sender.EnqueuePackets(std::move(packets));
+}
+
 TEST_F(RtpSenderEgressTest, PacketOptionsIsMediaSetByPacketType) {
   std::unique_ptr<RtpSenderEgress> sender = CreateRtpSenderEgress();
 

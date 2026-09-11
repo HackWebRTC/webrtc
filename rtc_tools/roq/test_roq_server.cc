@@ -808,7 +808,9 @@ class TestRoqServerImpl final : public TestRoqServer {
           if (queued == static_cast<ssize_t>(outgoing->bytes.size())) {
             {
               std::lock_guard lock(mutex_);
-              outgoing_.RecordSubmitted(*outgoing);
+              outgoing_.RecordSubmitted(
+                  *outgoing,
+                  Timestamp::Micros(config_.clock->CurrentTime().us()));
               ++stats_.sent_datagrams;
               if (!stats_.established)
                 ++stats_.early_datagrams_sent;

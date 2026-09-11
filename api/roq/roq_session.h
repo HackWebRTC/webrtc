@@ -34,6 +34,11 @@ enum class RoqUdpSendDisposition { kSent, kRetry, kFatal };
 RoqUdpSendDisposition ClassifyUdpSendResult(int64_t result,
                                             size_t expected_bytes,
                                             int error);
+bool ShouldContinueDatagramBurst(size_t attempted,
+                                 size_t limit,
+                                 bool pending_pacing,
+                                 size_t quiche_queue_length,
+                                 size_t pending_media);
 enum class RoqDatagramPriority {
   kPeriodicRtcp,
   kVideoDelta,
@@ -237,6 +242,14 @@ class RoqSession {
                                   std::span<const uint8_t> packet,
                                   RoqDatagramMetadata metadata,
                                   std::function<void()> on_submitted) = 0;
+  virtual bool ReserveMediaBatch(const RoqDatagramMetadata& metadata,
+                                 size_t packet_count,
+                                 size_t byte_size) {
+    (void)metadata;
+    (void)packet_count;
+    (void)byte_size;
+    return true;
+  }
   virtual void PurgeSendBinding(const std::string& binding_id) {
     (void)binding_id;
   }

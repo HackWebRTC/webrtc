@@ -104,6 +104,7 @@ constexpr RtpHeaderExtensionId kAbsoluteCaptureTimeExtensionId(8);
 constexpr RtpHeaderExtensionId kPlayoutDelayExtensionId(9);
 constexpr RtpHeaderExtensionId kVideoLayersAllocationExtensionId(10);
 constexpr RtpHeaderExtensionId kCorruptionDetectionExtensionId(11);
+constexpr RtpHeaderExtensionId kColorSpaceExtensionId(12);
 
 constexpr int kPayloadType = 100;
 constexpr VideoCodecType kType = VideoCodecType::kVideoCodecGeneric;
@@ -143,6 +144,8 @@ class LoopbackTransportTest : public Transport {
         kVideoLayersAllocationExtensionId);
     receivers_extensions_.Register<CorruptionDetectionExtension>(
         kCorruptionDetectionExtensionId);
+    receivers_extensions_.Register<ColorSpaceExtension>(
+        kColorSpaceExtensionId);
   }
 
   bool SendRtp(std::span<const uint8_t> data,
@@ -164,6 +167,13 @@ class LoopbackTransportTest : public Transport {
  private:
   RtpHeaderExtensionMap receivers_extensions_;
   std::vector<RtpPacketReceived> sent_packets_;
+};
+
+class RejectingBatchTransportTest final : public LoopbackTransportTest {
+ public:
+  bool ReserveRtpBatch(const RtpPacketBatch&) override { return accept; }
+
+  bool accept = false;
 };
 
 class TestRtpSenderVideo : public RTPSenderVideo {
@@ -242,6 +252,121 @@ TEST_F(RtpSenderVideoTest, KeyFrameHasCVO) {
   EXPECT_TRUE(
       transport_.last_sent_packet().GetExtension<VideoOrientation>(&rotation));
   EXPECT_EQ(kVideoRotation_0, rotation);
+}
+
+TEST(RtpSenderVideoAdmissionTest, TreatsRejectedBatchAsAnIntentionalDrop) {
+  GlobalSimulatedTimeController time_controller(kStartTime);
+  const Environment env =
+      CreateTestEnvironment({.time = &time_controller});
+  RateLimiter retransmission_rate_limiter(&env.clock(), 1000);
+  RejectingBatchTransportTest transport;
+  auto rtp_module = ModuleRtpRtcpImpl2::CreateSendModule(
+      env, {.outgoing_transport = &transport,
+            .retransmission_rate_limiter = &retransmission_rate_limiter,
+            .local_media_ssrc = kSsrc,
+            .rtx_send_ssrc = kRtxSsrc,
+            .rid = "rid"});
+  rtp_module->SetSequenceNumber(kSeqNum);
+  rtp_module->SetStartTimestamp(0);
+  TestRtpSenderVideo sender(&env.clock(), rtp_module->RtpSender(),
+                            env.field_trials(), false);
+  uint8_t frame[1] = {0};
+  RTPVideoHeader header;
+  header.frame_type = VideoFrameType::kVideoFrameDelta;
+
+  EXPECT_TRUE(sender.SendVideoFrame(
+      kPayloadType, kType, kTimestampInfo, env.clock().CurrentTime(), frame,
+      sizeof(frame), header, kDefaultExpectedRetransmissionTime, {}));
+  EXPECT_EQ(transport.packets_sent(), 0);
+}
+
+TEST(RtpSenderVideoAdmissionTest, RejectedBatchDoesNotAdvanceSentMetadata) {
+  GlobalSimulatedTimeController time_controller(kStartTime);
+  const Environment env =
+      CreateTestEnvironment({.time = &time_controller});
+  RateLimiter retransmission_rate_limiter(&env.clock(), 1000);
+  RejectingBatchTransportTest transport;
+  auto rtp_module = ModuleRtpRtcpImpl2::CreateSendModule(
+      env, {.outgoing_transport = &transport,
+            .retransmission_rate_limiter = &retransmission_rate_limiter,
+            .local_media_ssrc = kSsrc,
+            .rtx_send_ssrc = kRtxSsrc,
+            .rid = "rid"});
+  rtp_module->SetSequenceNumber(kSeqNum);
+  rtp_module->SetStartTimestamp(0);
+  rtp_module->RegisterRtpHeaderExtension(VideoOrientation::Uri(),
+                                         kVideoRotationExtensionId);
+  rtp_module->RegisterRtpHeaderExtension(ColorSpaceExtension::Uri(),
+                                         kColorSpaceExtensionId);
+  rtp_module->RegisterRtpHeaderExtension(PlayoutDelayLimits::Uri(),
+                                         kPlayoutDelayExtensionId);
+  rtp_module->RegisterRtpHeaderExtension(
+      RtpVideoLayersAllocationExtension::Uri(),
+      kVideoLayersAllocationExtensionId);
+  TestRtpSenderVideo sender(&env.clock(), rtp_module->RtpSender(),
+                            env.field_trials(), false);
+  uint8_t frame[1] = {0};
+  RTPVideoHeader header;
+  header.frame_type = VideoFrameType::kVideoFrameKey;
+  header.rotation = kVideoRotation_90;
+
+  transport.accept = true;
+  ASSERT_TRUE(sender.SendVideoFrame(
+      kPayloadType, kType, RtpTimestampWithOffset{kRtpTimestamp},
+      env.clock().CurrentTime(), frame, sizeof(frame), header,
+      kDefaultExpectedRetransmissionTime, {}));
+  ASSERT_EQ(transport.packets_sent(), 1);
+
+  VideoLayersAllocation allocation;
+  allocation.resolution_and_frame_rate_is_valid = true;
+  VideoLayersAllocation::SpatialLayer layer;
+  layer.width = 360;
+  layer.height = 180;
+  layer.spatial_id = 0;
+  layer.frame_rate_fps = 10;
+  layer.target_bitrate_per_temporal_layer.push_back(
+      DataRate::KilobitsPerSec(50));
+  allocation.active_spatial_layers.push_back(layer);
+  sender.SetVideoLayersAllocation(allocation);
+  transport.accept = false;
+  header.frame_type = VideoFrameType::kVideoFrameDelta;
+  header.rotation = kVideoRotation_0;
+  header.color_space = ColorSpace(
+      ColorSpace::PrimaryID::kBT709, ColorSpace::TransferID::kBT709,
+      ColorSpace::MatrixID::kBT709, ColorSpace::RangeID::kLimited);
+  header.playout_delay = VideoPlayoutDelay(TimeDelta::Millis(10),
+                                           TimeDelta::Millis(20));
+  EXPECT_TRUE(sender.SendVideoFrame(
+      kPayloadType, kType, RtpTimestampWithOffset{kRtpTimestamp + 1},
+      env.clock().CurrentTime(), frame, sizeof(frame), header,
+      kDefaultExpectedRetransmissionTime, {}));
+  ASSERT_EQ(transport.packets_sent(), 1);
+
+  transport.accept = true;
+  ASSERT_TRUE(sender.SendVideoFrame(
+      kPayloadType, kType, RtpTimestampWithOffset{kRtpTimestamp + 2},
+      env.clock().CurrentTime(), frame, sizeof(frame), header,
+      kDefaultExpectedRetransmissionTime, {}));
+  ASSERT_EQ(transport.packets_sent(), 2);
+  VideoRotation rotation;
+  EXPECT_TRUE(
+      transport.last_sent_packet().GetExtension<VideoOrientation>(&rotation));
+  EXPECT_EQ(kVideoRotation_0, rotation);
+  ColorSpace color_space;
+  EXPECT_TRUE(transport.last_sent_packet().GetExtension<ColorSpaceExtension>(
+      &color_space));
+  ASSERT_TRUE(header.color_space.has_value());
+  EXPECT_EQ(color_space, *header.color_space);
+  VideoPlayoutDelay playout_delay;
+  EXPECT_TRUE(transport.last_sent_packet().GetExtension<PlayoutDelayLimits>(
+      &playout_delay));
+  ASSERT_TRUE(header.playout_delay.has_value());
+  EXPECT_EQ(playout_delay, *header.playout_delay);
+  VideoLayersAllocation sent_allocation;
+  EXPECT_TRUE(transport.last_sent_packet()
+                  .GetExtension<RtpVideoLayersAllocationExtension>(
+                      &sent_allocation));
+  EXPECT_TRUE(sent_allocation.resolution_and_frame_rate_is_valid);
 }
 
 TEST_F(RtpSenderVideoTest, TimingFrameHasPacketizationTimstampSet) {

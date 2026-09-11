@@ -40,6 +40,11 @@ class FrameEncryptorInterface;
 class RateLimiter;
 class RtpPacketToSend;
 
+enum class RtpPacketEnqueueResult {
+  kEnqueued,
+  kDroppedByTransport,
+};
+
 // Maximum amount of padding in RFC 3550 is 255 bytes.
 constexpr size_t kMaxPaddingLength = 255;
 
@@ -150,7 +155,8 @@ class RTPSender {
 
   // Pass a set of packets to RtpPacketSender instance, for paced or immediate
   // sending to the network.
-  void EnqueuePackets(std::vector<std::unique_ptr<RtpPacketToSend>> packets)
+  RtpPacketEnqueueResult EnqueuePackets(
+      std::vector<std::unique_ptr<RtpPacketToSend>> packets)
       RTC_LOCKS_EXCLUDED(send_mutex_);
 
   void SetRtpState(const RtpState& rtp_state) RTC_LOCKS_EXCLUDED(send_mutex_);
@@ -180,6 +186,7 @@ class RTPSender {
   const std::optional<uint32_t> flexfec_ssrc_;
 
   RtpPacketHistory* const packet_history_;
+  Transport* const transport_;
   RtpPacketSender* const paced_sender_;
 
   mutable Mutex send_mutex_;

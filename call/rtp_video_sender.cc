@@ -251,7 +251,10 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
       observers.rtcp_type_observer;
   configuration.report_block_data_observer =
       observers.report_block_data_observer;
-  configuration.paced_sender = transport->packet_sender();
+  configuration.paced_sender =
+      send_transport->GetRtpPacingMode() == RtpPacingMode::kExternalTransport
+          ? nullptr
+          : transport->packet_sender();
   configuration.send_bitrate_observer = observers.bitrate_observer;
   configuration.send_packet_observer = observers.send_packet_observer;
   if (env.field_trials().IsDisabled("WebRTC-DisableRtxRateLimiter")) {

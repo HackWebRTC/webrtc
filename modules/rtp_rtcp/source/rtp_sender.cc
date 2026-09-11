@@ -23,6 +23,7 @@
 
 #include "absl/strings/string_view.h"
 #include "api/environment/environment.h"
+#include "api/call/transport.h"
 #include "api/rtp_header_extension_id.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_packet_sender.h"
@@ -165,6 +166,7 @@ RTPSender::RTPSender(const Environment& env,
       flexfec_ssrc_(config.fec_generator ? config.fec_generator->FecSsrc()
                                          : std::nullopt),
       packet_history_(packet_history),
+      transport_(config.outgoing_transport),
       paced_sender_(packet_sender),
       sending_media_(true),                   // Default to sending media.
       max_packet_size_(IP_PACKET_SIZE - 28),  // Default is IP-v4/UDP.
@@ -488,9 +490,25 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
   return padding_packets;
 }
 
-void RTPSender::EnqueuePackets(
+RtpPacketEnqueueResult RTPSender::EnqueuePackets(
     std::vector<std::unique_ptr<RtpPacketToSend>> packets) {
   RTC_DCHECK(!packets.empty());
+  if (!audio_configured_ && transport_ &&
+      packets.front()->packet_type() == RtpPacketMediaType::kVideo) {
+    RtpPacketBatch batch = {
+        .ssrc = packets.front()->Ssrc(),
+        .timestamp = packets.front()->Timestamp(),
+        .packet_count = packets.size(),
+        .byte_size = 0,
+        .key_frame = false,
+    };
+    for (const auto& packet : packets) {
+      batch.byte_size += packet->size();
+      batch.key_frame = batch.key_frame || packet->is_key_frame();
+    }
+    if (!transport_->ReserveRtpBatch(batch))
+      return RtpPacketEnqueueResult::kDroppedByTransport;
+  }
   Timestamp now = clock_->CurrentTime();
   for (auto& packet : packets) {
     RTC_DCHECK(packet);
@@ -502,6 +520,7 @@ void RTPSender::EnqueuePackets(
   }
 
   paced_sender_->EnqueuePackets(std::move(packets));
+  return RtpPacketEnqueueResult::kEnqueued;
 }
 
 size_t RTPSender::FecOrPaddingPacketMaxRtpHeaderLength() const {

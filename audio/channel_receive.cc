@@ -461,7 +461,7 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
       AudioSinkInterface::Data data(
           audio_frame->data(), audio_frame->samples_per_channel_,
           audio_frame->sample_rate_hz_, audio_frame->num_channels_,
-          audio_frame->timestamp_);
+          audio_frame->timestamp_, !audio_frame->packet_infos_.empty());
       audio_sink_->OnData(data);
     }
   }

@@ -87,6 +87,7 @@ struct RoqMediaEngineStats {
   uint32_t video_frames_encoded = 0;
   uint32_t video_frames_dropped = 0;
   uint32_t received_audio_packets = 0;
+  uint32_t received_video_packets = 0;
   uint64_t received_audio_samples = 0;
   uint64_t audio_fec_packets_received = 0;
   uint64_t audio_fec_packets_discarded = 0;
@@ -121,6 +122,7 @@ struct RoqMediaBindingStats {
   uint64_t audio_retransmitted_packets_sent = 0;
   uint64_t video_retransmitted_packets_sent = 0;
   uint32_t received_audio_packets = 0;
+  uint32_t received_video_packets = 0;
   uint32_t decoded_video_frames = 0;
   uint32_t pli_sent = 0;
   uint32_t fir_sent = 0;

@@ -6,7 +6,9 @@
 
 #include <errno.h>
 
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -43,10 +45,18 @@ TEST(RoqSessionTest, ReportsLowFrequencyLifecycleTransitions) {
 
 TEST(RoqSessionTest, ReportsTerminalSetupFailureWithoutPolling) {
   std::vector<RoqSessionLifecycleEvent> events;
+  std::mutex events_mutex;
+  std::condition_variable events_condition;
   RoqSessionConfig config = {
       .address = "invalid-address",
       .lifecycle_callback =
-          [&](RoqSessionLifecycleEvent event) { events.push_back(event); },
+          [&](RoqSessionLifecycleEvent event) {
+            {
+              std::lock_guard lock(events_mutex);
+              events.push_back(std::move(event));
+            }
+            events_condition.notify_all();
+          },
       .allowed_flow_ids = {0, 1, 2},
   };
   std::unique_ptr<RoqSession> session =
@@ -57,6 +67,9 @@ TEST(RoqSessionTest, ReportsTerminalSetupFailureWithoutPolling) {
   ASSERT_TRUE(session->Start(&error));
   EXPECT_TRUE(session->WaitUntilClosed(TimeDelta::Seconds(1)));
 
+  std::unique_lock lock(events_mutex);
+  EXPECT_TRUE(events_condition.wait_for(lock, std::chrono::seconds(1),
+                                        [&] { return !events.empty(); }));
   ASSERT_EQ(events.size(), 1u);
   EXPECT_EQ(events[0].state, RoqSessionLifecycleState::kClosed);
   EXPECT_FALSE(events[0].error.empty());
@@ -156,6 +169,15 @@ TEST(RoqSessionTest, RetriesOnlyTransientUdpSendFailures) {
             RoqUdpSendDisposition::kFatal);
   EXPECT_EQ(ClassifyUdpSendResult(-1, 1200, EBADF),
             RoqUdpSendDisposition::kFatal);
+}
+
+TEST(RoqSessionTest, ContinuesMediaBurstUntilPacingOrBackpressure) {
+  EXPECT_TRUE(ShouldContinueDatagramBurst(1, 64, false, 0, 31));
+  EXPECT_TRUE(ShouldContinueDatagramBurst(1, 64, false, 1, 31));
+  EXPECT_TRUE(ShouldContinueDatagramBurst(1, 64, false, 1, 0));
+  EXPECT_FALSE(ShouldContinueDatagramBurst(64, 64, false, 0, 31));
+  EXPECT_FALSE(ShouldContinueDatagramBurst(1, 64, true, 0, 31));
+  EXPECT_FALSE(ShouldContinueDatagramBurst(1, 64, false, 0, 0));
 }
 
 }  // namespace

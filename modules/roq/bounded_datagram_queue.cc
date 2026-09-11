@@ -20,6 +20,10 @@ BoundedDatagramQueue::BoundedDatagramQueue(size_t capacity,
 
 namespace {
 
+constexpr TimeDelta kRtxLifetime = TimeDelta::Millis(200);
+constexpr TimeDelta kRepairWindow = TimeDelta::Seconds(1);
+constexpr TimeDelta kFrameAssemblyLifetime = TimeDelta::Seconds(1);
+
 std::string SchedulerBinding(const QueuedDatagram& datagram) {
   return datagram.binding_id.empty() ? std::to_string(datagram.flow_id)
                                      : datagram.binding_id;
@@ -34,8 +38,96 @@ bool SameVideoStream(const QueuedDatagram& datagram,
 
 }  // namespace
 
+bool BoundedDatagramQueue::ReserveVideoFrame(QueuedDatagram frame,
+                                             size_t packet_count,
+                                             size_t byte_size,
+                                             Timestamp now) {
+  if (!frame.frame_id || packet_count == 0 || byte_size == 0 ||
+      packet_count > capacity_ || byte_size > byte_capacity_) {
+    if (frame.frame_id && packet_count > 0) {
+      queue_full_drops_ += packet_count;
+      dropped_by_priority_[static_cast<size_t>(frame.priority)] +=
+          packet_count;
+      binding_stats_[SchedulerBinding(frame)].dropped_packets += packet_count;
+      MarkFrameDropped(*frame.frame_id, now);
+      RecoveryState& state =
+          recovery_[{frame.frame_id->binding_id, frame.frame_id->ssrc}];
+      if (frame.request_key_frame)
+        state.request_key_frame = frame.request_key_frame;
+    }
+    return false;
+  }
+  PurgeExpired(now);
+  if (IsBroken(frame) &&
+      frame.priority == DatagramPriority::kVideoDelta) {
+    dependency_drops_ += packet_count;
+    dropped_by_priority_[static_cast<size_t>(frame.priority)] += packet_count;
+    DatagramBindingStats& stats = binding_stats_[SchedulerBinding(frame)];
+    stats.dropped_packets += packet_count;
+    stats.dependency_drops += packet_count;
+    return false;
+  }
+  if (std::any_of(frame_reservations_.begin(), frame_reservations_.end(),
+                  [&frame](const FrameReservation& reservation) {
+                    return reservation.frame_id == *frame.frame_id;
+                  })) {
+    return true;
+  }
+  // Keep one quarter of each external-queue limit available for audio and
+  // critical RTCP while a large video access unit is being admitted.
+  const size_t video_packet_budget =
+      capacity_ >= 4 ? capacity_ - (capacity_ + 3) / 4 : capacity_;
+  const size_t video_byte_budget = byte_capacity_ >= 4
+                                       ? byte_capacity_ -
+                                             (byte_capacity_ + 3) / 4
+                                       : byte_capacity_;
+  if (queue_.size() + reserved_packets_ + packet_count > video_packet_budget ||
+      byte_size_ + reserved_bytes_ + byte_size > video_byte_budget) {
+    queue_full_drops_ += packet_count;
+    dropped_by_priority_[static_cast<size_t>(frame.priority)] += packet_count;
+    binding_stats_[SchedulerBinding(frame)].dropped_packets += packet_count;
+    MarkFrameDropped(*frame.frame_id, now);
+    RecoveryState& state =
+        recovery_[{frame.frame_id->binding_id, frame.frame_id->ssrc}];
+    if (frame.request_key_frame)
+      state.request_key_frame = frame.request_key_frame;
+    return false;
+  }
+  frame_reservations_.push_back(
+      {.frame_id = *frame.frame_id,
+       .remaining_packets = packet_count,
+       .remaining_bytes = byte_size,
+       .priority = frame.priority,
+       .deadline = frame.deadline,
+       .contains_idr = frame.contains_idr,
+       .contains_sps = frame.contains_sps,
+       .contains_pps = frame.contains_pps,
+       .request_key_frame = std::move(frame.request_key_frame)});
+  reserved_packets_ += packet_count;
+  reserved_bytes_ += byte_size;
+  return true;
+}
+
 DatagramEnqueueResult BoundedDatagramQueue::Enqueue(QueuedDatagram datagram,
                                                     Timestamp now) {
+  const TimeDelta original_lifetime = datagram.deadline - datagram.enqueue_time;
+  auto reservation = frame_reservations_.end();
+  if (datagram.frame_id && !datagram.original_packet_id) {
+    reservation = std::find_if(
+        frame_reservations_.begin(), frame_reservations_.end(),
+        [&datagram](const FrameReservation& candidate) {
+          return candidate.frame_id == *datagram.frame_id;
+        });
+    if (reservation != frame_reservations_.end()) {
+      datagram.admitted = true;
+      datagram.committed = true;
+      datagram.priority = reservation->priority;
+      datagram.deadline = Timestamp::PlusInfinity();
+      datagram.request_key_frame = reservation->request_key_frame;
+    }
+    if (IsFrameStarted(*datagram.frame_id))
+      datagram.committed = true;
+  }
   if (datagram.bytes.size() > max_datagram_size_) {
     ++oversize_drops_;
     RecordDrop(datagram.priority);
@@ -74,16 +166,16 @@ DatagramEnqueueResult BoundedDatagramQueue::Enqueue(QueuedDatagram datagram,
       ++invalid_drops_;
       return DatagramEnqueueResult::kInvalid;
     }
-    if (original->deadline <= now) {
+    if (original->repair_until <= now) {
       ++expired_drops_;
       RecordDrop(original->priority);
       return DatagramEnqueueResult::kInvalid;
     }
-    datagram.deadline = original->deadline;
+    datagram.deadline = std::min(now + kRtxLifetime, original->repair_until);
     datagram.priority = original->priority;
     datagram.frame_id = original->frame_id;
   }
-  if (datagram.deadline <= now) {
+  if (!datagram.committed && datagram.deadline <= now) {
     ++expired_drops_;
     RecordDrop(datagram.priority);
     ++binding_stats_[SchedulerBinding(datagram)].dropped_packets;
@@ -96,7 +188,7 @@ DatagramEnqueueResult BoundedDatagramQueue::Enqueue(QueuedDatagram datagram,
     }
     return DatagramEnqueueResult::kInvalid;
   }
-  if (IsBroken(datagram) &&
+  if (!datagram.committed && IsBroken(datagram) &&
       datagram.priority == DatagramPriority::kVideoDelta) {
     ++dependency_drops_;
     RecordDrop(datagram.priority);
@@ -105,7 +197,8 @@ DatagramEnqueueResult BoundedDatagramQueue::Enqueue(QueuedDatagram datagram,
     ++stats.dependency_drops;
     return DatagramEnqueueResult::kDropped;
   }
-  if (datagram.frame_id && !datagram.original_packet_id &&
+  if (!datagram.admitted && datagram.frame_id &&
+      !datagram.original_packet_id &&
       datagram.priority == DatagramPriority::kVideoKey) {
     Timestamp frame_enqueue_time = datagram.enqueue_time;
     auto submitted =
@@ -140,11 +233,11 @@ DatagramEnqueueResult BoundedDatagramQueue::Enqueue(QueuedDatagram datagram,
     }
     for (SentPacketDeadline& sent : sent_packet_deadlines_) {
       if (sent.frame_id == datagram.frame_id) {
-        sent.deadline = frame_deadline;
         sent.priority = DatagramPriority::kVideoKey;
       }
     }
-  } else if (datagram.frame_id) {
+  } else if (!datagram.admitted && datagram.frame_id &&
+             !datagram.original_packet_id) {
     const auto frame =
         std::find_if(queue_.begin(), queue_.end(),
                      [&datagram](const QueuedDatagram& queued) {
@@ -174,6 +267,14 @@ DatagramEnqueueResult BoundedDatagramQueue::Enqueue(QueuedDatagram datagram,
     bool contains_idr = datagram.contains_idr;
     bool contains_sps = datagram.contains_sps;
     bool contains_pps = datagram.contains_pps;
+    if (reservation != frame_reservations_.end()) {
+      reservation->contains_idr |= contains_idr;
+      reservation->contains_sps |= contains_sps;
+      reservation->contains_pps |= contains_pps;
+      contains_idr = reservation->contains_idr;
+      contains_sps = reservation->contains_sps;
+      contains_pps = reservation->contains_pps;
+    }
     for (const QueuedDatagram& queued : queue_) {
       if (queued.frame_id == datagram.frame_id) {
         contains_idr |= queued.contains_idr;
@@ -181,7 +282,8 @@ DatagramEnqueueResult BoundedDatagramQueue::Enqueue(QueuedDatagram datagram,
         contains_pps |= queued.contains_pps;
       }
     }
-    const bool independent = contains_idr && contains_sps && contains_pps;
+    const bool independent = datagram.independent_frame ||
+                             (contains_idr && contains_sps && contains_pps);
     for (QueuedDatagram& queued : queue_) {
       if (queued.frame_id == datagram.frame_id) {
         queued.contains_idr = contains_idr;
@@ -194,21 +296,42 @@ DatagramEnqueueResult BoundedDatagramQueue::Enqueue(QueuedDatagram datagram,
     datagram.contains_sps = contains_sps;
     datagram.contains_pps = contains_pps;
     datagram.independent_frame = independent;
-    if (datagram.frame_complete)
+    if (datagram.frame_complete) {
       CompleteFrame(*datagram.frame_id);
+      TimeDelta lifetime = original_lifetime;
+      for (const QueuedDatagram& queued : queue_) {
+        if (queued.frame_id == datagram.frame_id)
+          lifetime = std::max(lifetime, queued.deadline - queued.enqueue_time);
+      }
+      const Timestamp frame_deadline = now + lifetime;
+      for (QueuedDatagram& queued : queue_) {
+        if (queued.frame_id == datagram.frame_id)
+          queued.deadline = frame_deadline;
+      }
+      datagram.deadline = frame_deadline;
+    }
   }
-  while (queue_.size() >= capacity_ ||
-         byte_size_ + datagram.bytes.size() > byte_capacity_) {
-    const DatagramPriority lowest =
-        std::min_element(
-            queue_.begin(), queue_.end(),
-            [](const QueuedDatagram& left, const QueuedDatagram& right) {
-              return left.priority < right.priority;
-            })
-            ->priority;
+  while (!datagram.admitted && !datagram.committed &&
+         (queue_.size() + reserved_packets_ >= capacity_ ||
+          byte_size_ + reserved_bytes_ + datagram.bytes.size() >
+              byte_capacity_)) {
+    const auto lowest_it = std::min_element(
+        queue_.begin(), queue_.end(),
+        [](const QueuedDatagram& left, const QueuedDatagram& right) {
+          if (left.committed != right.committed)
+            return !left.committed;
+          return left.priority < right.priority;
+        });
+    if (lowest_it == queue_.end() || lowest_it->committed) {
+      ++queue_full_drops_;
+      RecordDrop(datagram.priority);
+      ++binding_stats_[SchedulerBinding(datagram)].dropped_packets;
+      return DatagramEnqueueResult::kQueueFull;
+    }
+    const DatagramPriority lowest = lowest_it->priority;
     std::map<std::string, size_t> backlog_by_binding;
     for (const QueuedDatagram& queued : queue_) {
-      if (queued.priority == lowest)
+      if (!queued.committed && queued.priority == lowest)
         backlog_by_binding[SchedulerBinding(queued)] += queued.bytes.size();
     }
     const auto largest =
@@ -220,10 +343,11 @@ DatagramEnqueueResult BoundedDatagramQueue::Enqueue(QueuedDatagram datagram,
         queue_.begin(), queue_.end(),
         [lowest, &largest](const QueuedDatagram& left,
                            const QueuedDatagram& right) {
-          const bool left_candidate = left.priority == lowest &&
+          const bool left_candidate = !left.committed &&
+                                      left.priority == lowest &&
                                       SchedulerBinding(left) == largest->first;
           const bool right_candidate =
-              right.priority == lowest &&
+              !right.committed && right.priority == lowest &&
               SchedulerBinding(right) == largest->first;
           if (left_candidate != right_candidate)
             return left_candidate;
@@ -271,6 +395,20 @@ DatagramEnqueueResult BoundedDatagramQueue::Enqueue(QueuedDatagram datagram,
   byte_size_ += datagram.bytes.size();
   ++binding_stats_[SchedulerBinding(datagram)].enqueued_packets;
   queue_.push_back(std::move(datagram));
+  if (reservation != frame_reservations_.end()) {
+    if (reservation->remaining_packets > 0) {
+      --reservation->remaining_packets;
+      --reserved_packets_;
+    }
+    const size_t consumed =
+        std::min(reservation->remaining_bytes, queue_.back().bytes.size());
+    reservation->remaining_bytes -= consumed;
+    reserved_bytes_ -= consumed;
+    if (reservation->remaining_packets == 0) {
+      reserved_bytes_ -= reservation->remaining_bytes;
+      frame_reservations_.erase(reservation);
+    }
+  }
   peak_size_ = std::max(peak_size_, queue_.size());
   peak_byte_size_ = std::max(peak_byte_size_, byte_size_);
   return DatagramEnqueueResult::kQueued;
@@ -283,7 +421,7 @@ std::optional<QueuedDatagram> BoundedDatagramQueue::Pop(Timestamp now) {
   DatagramPriority highest = DatagramPriority::kPeriodicRtcp;
   bool found = false;
   for (const QueuedDatagram& datagram : queue_) {
-    if (!IsFrameComplete(datagram))
+    if (!IsFrameComplete(datagram) || HasEarlierVideoFrame(datagram))
       continue;
     if (!found || datagram.priority > highest) {
       highest = datagram.priority;
@@ -295,7 +433,8 @@ std::optional<QueuedDatagram> BoundedDatagramQueue::Pop(Timestamp now) {
 
   std::vector<std::string> bindings;
   for (const QueuedDatagram& datagram : queue_) {
-    if (datagram.priority != highest || !IsFrameComplete(datagram))
+    if (datagram.priority != highest || !IsFrameComplete(datagram) ||
+        HasEarlierVideoFrame(datagram))
       continue;
     const std::string binding = SchedulerBinding(datagram);
     if (std::find(bindings.begin(), bindings.end(), binding) == bindings.end())
@@ -308,7 +447,9 @@ std::optional<QueuedDatagram> BoundedDatagramQueue::Pop(Timestamp now) {
   if (!current.empty()) {
     selected = std::find_if(
         queue_.begin(), queue_.end(), [&](const QueuedDatagram& datagram) {
-          return datagram.priority == highest && IsFrameComplete(datagram) &&
+          return datagram.priority == highest &&
+                 IsFrameComplete(datagram) &&
+                 !HasEarlierVideoFrame(datagram) &&
                  SchedulerBinding(datagram) == current &&
                  datagram.bytes.size() <= deficits_[current];
         });
@@ -331,7 +472,9 @@ std::optional<QueuedDatagram> BoundedDatagramQueue::Pop(Timestamp now) {
       deficits_[binding] += max_datagram_size_;
       selected = std::find_if(
           queue_.begin(), queue_.end(), [&](const QueuedDatagram& datagram) {
-            return datagram.priority == highest && IsFrameComplete(datagram) &&
+            return datagram.priority == highest &&
+                   IsFrameComplete(datagram) &&
+                   !HasEarlierVideoFrame(datagram) &&
                    SchedulerBinding(datagram) == binding &&
                    datagram.bytes.size() <= deficits_[binding];
           });
@@ -343,13 +486,25 @@ std::optional<QueuedDatagram> BoundedDatagramQueue::Pop(Timestamp now) {
   }
   if (selected == queue_.end())
     return std::nullopt;
+  if (selected->frame_id && !selected->original_packet_id) {
+    if (!IsFrameStarted(*selected->frame_id))
+      started_frames_.push_back(*selected->frame_id);
+    for (QueuedDatagram& queued : queue_) {
+      if (queued.frame_id == selected->frame_id &&
+          !queued.original_packet_id) {
+        queued.committed = true;
+      }
+    }
+  }
   QueuedDatagram datagram = std::move(*selected);
   byte_size_ -= datagram.bytes.size();
   queue_.erase(selected);
   deficits_[selected_binding] -= datagram.bytes.size();
   const bool can_continue = std::any_of(
       queue_.begin(), queue_.end(), [&](const QueuedDatagram& queued) {
-        return queued.priority == highest && IsFrameComplete(queued) &&
+        return queued.priority == highest &&
+               IsFrameComplete(queued) &&
+               !HasEarlierVideoFrame(queued) &&
                SchedulerBinding(queued) == selected_binding &&
                queued.bytes.size() <= deficits_[selected_binding];
       });
@@ -363,23 +518,31 @@ std::optional<QueuedDatagram> BoundedDatagramQueue::Pop(Timestamp now) {
       std::none_of(queue_.begin(), queue_.end(),
                    [&datagram](const QueuedDatagram& queued) {
                      return queued.frame_id == datagram.frame_id;
+                   }) &&
+      std::none_of(frame_reservations_.begin(), frame_reservations_.end(),
+                   [&datagram](const FrameReservation& reservation) {
+                     return reservation.frame_id == *datagram.frame_id;
                    })) {
     std::erase(complete_frames_, *datagram.frame_id);
+    std::erase(started_frames_, *datagram.frame_id);
   }
   max_queue_delay_ = std::max(max_queue_delay_, now - datagram.enqueue_time);
   return datagram;
 }
 
-void BoundedDatagramQueue::RecordSubmitted(const QueuedDatagram& datagram) {
+void BoundedDatagramQueue::RecordSubmitted(const QueuedDatagram& datagram,
+                                           Timestamp now) {
   ++binding_stats_[SchedulerBinding(datagram)].submitted_packets;
   if (datagram.packet_id) {
     sent_packet_deadlines_.push_back({.packet_id = *datagram.packet_id,
-                                      .deadline = datagram.deadline,
+                                      .repair_until = now + kRepairWindow,
                                       .priority = datagram.priority,
                                       .frame_id = datagram.frame_id});
   }
   if (datagram.frame_id && datagram.frame_complete &&
-      datagram.independent_frame) {
+      (datagram.independent_frame ||
+       (datagram.contains_idr && datagram.contains_sps &&
+        datagram.contains_pps))) {
     const auto key =
         std::make_pair(datagram.frame_id->binding_id, datagram.frame_id->ssrc);
     broken_video_.erase(key);
@@ -453,7 +616,15 @@ std::optional<Timestamp> BoundedDatagramQueue::FrameDeadline(
 size_t BoundedDatagramQueue::PurgeExpired(Timestamp now) {
   std::vector<DatagramFrameId> expired_frames;
   for (const QueuedDatagram& datagram : queue_) {
-    if (datagram.deadline <= now && datagram.frame_id &&
+    const bool assembly_expired =
+        datagram.frame_id && !datagram.original_packet_id &&
+        !IsFrameComplete(datagram) &&
+        datagram.enqueue_time + kFrameAssemblyLifetime <= now;
+    const bool admission_expired =
+        datagram.frame_id && !datagram.original_packet_id &&
+        IsFrameComplete(datagram) &&
+        !IsFrameStarted(*datagram.frame_id) && datagram.deadline <= now;
+    if ((assembly_expired || admission_expired) &&
         std::find(expired_frames.begin(), expired_frames.end(),
                   *datagram.frame_id) == expired_frames.end()) {
       expired_frames.push_back(*datagram.frame_id);
@@ -468,7 +639,8 @@ size_t BoundedDatagramQueue::PurgeExpired(Timestamp now) {
   }
   const size_t old_size = queue_.size();
   std::erase_if(queue_, [this, now](const QueuedDatagram& datagram) {
-    if (datagram.deadline > now)
+    if (datagram.deadline > now || datagram.committed ||
+        (datagram.frame_id && !IsFrameComplete(datagram)))
       return false;
     byte_size_ -= datagram.bytes.size();
     RecordDrop(datagram.priority);
@@ -540,6 +712,15 @@ size_t BoundedDatagramQueue::EraseFrame(const DatagramFrameId& frame_id,
         return true;
       });
   std::erase(complete_frames_, frame_id);
+  std::erase(started_frames_, frame_id);
+  std::erase_if(frame_reservations_,
+                [this, &frame_id](const FrameReservation& reservation) {
+                  if (reservation.frame_id != frame_id)
+                    return false;
+                  reserved_packets_ -= reservation.remaining_packets;
+                  reserved_bytes_ -= reservation.remaining_bytes;
+                  return true;
+                });
   return old_size - queue_.size();
 }
 
@@ -549,7 +730,7 @@ void BoundedDatagramQueue::RecordDrop(DatagramPriority priority) {
 
 void BoundedDatagramQueue::PruneSentPacketDeadlines(Timestamp now) {
   std::erase_if(sent_packet_deadlines_, [now](const SentPacketDeadline& sent) {
-    return sent.deadline + TimeDelta::Seconds(1) <= now;
+    return sent.repair_until + TimeDelta::Seconds(1) <= now;
   });
   std::erase_if(sent_frame_deadlines_, [now](const SentFrameDeadline& sent) {
     return sent.deadline + TimeDelta::Seconds(1) <= now;
@@ -561,6 +742,10 @@ size_t BoundedDatagramQueue::Clear() {
   queue_.clear();
   byte_size_ = 0;
   complete_frames_.clear();
+  started_frames_.clear();
+  frame_reservations_.clear();
+  reserved_packets_ = 0;
+  reserved_bytes_ = 0;
   broken_video_.clear();
   sent_packet_deadlines_.clear();
   sent_frame_deadlines_.clear();
@@ -584,6 +769,17 @@ size_t BoundedDatagramQueue::PurgeBinding(const std::string& binding_id) {
   std::erase_if(complete_frames_, [&binding_id](const DatagramFrameId& frame) {
     return frame.binding_id == binding_id;
   });
+  std::erase_if(started_frames_, [&binding_id](const DatagramFrameId& frame) {
+    return frame.binding_id == binding_id;
+  });
+  std::erase_if(frame_reservations_,
+                [this, &binding_id](const FrameReservation& reservation) {
+                  if (reservation.frame_id.binding_id != binding_id)
+                    return false;
+                  reserved_packets_ -= reservation.remaining_packets;
+                  reserved_bytes_ -= reservation.remaining_bytes;
+                  return true;
+                });
   std::erase_if(
       sent_packet_deadlines_, [&binding_id](const SentPacketDeadline& sent) {
         return sent.frame_id && sent.frame_id->binding_id == binding_id;
@@ -674,10 +870,35 @@ void BoundedDatagramQueue::CompleteFrame(const DatagramFrameId& frame_id) {
 
 bool BoundedDatagramQueue::IsFrameComplete(
     const QueuedDatagram& datagram) const {
-  if (!datagram.frame_id || datagram.frame_id->binding_id.empty())
+  if (datagram.admitted || datagram.committed || datagram.original_packet_id ||
+      !datagram.frame_id ||
+      datagram.frame_id->binding_id.empty())
     return true;
   return std::find(complete_frames_.begin(), complete_frames_.end(),
                    *datagram.frame_id) != complete_frames_.end();
+}
+
+bool BoundedDatagramQueue::IsFrameStarted(
+    const DatagramFrameId& frame_id) const {
+  return std::find(started_frames_.begin(), started_frames_.end(), frame_id) !=
+         started_frames_.end();
+}
+
+bool BoundedDatagramQueue::HasEarlierVideoFrame(
+    const QueuedDatagram& datagram) const {
+  if (!datagram.frame_id || datagram.original_packet_id)
+    return false;
+  for (const QueuedDatagram& queued : queue_) {
+    if (&queued == &datagram)
+      break;
+    if (!queued.original_packet_id && queued.frame_id &&
+        queued.frame_id->binding_id == datagram.frame_id->binding_id &&
+        queued.frame_id->ssrc == datagram.frame_id->ssrc &&
+        queued.frame_id->timestamp != datagram.frame_id->timestamp) {
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace webrtc::roq

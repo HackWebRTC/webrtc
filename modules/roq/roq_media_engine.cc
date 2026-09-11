@@ -326,6 +326,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         send.rtp.rtx.payload_type = config.rtx_payload_type;
         send.rtp.rtx.ssrcs = {config.rtx_ssrc};
         send.rtp.max_packet_size = config_.max_rtp_packet_size;
+        send.rtp.enable_send_packet_batching = true;
         send.encoder_settings.encoder_factory = config_.video_encoder_factory;
         send.encoder_settings.bitrate_allocator_factory =
             bitrate_allocator_factory_.get();
@@ -641,6 +642,8 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         }
         if (binding.video) {
           const auto video = binding.video->GetStats();
+          result.received_video_packets +=
+              video.rtp_stats.packet_counter.packets;
           result.decoded_video_frames += video.frames_decoded;
           result.pli_sent += video.rtcp_packet_type_counts.pli_packets;
           result.fir_sent += video.rtcp_packet_type_counts.fir_packets;
@@ -683,6 +686,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         result.sent_audio_packets += terminal.sent_audio_packets;
         result.sent_video_frames += terminal.sent_video_frames;
         result.received_audio_packets += terminal.received_audio_packets;
+        result.received_video_packets += terminal.received_video_packets;
         result.decoded_video_frames += terminal.decoded_video_frames;
         result.pli_sent += terminal.pli_sent;
         result.fir_sent += terminal.fir_sent;
@@ -800,6 +804,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
     }
     if (binding.video) {
       const auto video = binding.video->GetStats();
+      result.received_video_packets = video.rtp_stats.packet_counter.packets;
       result.decoded_video_frames = video.frames_decoded;
       result.pli_sent = video.rtcp_packet_type_counts.pli_packets;
       result.fir_sent = video.rtcp_packet_type_counts.fir_packets;

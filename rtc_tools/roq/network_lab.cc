@@ -27,6 +27,7 @@
 #include <limits>
 #include <queue>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -219,6 +220,19 @@ class ImpairmentDirection {
                                         0x9e3779b97f4a7c15ULL));
     const auto now = SteadyClock::now();
     const auto profile_elapsed = now - profile_start_;
+    // Exercise RTP repair while the path is still unconstrained, so the M4
+    // product test does not depend on a random loss happening early enough
+    // for the one-second repair window. Large server-to-client datagrams are
+    // media-bearing in this profile; ACK-only packets remain untouched.
+    if (profile_ == "m4" && std::string_view(name_) == "server_to_client" &&
+        !m4_repair_probe_injected_ &&
+        profile_elapsed >= std::chrono::seconds(2) &&
+        profile_elapsed < std::chrono::seconds(4) && size > 200) {
+      m4_repair_probe_injected_ = true;
+      ++result_->injected_loss;
+      event_log_->Write("injected_loss", name_, sequence);
+      return;
+    }
     if (profile_ == "m5" && profile_elapsed >= std::chrono::seconds(5) &&
         profile_elapsed < std::chrono::seconds(11)) {
       ++result_->injected_loss;
@@ -328,6 +342,7 @@ class ImpairmentDirection {
   EventLog* event_log_;
   UdpSelfTestResult* result_;
   const std::string profile_;
+  bool m4_repair_probe_injected_ = false;
   const SteadyClock::time_point profile_start_;
   SteadyClock::time_point next_serialization_ = SteadyClock::now();
   std::priority_queue<ScheduledPacket,

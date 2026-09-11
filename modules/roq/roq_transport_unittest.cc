@@ -43,7 +43,16 @@ class FakeRoqSession final : public RoqSession {
     bytes_.assign(packet.begin(), packet.end());
     metadata_ = std::move(metadata);
     on_submitted_ = std::move(on_submitted);
+    submissions_.push_back(on_submitted_);
     return RoqSendResult::kQueued;
+  }
+  bool ReserveMediaBatch(const RoqDatagramMetadata& metadata,
+                         size_t packet_count,
+                         size_t byte_size) override {
+    reserved_metadata_ = metadata;
+    reserved_packet_count_ = packet_count;
+    reserved_byte_size_ = byte_size;
+    return reserve_result_;
   }
   void RecordInvalidDatagram() override { ++invalid_datagrams_; }
   void UpdatePeerDatagramPayloadLimit(size_t) override {}
@@ -56,7 +65,12 @@ class FakeRoqSession final : public RoqSession {
   std::vector<uint8_t> bytes_;
   RoqDatagramMetadata metadata_;
   std::function<void()> on_submitted_;
+  std::vector<std::function<void()>> submissions_;
   size_t invalid_datagrams_ = 0;
+  bool reserve_result_ = true;
+  RoqDatagramMetadata reserved_metadata_;
+  size_t reserved_packet_count_ = 0;
+  size_t reserved_byte_size_ = 0;
 };
 
 RoqPacketTransportConfig VideoConfig(FakeRoqSession* session, Clock* clock) {
@@ -109,6 +123,33 @@ TEST(RoqPacketTransportTest, ClassifiesKeyVideoFrame) {
             (RoqPacketId{.ssrc = 22222222, .sequence_number = 42}));
 }
 
+TEST(RoqPacketTransportTest, ReservesPacketizedVideoBeforeRtpSubmission) {
+  SimulatedClock clock(Timestamp::Millis(100));
+  FakeRoqSession session;
+  RoqPacketTransport transport(VideoConfig(&session, &clock));
+
+  EXPECT_TRUE(transport.ReserveRtpBatch({.ssrc = 22222222,
+                                         .timestamp = 90000,
+                                         .packet_count = 3,
+                                         .byte_size = 3600,
+                                         .key_frame = true}));
+
+  EXPECT_EQ(session.reserved_packet_count_, 3u);
+  EXPECT_EQ(session.reserved_byte_size_, 3600u);
+  EXPECT_EQ(session.reserved_metadata_.priority,
+            RoqDatagramPriority::kVideoKey);
+  EXPECT_EQ(session.reserved_metadata_.frame_id,
+            (RoqFrameId{.ssrc = 22222222, .timestamp = 90000}));
+}
+
+TEST(RoqPacketTransportTest, DeclaresExternalTransportPacing) {
+  SimulatedClock clock(Timestamp::Millis(100));
+  FakeRoqSession session;
+  RoqPacketTransport transport(VideoConfig(&session, &clock));
+
+  EXPECT_EQ(transport.GetRtpPacingMode(), RtpPacingMode::kExternalTransport);
+}
+
 TEST(RoqPacketTransportTest, ReportsOnlyTheFirstSubmittedKeyVideoFrame) {
   SimulatedClock clock(Timestamp::Millis(100));
   FakeRoqSession session;
@@ -117,12 +158,12 @@ TEST(RoqPacketTransportTest, ReportsOnlyTheFirstSubmittedKeyVideoFrame) {
   config.key_frame_submitted =
       [&](uint32_t, uint32_t, uint16_t) { ++submitted_key_frames; };
   RoqPacketTransport transport(std::move(config));
-  constexpr std::array<uint8_t, 14> first = {
-      0x80, 0xe0, 0x00, 0x2a, 0x00, 0x01, 0x5f,
-      0x90, 0x01, 0x53, 0x15, 0x8e, 0x65, 0xaa};
-  constexpr std::array<uint8_t, 14> second = {
-      0x80, 0xe0, 0x00, 0x2b, 0x00, 0x02, 0xbf,
-      0x20, 0x01, 0x53, 0x15, 0x8e, 0x65, 0xbb};
+  constexpr std::array<uint8_t, 22> first = {
+      0x80, 0xe0, 0x00, 0x2a, 0x00, 0x01, 0x5f, 0x90, 0x01, 0x53, 0x15,
+      0x8e, 0x18, 0x00, 0x01, 0x67, 0x00, 0x01, 0x68, 0x00, 0x01, 0x65};
+  constexpr std::array<uint8_t, 22> second = {
+      0x80, 0xe0, 0x00, 0x2b, 0x00, 0x02, 0xbf, 0x20, 0x01, 0x53, 0x15,
+      0x8e, 0x18, 0x00, 0x01, 0x67, 0x00, 0x01, 0x68, 0x00, 0x01, 0x65};
 
   ASSERT_TRUE(transport.SendRtp(first, PacketOptions()));
   ASSERT_TRUE(session.on_submitted_);
@@ -131,6 +172,41 @@ TEST(RoqPacketTransportTest, ReportsOnlyTheFirstSubmittedKeyVideoFrame) {
   ASSERT_TRUE(session.on_submitted_);
   session.on_submitted_();
 
+  EXPECT_EQ(submitted_key_frames, 1);
+}
+
+TEST(RoqPacketTransportTest, ReportsKeyFrameOnlyAfterCompleteRecoveryUnitSubmits) {
+  SimulatedClock clock(Timestamp::Millis(100));
+  FakeRoqSession session;
+  int submitted_key_frames = 0;
+  RoqPacketTransportConfig config = VideoConfig(&session, &clock);
+  config.key_frame_submitted =
+      [&](uint32_t, uint32_t, uint16_t) { ++submitted_key_frames; };
+  RoqPacketTransport transport(std::move(config));
+  constexpr std::array<uint8_t, 14> sps = {
+      0x80, 0x60, 0x00, 0x2a, 0x00, 0x01, 0x5f,
+      0x80, 0x01, 0x53, 0x15, 0x8e, 0x67, 0xaa};
+  constexpr std::array<uint8_t, 14> pps = {
+      0x80, 0x60, 0x00, 0x2b, 0x00, 0x01, 0x5f,
+      0x80, 0x01, 0x53, 0x15, 0x8e, 0x68, 0xbb};
+  constexpr std::array<uint8_t, 14> idr_start = {
+      0x80, 0x60, 0x00, 0x2c, 0x00, 0x01, 0x60,
+      0x00, 0x01, 0x53, 0x15, 0x8e, 0x65, 0xcc};
+  constexpr std::array<uint8_t, 14> idr_marker = {
+      0x80, 0xe0, 0x00, 0x2d, 0x00, 0x01, 0x60,
+      0x00, 0x01, 0x53, 0x15, 0x8e, 0x65, 0xdd};
+
+  ASSERT_TRUE(transport.SendRtp(sps, PacketOptions()));
+  ASSERT_TRUE(transport.SendRtp(pps, PacketOptions()));
+  ASSERT_TRUE(transport.SendRtp(idr_start, PacketOptions()));
+  ASSERT_TRUE(transport.SendRtp(idr_marker, PacketOptions()));
+  ASSERT_EQ(session.submissions_.size(), 4u);
+  session.submissions_[3]();
+  EXPECT_EQ(submitted_key_frames, 0);
+  for (size_t index = 0; index < 3; ++index) {
+    session.submissions_[index]();
+    EXPECT_EQ(submitted_key_frames, index == 2 ? 1 : 0);
+  }
   EXPECT_EQ(submitted_key_frames, 1);
 }
 

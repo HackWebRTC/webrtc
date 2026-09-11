@@ -900,6 +900,53 @@ TEST(RoqMediaEngineTest, QueriesStatsByStableBindingId) {
   EXPECT_FALSE(engine->binding_stats("missing").has_value());
 }
 
+TEST(RoqMediaEngineTest, ReportsReceivedVideoPacketsByBinding) {
+  const Environment env = CreateTestEnvironment();
+  scoped_refptr<AudioDeviceModule> audio =
+      CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_TRUE(audio);
+  ASSERT_EQ(audio->Init(), 0);
+  auto video_encoder = CreateBuiltinVideoEncoderFactory();
+  auto video_decoder = CreateBuiltinVideoDecoderFactory();
+  NullTransport transport;
+  std::string error;
+  std::unique_ptr<RoqMediaEngine> engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = video_encoder.get(),
+       .video_decoder_factory = video_decoder.get()},
+      env, &error);
+  ASSERT_TRUE(engine) << error;
+  ASSERT_TRUE(engine->Start(&error)) << error;
+  ASSERT_TRUE(engine->AddReceiveBinding({.binding_id = "camera",
+                                         .kind = RoqMediaKind::kVideo,
+                                         .primary_ssrc = 2001,
+                                         .rtx_ssrc = 2002,
+                                         .payload_type = 96,
+                                         .rtx_payload_type = 97,
+                                         .transport = &transport},
+                                        &error))
+      << error;
+  constexpr std::array<uint8_t, 14> packet = {
+      0x80, 0xe0, 0x00, 0x01, 0x00, 0x01, 0x5f,
+      0x90, 0x00, 0x00, 0x07, 0xd1, 0x65, 0x80};
+
+  engine->DeliverRtp("camera", packet);
+  std::optional<RoqMediaBindingStats> stats;
+  for (int attempt = 0; attempt < 100; ++attempt) {
+    stats = engine->binding_stats("camera");
+    if (stats && stats->received_video_packets == 1)
+      break;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  ASSERT_TRUE(stats);
+  EXPECT_EQ(stats->received_audio_packets, 0u);
+  EXPECT_EQ(stats->received_video_packets, 1u);
+  engine->Stop();
+}
+
 TEST(RoqMediaEngineTest, RetainsTerminalBindingStatsAfterRemoval) {
   const Environment env = CreateTestEnvironment();
   scoped_refptr<AudioDeviceModule> audio =

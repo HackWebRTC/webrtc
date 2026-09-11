@@ -1463,6 +1463,7 @@ if (rtc_include_tests) {
       "../../api:rtp_header_extension_id",
       "../../api:rtp_packet_sender",
       "../../api:rtp_parameters",
+      "../../api:transport_api",
       "../../api/environment",
       "../../api/units:frequency",
       "../../api/units:time_delta",

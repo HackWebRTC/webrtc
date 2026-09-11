@@ -20,6 +20,7 @@
 
 #include "absl/strings/string_view.h"
 #include "api/environment/environment.h"
+#include "api/call/transport.h"
 #include "api/frame_transformer_interface.h"
 #include "api/rtp_header_extension_id.h"
 #include "api/rtp_packet_sender.h"
@@ -97,6 +98,23 @@ class MockRtpPacketPacer : public RtpPacketSender {
               (std::vector<std::unique_ptr<RtpPacketToSend>>),
               (override));
   MOCK_METHOD(void, RemovePacketsForSsrc, (uint32_t), (override));
+};
+
+class ConfigurableBatchTransport final : public Transport {
+ public:
+  bool ReserveRtpBatch(const RtpPacketBatch& batch) override {
+    observed = batch;
+    return accept;
+  }
+  bool SendRtp(std::span<const uint8_t>, const PacketOptions&) override {
+    return true;
+  }
+  bool SendRtcp(std::span<const uint8_t>, const PacketOptions&) override {
+    return true;
+  }
+
+  std::optional<RtpPacketBatch> observed;
+  bool accept = false;
 };
 
 uint32_t ToRtpTimestamp(Timestamp time) {
@@ -341,6 +359,73 @@ TEST_F(RtpSenderTest, SendToNetworkForwardsPacketsToPacer) {
                   Pointee(Property(&RtpPacketToSend::capture_time, now))))));
 
   rtp_sender_->EnqueuePackets(std::move(packets));
+}
+
+TEST_F(RtpSenderTest, RejectsWholeVideoBatchBeforePacingAndSequencing) {
+  ConfigurableBatchTransport transport;
+  RtpRtcpInterface::Configuration config = GetDefaultConfig();
+  config.outgoing_transport = &transport;
+  CreateSender(config);
+  std::vector<std::unique_ptr<RtpPacketToSend>> packets;
+  packets.push_back(
+      BuildRtpPacket(kPayload, false, kTimestamp, env_.clock().CurrentTime()));
+  packets.push_back(
+      BuildRtpPacket(kPayload, true, kTimestamp, env_.clock().CurrentTime()));
+  packets[0]->set_is_key_frame(true);
+  packets[1]->set_is_key_frame(true);
+  packets[0]->AllocatePayload(100);
+  packets[1]->AllocatePayload(200);
+
+  EXPECT_CALL(mock_paced_sender_, EnqueuePackets).Times(0);
+  EXPECT_EQ(rtp_sender_->EnqueuePackets(std::move(packets)),
+            RtpPacketEnqueueResult::kDroppedByTransport);
+
+  ASSERT_TRUE(transport.observed);
+  EXPECT_EQ(transport.observed->ssrc, kSsrc);
+  EXPECT_EQ(transport.observed->timestamp, kTimestamp);
+  EXPECT_EQ(transport.observed->packet_count, 2u);
+  EXPECT_GT(transport.observed->byte_size, 300u);
+  EXPECT_TRUE(transport.observed->key_frame);
+}
+
+TEST_F(RtpSenderTest, DroppedBatchDoesNotConsumeRtpSequenceNumbers) {
+  ConfigurableBatchTransport transport;
+  RtpRtcpInterface::Configuration config = GetDefaultConfig();
+  config.outgoing_transport = &transport;
+  CreateSender(config);
+  std::vector<std::unique_ptr<RtpPacketToSend>> dropped;
+  dropped.push_back(
+      BuildRtpPacket(kPayload, true, kTimestamp, env_.clock().CurrentTime()));
+  EXPECT_EQ(dropped.front()->SequenceNumber(), 0u);
+  EXPECT_EQ(rtp_sender_->EnqueuePackets(std::move(dropped)),
+            RtpPacketEnqueueResult::kDroppedByTransport);
+
+  transport.accept = true;
+  std::vector<std::unique_ptr<RtpPacketToSend>> accepted;
+  accepted.push_back(BuildRtpPacket(kPayload, true, kTimestamp + 1,
+                                    env_.clock().CurrentTime()));
+  EXPECT_EQ(accepted.front()->SequenceNumber(), 0u);
+  EXPECT_CALL(mock_paced_sender_, EnqueuePackets(SizeIs(1)));
+  EXPECT_EQ(rtp_sender_->EnqueuePackets(std::move(accepted)),
+            RtpPacketEnqueueResult::kEnqueued);
+}
+
+TEST_F(RtpSenderTest, AcceptedVideoBatchIsForwardedToTheConfiguredSender) {
+  ConfigurableBatchTransport transport;
+  transport.accept = true;
+  RtpRtcpInterface::Configuration config = GetDefaultConfig();
+  config.outgoing_transport = &transport;
+  CreateSender(config);
+  std::vector<std::unique_ptr<RtpPacketToSend>> packets;
+  packets.push_back(
+      BuildRtpPacket(kPayload, false, kTimestamp, env_.clock().CurrentTime()));
+  packets.push_back(
+      BuildRtpPacket(kPayload, true, kTimestamp, env_.clock().CurrentTime()));
+
+  EXPECT_CALL(mock_paced_sender_, EnqueuePackets(SizeIs(2)));
+  rtp_sender_->EnqueuePackets(std::move(packets));
+  ASSERT_TRUE(transport.observed);
+  EXPECT_EQ(transport.observed->packet_count, 2u);
 }
 
 TEST_F(RtpSenderTest, ReSendPacketForwardsPacketsToPacer) {

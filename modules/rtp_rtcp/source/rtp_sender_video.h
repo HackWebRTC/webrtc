@@ -194,7 +194,7 @@ class RTPSenderVideo : public RTPVideoFrameSenderInterface {
 
   size_t FecPacketOverhead() const RTC_EXCLUSIVE_LOCKS_REQUIRED(send_checker_);
 
-  void LogAndSendToNetwork(
+  RtpPacketEnqueueResult LogAndSendToNetwork(
       std::vector<std::unique_ptr<RtpPacketToSend>> packets,
       size_t encoder_output_size);
 

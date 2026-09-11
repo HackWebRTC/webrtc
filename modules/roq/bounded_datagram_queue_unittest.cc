@@ -216,6 +216,21 @@ TEST(BoundedDatagramQueueTest, RequeueRestoresCompleteFrameEligibility) {
   EXPECT_TRUE(queue.Pop(now).has_value());
 }
 
+TEST(BoundedDatagramQueueTest, HoldsVideoPacketUntilFrameMarkerArrives) {
+  BoundedDatagramQueue queue(/*capacity=*/4, /*max_datagram_size=*/8);
+  constexpr Timestamp now = Timestamp::Millis(100);
+  QueuedDatagram packet = Datagram(
+      1, DatagramPriority::kVideoDelta, now, TimeDelta::Millis(100),
+      DatagramFrameId{.ssrc = 7,
+                      .timestamp = 90000,
+                      .binding_id = "video"});
+  packet.binding_id = "video";
+  ASSERT_EQ(queue.Enqueue(std::move(packet), now),
+            DatagramEnqueueResult::kQueued);
+
+  EXPECT_EQ(queue.Pop(now), std::nullopt);
+}
+
 TEST(BoundedDatagramQueueTest, PurgeBindingRemovesRtxDeadlineState) {
   BoundedDatagramQueue queue(/*capacity=*/4, /*max_datagram_size=*/8);
   constexpr Timestamp now = Timestamp::Millis(100);
@@ -230,7 +245,7 @@ TEST(BoundedDatagramQueueTest, PurgeBindingRemovesRtxDeadlineState) {
             DatagramEnqueueResult::kQueued);
   std::optional<QueuedDatagram> sent = queue.Pop(now);
   ASSERT_TRUE(sent);
-  queue.RecordSubmitted(*sent);
+  queue.RecordSubmitted(*sent, now);
   queue.PurgeBinding("video");
   QueuedDatagram rtx =
       Datagram(2, DatagramPriority::kVideoDelta, now, TimeDelta::Seconds(1));
@@ -272,7 +287,7 @@ TEST(BoundedDatagramQueueTest, EvictsLargestBacklogWithinPriority) {
   EXPECT_EQ(queue.Pop(now), std::nullopt);
 }
 
-TEST(BoundedDatagramQueueTest, HoldsVideoUntilTheAccessUnitIsComplete) {
+TEST(BoundedDatagramQueueTest, StartsCompleteVideoAtTheFirstPacket) {
   BoundedDatagramQueue queue(/*capacity=*/4, /*max_datagram_size=*/8);
   constexpr Timestamp now = Timestamp::Millis(100);
   constexpr DatagramFrameId frame = {
@@ -292,6 +307,247 @@ TEST(BoundedDatagramQueueTest, HoldsVideoUntilTheAccessUnitIsComplete) {
             DatagramEnqueueResult::kQueued);
   EXPECT_EQ(queue.Pop(now)->bytes, (std::vector<uint8_t>{1}));
   EXPECT_EQ(queue.Pop(now)->bytes, (std::vector<uint8_t>{2}));
+}
+
+TEST(BoundedDatagramQueueTest, StartsVideoDeadlineWhenFrameCompletes) {
+  BoundedDatagramQueue queue(/*capacity=*/4, /*max_datagram_size=*/8);
+  constexpr Timestamp start = Timestamp::Millis(100);
+  constexpr DatagramFrameId frame = {
+      .ssrc = 7, .timestamp = 90000, .binding_id = "video"};
+  QueuedDatagram first = Datagram(1, DatagramPriority::kVideoDelta, start,
+                                  TimeDelta::Millis(100), frame);
+  first.binding_id = "video";
+  ASSERT_EQ(queue.Enqueue(std::move(first), start),
+            DatagramEnqueueResult::kQueued);
+
+  EXPECT_EQ(queue.PurgeExpired(start + TimeDelta::Millis(110)), 0u);
+  QueuedDatagram marker = Datagram(2, DatagramPriority::kVideoDelta,
+                                   start + TimeDelta::Millis(110),
+                                   TimeDelta::Millis(100), frame);
+  marker.binding_id = "video";
+  marker.frame_complete = true;
+  ASSERT_EQ(queue.Enqueue(std::move(marker),
+                          start + TimeDelta::Millis(110)),
+            DatagramEnqueueResult::kQueued);
+
+  EXPECT_EQ(queue.PurgeExpired(start + TimeDelta::Millis(209)), 0u);
+  EXPECT_EQ(queue.PurgeExpired(start + TimeDelta::Millis(211)), 2u);
+}
+
+TEST(BoundedDatagramQueueTest, IncompleteVideoExpiresOnlyAtAssemblyBoundary) {
+  BoundedDatagramQueue queue(/*capacity=*/4, /*max_datagram_size=*/8);
+  constexpr Timestamp start = Timestamp::Millis(100);
+  QueuedDatagram packet = Datagram(
+      1, DatagramPriority::kVideoDelta, start, TimeDelta::Millis(100),
+      DatagramFrameId{.ssrc = 7,
+                      .timestamp = 90000,
+                      .binding_id = "video"});
+  packet.binding_id = "video";
+  ASSERT_EQ(queue.Enqueue(std::move(packet), start),
+            DatagramEnqueueResult::kQueued);
+
+  EXPECT_EQ(queue.PurgeExpired(start + TimeDelta::Millis(999)), 0u);
+  EXPECT_EQ(queue.PurgeExpired(start + TimeDelta::Seconds(1)), 1u);
+}
+
+TEST(BoundedDatagramQueueTest, DoesNotExpireVideoAfterSubmissionStarts) {
+  BoundedDatagramQueue queue(/*capacity=*/4, /*max_datagram_size=*/8);
+  constexpr Timestamp start = Timestamp::Millis(100);
+  constexpr DatagramFrameId frame = {
+      .ssrc = 7, .timestamp = 90000, .binding_id = "video"};
+  QueuedDatagram first = Datagram(1, DatagramPriority::kVideoDelta, start,
+                                  TimeDelta::Millis(100), frame);
+  first.binding_id = "video";
+  QueuedDatagram marker = Datagram(2, DatagramPriority::kVideoDelta, start,
+                                   TimeDelta::Millis(100), frame);
+  marker.binding_id = "video";
+  marker.frame_complete = true;
+  ASSERT_EQ(queue.Enqueue(std::move(first), start),
+            DatagramEnqueueResult::kQueued);
+  ASSERT_EQ(queue.Enqueue(std::move(marker), start),
+            DatagramEnqueueResult::kQueued);
+  std::optional<QueuedDatagram> submitted = queue.Pop(start);
+  ASSERT_TRUE(submitted);
+  EXPECT_TRUE(submitted->committed);
+
+  EXPECT_EQ(queue.PurgeExpired(start + TimeDelta::Millis(101)), 0u);
+  std::optional<QueuedDatagram> remaining =
+      queue.Pop(start + TimeDelta::Millis(101));
+  ASSERT_TRUE(remaining);
+  EXPECT_TRUE(remaining->committed);
+}
+
+TEST(BoundedDatagramQueueTest, AcceptsLatePacketAfterReservedFrameStarts) {
+  BoundedDatagramQueue queue(/*capacity=*/4, /*max_datagram_size=*/8,
+                             /*byte_capacity=*/16);
+  constexpr Timestamp start = Timestamp::Millis(100);
+  constexpr DatagramFrameId frame = {
+      .ssrc = 7, .timestamp = 90000, .binding_id = "video"};
+  QueuedDatagram reservation = Datagram(0, DatagramPriority::kVideoKey, start,
+                                        TimeDelta::Millis(100), frame);
+  reservation.binding_id = "video";
+  ASSERT_TRUE(queue.ReserveVideoFrame(std::move(reservation), 2, 2, start));
+  QueuedDatagram first = Datagram(1, DatagramPriority::kVideoKey, start,
+                                  TimeDelta::Millis(100), frame);
+  first.binding_id = "video";
+  first.contains_sps = true;
+  ASSERT_EQ(queue.Enqueue(std::move(first), start),
+            DatagramEnqueueResult::kQueued);
+  auto sent = queue.Pop(start);
+  ASSERT_TRUE(sent);
+  queue.RecordSubmitted(*sent, start);
+
+  QueuedDatagram marker = Datagram(2, DatagramPriority::kVideoKey,
+                                   start + TimeDelta::Millis(101),
+                                   TimeDelta::Millis(100), frame);
+  marker.binding_id = "video";
+  marker.contains_pps = true;
+  marker.contains_idr = true;
+  marker.frame_complete = true;
+  EXPECT_EQ(queue.Enqueue(std::move(marker),
+                          start + TimeDelta::Millis(101)),
+            DatagramEnqueueResult::kQueued);
+  EXPECT_TRUE(queue.Pop(start + TimeDelta::Millis(101)));
+}
+
+TEST(BoundedDatagramQueueTest, ReservedVideoCanStreamBeforeMarker) {
+  BoundedDatagramQueue queue(/*capacity=*/2, /*max_datagram_size=*/8,
+                             /*byte_capacity=*/16);
+  constexpr Timestamp start = Timestamp::Millis(100);
+  constexpr DatagramFrameId frame = {
+      .ssrc = 7, .timestamp = 90000, .binding_id = "video"};
+  QueuedDatagram reservation = Datagram(0, DatagramPriority::kVideoKey, start,
+                                        TimeDelta::Millis(150), frame);
+  reservation.binding_id = "video";
+  reservation.independent_frame = true;
+  ASSERT_TRUE(queue.ReserveVideoFrame(std::move(reservation), 2, 2, start));
+
+  QueuedDatagram first = Datagram(1, DatagramPriority::kVideoDelta, start,
+                                  TimeDelta::Millis(100), frame);
+  first.binding_id = "video";
+  first.committed = true;
+  ASSERT_EQ(queue.Enqueue(std::move(first), start),
+            DatagramEnqueueResult::kQueued);
+  std::optional<QueuedDatagram> popped = queue.Pop(start);
+  ASSERT_TRUE(popped);
+  EXPECT_TRUE(popped->committed);
+  EXPECT_EQ(popped->priority, DatagramPriority::kVideoKey);
+}
+
+TEST(BoundedDatagramQueueTest, ReservedKeyFrameRepairsBrokenChainOnMarker) {
+  BoundedDatagramQueue queue(/*capacity=*/4, /*max_datagram_size=*/8,
+                             /*byte_capacity=*/16);
+  constexpr Timestamp start = Timestamp::Millis(100);
+  constexpr DatagramFrameId frame = {
+      .ssrc = 7, .timestamp = 90000, .binding_id = "video"};
+  queue.RequireIndependentVideoFrame("video", 7, start);
+  QueuedDatagram reservation = Datagram(0, DatagramPriority::kVideoKey, start,
+                                        TimeDelta::Millis(150), frame);
+  reservation.binding_id = "video";
+  reservation.independent_frame = true;
+  ASSERT_TRUE(queue.ReserveVideoFrame(std::move(reservation), 2, 2, start));
+  QueuedDatagram first = Datagram(1, DatagramPriority::kVideoDelta, start,
+                                  TimeDelta::Millis(100), frame);
+  first.binding_id = "video";
+  QueuedDatagram marker = Datagram(2, DatagramPriority::kVideoKey, start,
+                                   TimeDelta::Millis(150), frame);
+  marker.binding_id = "video";
+  marker.contains_idr = true;
+  marker.contains_sps = true;
+  marker.contains_pps = true;
+  marker.frame_complete = true;
+  ASSERT_EQ(queue.Enqueue(std::move(first), start),
+            DatagramEnqueueResult::kQueued);
+  ASSERT_EQ(queue.Enqueue(std::move(marker), start),
+            DatagramEnqueueResult::kQueued);
+  auto submitted_first = queue.Pop(start);
+  auto submitted_marker = queue.Pop(start);
+  ASSERT_TRUE(submitted_first);
+  ASSERT_TRUE(submitted_marker);
+  queue.RecordSubmitted(*submitted_first, start);
+  queue.RecordSubmitted(*submitted_marker, start);
+
+  QueuedDatagram delta = Datagram(3, DatagramPriority::kVideoDelta, start,
+                                  TimeDelta::Seconds(1),
+                                  DatagramFrameId{.ssrc = 7,
+                                                  .timestamp = 93000,
+                                                  .binding_id = "video"});
+  delta.binding_id = "video";
+  delta.frame_complete = true;
+  EXPECT_EQ(queue.Enqueue(std::move(delta), start),
+            DatagramEnqueueResult::kQueued);
+}
+
+TEST(BoundedDatagramQueueTest, ReservedVideoSurvivesSchedulingDelay) {
+  BoundedDatagramQueue queue(/*capacity=*/4, /*max_datagram_size=*/8,
+                             /*byte_capacity=*/16);
+  constexpr Timestamp start = Timestamp::Millis(100);
+  constexpr DatagramFrameId frame = {
+      .ssrc = 7, .timestamp = 90000, .binding_id = "video"};
+  QueuedDatagram reservation = Datagram(0, DatagramPriority::kVideoDelta,
+                                        start, TimeDelta::Millis(100), frame);
+  reservation.binding_id = "video";
+  ASSERT_TRUE(queue.ReserveVideoFrame(std::move(reservation), 1, 1, start));
+
+  QueuedDatagram packet = Datagram(1, DatagramPriority::kVideoDelta, start,
+                                   TimeDelta::Millis(100), frame);
+  packet.binding_id = "video";
+  packet.frame_complete = true;
+  EXPECT_EQ(queue.Enqueue(std::move(packet),
+                          start + TimeDelta::Millis(101)),
+            DatagramEnqueueResult::kQueued);
+  EXPECT_TRUE(queue.Pop(start + TimeDelta::Millis(101)));
+  EXPECT_EQ(queue.expired_drops(), 0u);
+}
+
+TEST(BoundedDatagramQueueTest, ReservationRejectsWholeFrameBeforePacketsQueue) {
+  BoundedDatagramQueue queue(/*capacity=*/1, /*max_datagram_size=*/8,
+                             /*byte_capacity=*/8);
+  constexpr Timestamp start = Timestamp::Millis(100);
+  QueuedDatagram frame = Datagram(0, DatagramPriority::kVideoDelta, start,
+                                  TimeDelta::Millis(100),
+                                  DatagramFrameId{.ssrc = 7,
+                                                  .timestamp = 90000,
+                                                  .binding_id = "video"});
+  frame.binding_id = "video";
+
+  EXPECT_FALSE(queue.ReserveVideoFrame(std::move(frame), 2, 2, start));
+  EXPECT_EQ(queue.queue_full_drops(), 2u);
+  EXPECT_EQ(queue.size(), 0u);
+}
+
+TEST(BoundedDatagramQueueTest, ReservedFrameCannotBeEvictedByLaterVideo) {
+  BoundedDatagramQueue queue(/*capacity=*/4, /*max_datagram_size=*/8,
+                             /*byte_capacity=*/16);
+  constexpr Timestamp start = Timestamp::Millis(100);
+  constexpr DatagramFrameId committed = {
+      .ssrc = 7, .timestamp = 90000, .binding_id = "video"};
+  QueuedDatagram reservation = Datagram(0, DatagramPriority::kVideoDelta,
+                                        start, TimeDelta::Millis(100),
+                                        committed);
+  reservation.binding_id = "video";
+  ASSERT_TRUE(queue.ReserveVideoFrame(std::move(reservation), 3, 12, start));
+
+  QueuedDatagram first = Datagram(1, DatagramPriority::kVideoDelta, start,
+                                  TimeDelta::Millis(100), committed);
+  first.bytes.resize(4);
+  first.binding_id = "video";
+  first.committed = true;
+  ASSERT_EQ(queue.Enqueue(std::move(first), start),
+            DatagramEnqueueResult::kQueued);
+
+  QueuedDatagram later = Datagram(2, DatagramPriority::kVideoKey, start,
+                                  TimeDelta::Millis(150),
+                                  DatagramFrameId{.ssrc = 8,
+                                                  .timestamp = 93000,
+                                                  .binding_id = "other"});
+  later.bytes.resize(8);
+  later.binding_id = "other";
+  later.frame_complete = true;
+  EXPECT_EQ(queue.Enqueue(std::move(later), start),
+            DatagramEnqueueResult::kQueueFull);
+  ASSERT_TRUE(queue.Pop(start));
+  EXPECT_EQ(queue.Pop(start), std::nullopt);
 }
 
 TEST(BoundedDatagramQueueTest, EnforcesConnectionByteCapacity) {
@@ -344,7 +600,7 @@ TEST(BoundedDatagramQueueTest, OnlyCompleteIndependentFrameRepairsBrokenChain) {
             DatagramEnqueueResult::kDropped);
   std::optional<QueuedDatagram> incomplete = queue.Pop(start);
   ASSERT_TRUE(incomplete);
-  queue.RecordSubmitted(*incomplete);
+  queue.RecordSubmitted(*incomplete, start);
 
   QueuedDatagram recovery = Datagram(4, DatagramPriority::kVideoKey, start,
                                      TimeDelta::Seconds(1), frame(99000));
@@ -357,7 +613,7 @@ TEST(BoundedDatagramQueueTest, OnlyCompleteIndependentFrameRepairsBrokenChain) {
             DatagramEnqueueResult::kQueued);
   std::optional<QueuedDatagram> recovered = queue.Pop(start);
   ASSERT_TRUE(recovered);
-  queue.RecordSubmitted(*recovered);
+  queue.RecordSubmitted(*recovered, start);
   QueuedDatagram delta = Datagram(5, DatagramPriority::kVideoDelta, start,
                                   TimeDelta::Seconds(1), frame(102000));
   delta.binding_id = "video";
@@ -394,7 +650,7 @@ TEST(BoundedDatagramQueueTest,
             DatagramEnqueueResult::kQueued);
   auto submitted = queue.Pop(now);
   ASSERT_TRUE(submitted);
-  queue.RecordSubmitted(*submitted);
+  queue.RecordSubmitted(*submitted, now);
 
   QueuedDatagram next = Datagram(3, DatagramPriority::kVideoDelta, now,
                                  TimeDelta::Seconds(1), frame(96000));
@@ -518,6 +774,31 @@ TEST(BoundedDatagramQueueTest, RejectsLowerPriorityPacketWhenFull) {
   EXPECT_EQ(queue.queue_full_drops(), 1u);
 }
 
+TEST(BoundedDatagramQueueTest, DoesNotReorderLaterKeyFrameAheadOfDelta) {
+  BoundedDatagramQueue queue(/*capacity=*/4, /*max_datagram_size=*/8);
+  constexpr Timestamp now = Timestamp::Millis(100);
+  const auto frame = [](uint32_t timestamp) {
+    return DatagramFrameId{
+        .ssrc = 9, .timestamp = timestamp, .binding_id = "video"};
+  };
+  QueuedDatagram delta = Datagram(1, DatagramPriority::kVideoDelta, now,
+                                  TimeDelta::Seconds(1), frame(90000));
+  delta.binding_id = "video";
+  delta.frame_complete = true;
+  QueuedDatagram key = Datagram(2, DatagramPriority::kVideoKey, now,
+                                TimeDelta::Seconds(1), frame(93000));
+  key.binding_id = "video";
+  key.frame_complete = true;
+  key.contains_idr = key.contains_sps = key.contains_pps = true;
+  ASSERT_EQ(queue.Enqueue(std::move(delta), now),
+            DatagramEnqueueResult::kQueued);
+  ASSERT_EQ(queue.Enqueue(std::move(key), now),
+            DatagramEnqueueResult::kQueued);
+
+  ASSERT_TRUE(queue.Pop(now));
+  EXPECT_EQ(queue.Pop(now)->bytes, (std::vector<uint8_t>{2}));
+}
+
 TEST(BoundedDatagramQueueTest, EvictsWholeOldVideoFrameForAudio) {
   BoundedDatagramQueue queue(/*capacity=*/2, /*max_datagram_size=*/8);
   constexpr Timestamp now = Timestamp::Millis(100);
@@ -605,7 +886,7 @@ TEST(BoundedDatagramQueueTest, KeepsKeyFramePolicyForLaterPackets) {
             DatagramEnqueueResult::kQueued);
   std::optional<QueuedDatagram> submitted = queue.Pop(start);
   ASSERT_TRUE(submitted.has_value());
-  queue.RecordSubmitted(*submitted);
+  queue.RecordSubmitted(*submitted, start);
   EXPECT_EQ(queue.Enqueue(Datagram(2, DatagramPriority::kVideoDelta,
                                    start + TimeDelta::Millis(20),
                                    TimeDelta::Millis(100), frame),
@@ -629,7 +910,7 @@ TEST(BoundedDatagramQueueTest, PromotesFrameAfterEarlierPacketWasSubmitted) {
             DatagramEnqueueResult::kQueued);
   std::optional<QueuedDatagram> submitted = queue.Pop(start);
   ASSERT_TRUE(submitted.has_value());
-  queue.RecordSubmitted(*submitted);
+  queue.RecordSubmitted(*submitted, start);
 
   EXPECT_EQ(queue.Enqueue(Datagram(2, DatagramPriority::kVideoKey,
                                    start + TimeDelta::Millis(10),
@@ -651,7 +932,7 @@ TEST(BoundedDatagramQueueTest, PromotesFrameAfterEarlierPacketWasSubmitted) {
   ASSERT_TRUE(queue.Pop(start + TimeDelta::Millis(120)).has_value());
   std::optional<QueuedDatagram> rtx = queue.Pop(start + TimeDelta::Millis(120));
   ASSERT_TRUE(rtx.has_value());
-  EXPECT_EQ(rtx->deadline, start + TimeDelta::Millis(150));
+  EXPECT_EQ(rtx->deadline, start + TimeDelta::Millis(320));
 }
 
 TEST(BoundedDatagramQueueTest, PmtuShrinkPurgesWholeVideoFrame) {
@@ -678,7 +959,7 @@ TEST(BoundedDatagramQueueTest, PmtuShrinkPurgesWholeVideoFrame) {
   EXPECT_EQ(queue.pmtu_purge_drops(), 2u);
 }
 
-TEST(BoundedDatagramQueueTest, RtxInheritsOriginalAbsoluteDeadline) {
+TEST(BoundedDatagramQueueTest, RtxGetsFreshDeadlineWithinRepairWindow) {
   BoundedDatagramQueue queue(/*capacity=*/3, /*max_datagram_size=*/8);
   constexpr Timestamp start = Timestamp::Millis(100);
   constexpr DatagramPacketId primary = {.ssrc = 7, .sequence_number = 65535};
@@ -691,17 +972,71 @@ TEST(BoundedDatagramQueueTest, RtxInheritsOriginalAbsoluteDeadline) {
             DatagramEnqueueResult::kQueued);
   std::optional<QueuedDatagram> submitted = queue.Pop(start);
   ASSERT_TRUE(submitted.has_value());
-  queue.RecordSubmitted(*submitted);
+  queue.RecordSubmitted(*submitted, start);
 
   EXPECT_EQ(queue.Enqueue({.bytes = {2},
-                           .enqueue_time = start + TimeDelta::Millis(50),
+                           .enqueue_time = start + TimeDelta::Millis(110),
                            .deadline = Timestamp::PlusInfinity(),
                            .priority = DatagramPriority::kVideoDelta,
                            .original_packet_id = primary},
-                          start + TimeDelta::Millis(50)),
+                          start + TimeDelta::Millis(110)),
             DatagramEnqueueResult::kQueued);
   ASSERT_TRUE(queue.front());
-  EXPECT_EQ(queue.front()->deadline, start + TimeDelta::Millis(100));
+  EXPECT_EQ(queue.front()->deadline, start + TimeDelta::Millis(310));
+}
+
+TEST(BoundedDatagramQueueTest, RepairWindowStartsWhenPrimaryIsSubmitted) {
+  BoundedDatagramQueue queue(/*capacity=*/3, /*max_datagram_size=*/8);
+  constexpr Timestamp start = Timestamp::Millis(100);
+  constexpr DatagramPacketId primary = {.ssrc = 7, .sequence_number = 42};
+  ASSERT_EQ(queue.Enqueue({.bytes = {1},
+                           .enqueue_time = start,
+                           .deadline = start + TimeDelta::Seconds(2),
+                           .priority = DatagramPriority::kVideoDelta,
+                           .packet_id = primary},
+                          start),
+            DatagramEnqueueResult::kQueued);
+  auto sent = queue.Pop(start + TimeDelta::Millis(750));
+  ASSERT_TRUE(sent);
+  queue.RecordSubmitted(*sent, start + TimeDelta::Millis(750));
+
+  EXPECT_EQ(queue.Enqueue({.bytes = {2},
+                           .enqueue_time = start + TimeDelta::Millis(1500),
+                           .deadline = Timestamp::PlusInfinity(),
+                           .priority = DatagramPriority::kVideoDelta,
+                           .original_packet_id = primary},
+                          start + TimeDelta::Millis(1500)),
+            DatagramEnqueueResult::kQueued);
+}
+
+TEST(BoundedDatagramQueueTest, RtxForSubmittedVideoFrameCanBePopped) {
+  BoundedDatagramQueue queue(/*capacity=*/3, /*max_datagram_size=*/8);
+  constexpr Timestamp start = Timestamp::Millis(100);
+  constexpr DatagramFrameId frame = {
+      .ssrc = 7, .timestamp = 90000, .binding_id = "video"};
+  constexpr DatagramPacketId primary_id = {
+      .ssrc = 7, .sequence_number = 42};
+  QueuedDatagram primary =
+      Datagram(1, DatagramPriority::kVideoDelta, start,
+               TimeDelta::Millis(100), frame);
+  primary.binding_id = "video";
+  primary.packet_id = primary_id;
+  primary.frame_complete = true;
+  ASSERT_EQ(queue.Enqueue(std::move(primary), start),
+            DatagramEnqueueResult::kQueued);
+  std::optional<QueuedDatagram> submitted = queue.Pop(start);
+  ASSERT_TRUE(submitted.has_value());
+  queue.RecordSubmitted(*submitted, start);
+
+  QueuedDatagram rtx =
+      Datagram(2, DatagramPriority::kVideoDelta,
+               start + TimeDelta::Millis(50), TimeDelta::Seconds(1));
+  rtx.binding_id = "video";
+  rtx.original_packet_id = primary_id;
+  ASSERT_EQ(queue.Enqueue(std::move(rtx), start + TimeDelta::Millis(50)),
+            DatagramEnqueueResult::kQueued);
+
+  EXPECT_TRUE(queue.Pop(start + TimeDelta::Millis(50)).has_value());
 }
 
 TEST(BoundedDatagramQueueTest, RejectsOrphanAndExpiredRtx) {
@@ -731,17 +1066,57 @@ TEST(BoundedDatagramQueueTest, CountsExpiredRtxAsExpiredInsteadOfOrphan) {
             DatagramEnqueueResult::kQueued);
   std::optional<QueuedDatagram> submitted = queue.Pop(start);
   ASSERT_TRUE(submitted.has_value());
-  queue.RecordSubmitted(*submitted);
+  queue.RecordSubmitted(*submitted, start);
 
   EXPECT_EQ(queue.Enqueue({.bytes = {2},
-                           .enqueue_time = start + TimeDelta::Millis(101),
+                           .enqueue_time = start + TimeDelta::Millis(1001),
                            .deadline = Timestamp::PlusInfinity(),
                            .priority = DatagramPriority::kVideoDelta,
                            .original_packet_id = primary},
-                          start + TimeDelta::Millis(101)),
+                          start + TimeDelta::Millis(1001)),
             DatagramEnqueueResult::kInvalid);
   EXPECT_EQ(queue.expired_drops(), 1u);
   EXPECT_EQ(queue.invalid_drops(), 0u);
+}
+
+TEST(BoundedDatagramQueueTest, ExpiredRtxDoesNotBreakPrimaryVideoChain) {
+  BoundedDatagramQueue queue(/*capacity=*/8, /*max_datagram_size=*/8);
+  constexpr Timestamp start = Timestamp::Millis(100);
+  const DatagramFrameId frame = {
+      .ssrc = 7, .timestamp = 90000, .binding_id = "video"};
+  QueuedDatagram primary = Datagram(1, DatagramPriority::kVideoDelta, start,
+                                    TimeDelta::Seconds(1), frame);
+  primary.binding_id = "video";
+  primary.packet_id = DatagramPacketId{.ssrc = 7, .sequence_number = 1};
+  primary.frame_complete = true;
+  ASSERT_EQ(queue.Enqueue(std::move(primary), start),
+            DatagramEnqueueResult::kQueued);
+  auto submitted = queue.Pop(start);
+  ASSERT_TRUE(submitted);
+  queue.RecordSubmitted(*submitted, start);
+
+  QueuedDatagram rtx = Datagram(2, DatagramPriority::kVideoDelta,
+                                start + TimeDelta::Millis(1),
+                                TimeDelta::Millis(10));
+  rtx.binding_id = "video";
+  rtx.original_packet_id = DatagramPacketId{.ssrc = 7, .sequence_number = 1};
+  ASSERT_EQ(queue.Enqueue(std::move(rtx), start + TimeDelta::Millis(1)),
+            DatagramEnqueueResult::kQueued);
+  ASSERT_TRUE(queue.front());
+  EXPECT_TRUE(queue.front()->original_packet_id.has_value());
+  EXPECT_EQ(queue.front()->deadline, start + TimeDelta::Millis(201));
+  EXPECT_EQ(queue.PurgeExpired(start + TimeDelta::Millis(202)), 1u);
+
+  QueuedDatagram next = Datagram(3, DatagramPriority::kVideoDelta, start,
+                                 TimeDelta::Seconds(1),
+                                 DatagramFrameId{.ssrc = 7,
+                                                 .timestamp = 93000,
+                                                 .binding_id = "video"});
+  next.binding_id = "video";
+  next.frame_complete = true;
+  EXPECT_EQ(queue.Enqueue(std::move(next), start + TimeDelta::Millis(202)),
+            DatagramEnqueueResult::kQueued);
+  EXPECT_EQ(queue.dependency_drops(), 0u);
 }
 
 TEST(BoundedDatagramQueueTest, ClearDropsAllPendingMedia) {

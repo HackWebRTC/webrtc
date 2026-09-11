@@ -52,11 +52,16 @@ class RoqPacketTransport final : public Transport {
                const PacketOptions& options) override;
   bool SendRtcp(std::span<const uint8_t> packet,
                 const PacketOptions& options) override;
+  RtpPacingMode GetRtpPacingMode() const override {
+    return RtpPacingMode::kExternalTransport;
+  }
+  bool ReserveRtpBatch(const RtpPacketBatch& batch) override;
   uint64_t accepted_rtp_packets() const {
     return accepted_rtp_packets_->load();
   }
 
  private:
+  struct KeyFrameSubmissionState;
   bool Send(uint64_t flow_id,
             std::span<const uint8_t> packet,
             const PacketOptions& options);
@@ -65,8 +70,7 @@ class RoqPacketTransport final : public Transport {
   const RoqPacketTransportConfig config_;
   std::shared_ptr<std::atomic<uint64_t>> accepted_rtp_packets_ =
       std::make_shared<std::atomic<uint64_t>>(0);
-  std::shared_ptr<std::atomic<bool>> key_frame_submitted_ =
-      std::make_shared<std::atomic<bool>>(false);
+  std::shared_ptr<KeyFrameSubmissionState> key_frame_submission_state_;
 };
 
 }  // namespace webrtc::roq
