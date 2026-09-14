@@ -53,8 +53,7 @@ struct RoqPacketTransport::KeyFrameSubmissionState {
       ++frame.submitted_packets;
       if (frame.marker_seen &&
           frame.submitted_packets == frame.registered_packets) {
-        if (!reported && frame.contains_idr && submitted_sps && submitted_pps) {
-          reported = true;
+        if (frame.contains_idr && submitted_sps && submitted_pps) {
           callback = on_submitted;
           ssrc = frame.ssrc;
           timestamp = metadata.timestamp;
@@ -71,7 +70,6 @@ struct RoqPacketTransport::KeyFrameSubmissionState {
   std::map<uint32_t, Frame> frames;
   bool submitted_sps = false;
   bool submitted_pps = false;
-  bool reported = false;
   std::function<void(uint32_t, uint32_t, uint16_t)> on_submitted;
 };
 

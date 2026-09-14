@@ -150,7 +150,7 @@ TEST(RoqPacketTransportTest, DeclaresExternalTransportPacing) {
   EXPECT_EQ(transport.GetRtpPacingMode(), RtpPacingMode::kExternalTransport);
 }
 
-TEST(RoqPacketTransportTest, ReportsOnlyTheFirstSubmittedKeyVideoFrame) {
+TEST(RoqPacketTransportTest, ReportsEachSubmittedKeyVideoFrame) {
   SimulatedClock clock(Timestamp::Millis(100));
   FakeRoqSession session;
   int submitted_key_frames = 0;
@@ -172,7 +172,7 @@ TEST(RoqPacketTransportTest, ReportsOnlyTheFirstSubmittedKeyVideoFrame) {
   ASSERT_TRUE(session.on_submitted_);
   session.on_submitted_();
 
-  EXPECT_EQ(submitted_key_frames, 1);
+  EXPECT_EQ(submitted_key_frames, 2);
 }
 
 TEST(RoqPacketTransportTest, ReportsKeyFrameOnlyAfterCompleteRecoveryUnitSubmits) {
