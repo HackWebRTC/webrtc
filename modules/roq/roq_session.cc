@@ -218,7 +218,8 @@ class RoqSessionImpl final : public RoqSession {
                   config_.outgoing_queue_byte_capacity),
         receive_flows_(config_.receive_flow_ids.empty()
                            ? config_.allowed_flow_ids
-                           : config_.receive_flow_ids),
+                           : config_.receive_flow_ids,
+                       config_.buffer_dynamic_receive_flows),
         send_flow_ids_(config_.allowed_flow_ids) {}
 
   ~RoqSessionImpl() override {
@@ -313,7 +314,7 @@ class RoqSessionImpl final : public RoqSession {
     ReceiveCallback callback;
     {
       std::lock_guard lock(mutex_);
-      released = receive_flows_.Update(std::move(flow_ids));
+      released = receive_flows_.Update(std::move(flow_ids), config_.clock->CurrentTime());
       CopyFlowStatsLocked();
       callback = receive_callback_;
     }
@@ -324,6 +325,11 @@ class RoqSessionImpl final : public RoqSession {
   }
 
   void BeginFlowUpdate() override { BeginReceiveFlowUpdate(); }
+
+  void PrepareReceiveFlowIds(std::vector<uint64_t> flow_ids) override {
+    std::lock_guard lock(mutex_);
+    receive_flows_.Prepare(std::move(flow_ids));
+  }
 
   void CommitFlowUpdate(std::vector<RoqFlowConfig> flows) override {
     std::vector<ReceiveFlowConfig> receive_flows;
@@ -341,7 +347,7 @@ class RoqSessionImpl final : public RoqSession {
     ReceiveCallback callback;
     {
       std::lock_guard lock(mutex_);
-      released = receive_flows_.Update(std::move(receive_flows));
+      released = receive_flows_.Update(std::move(receive_flows), config_.clock->CurrentTime());
       send_flow_ids_ = std::move(send_flows);
       CopyFlowStatsLocked();
       callback = receive_callback_;
@@ -675,7 +681,7 @@ class RoqSessionImpl final : public RoqSession {
             reinterpret_cast<const uint8_t*>(reason.data()), reason.size());
         return true;
       }
-      if (route == ReceiveFlowRoute::kBuffered)
+      if (route != ReceiveFlowRoute::kDeliver)
         continue;
       ReceiveCallback callback;
       {

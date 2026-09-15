@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <deque>
 #include <map>
+#include <set>
 #include <vector>
 
 #include "api/roq/roq_session.h"
@@ -28,10 +29,15 @@ struct ReceiveFlowConfig {
 class ReceiveFlowRegistry {
  public:
   explicit ReceiveFlowRegistry(std::vector<uint64_t> flow_ids);
+  ReceiveFlowRegistry(std::vector<uint64_t> flow_ids, bool buffer_dynamic_flows);
 
   void BeginUpdate(Timestamp now);
+  void Prepare(std::vector<uint64_t> flow_ids);
   ReceiveFlowRoute Route(const RoqReceivedPacket& packet, Timestamp now);
   std::vector<RoqReceivedPacket> Update(std::vector<uint64_t> flow_ids);
+  std::vector<RoqReceivedPacket> Update(std::vector<uint64_t> flow_ids, Timestamp now);
+  std::vector<RoqReceivedPacket> Update(
+      std::vector<ReceiveFlowConfig> flow_configs, Timestamp now);
   std::vector<RoqReceivedPacket> Update(
       std::vector<ReceiveFlowConfig> flow_configs);
 
@@ -43,6 +49,7 @@ class ReceiveFlowRegistry {
   struct BufferedPacket {
     RoqReceivedPacket packet;
     size_t bytes = 0;
+    Timestamp received_at = Timestamp::MinusInfinity();
   };
 
   bool IsKnown(uint64_t flow_id) const;
@@ -50,6 +57,7 @@ class ReceiveFlowRegistry {
   void DropOldestForFlow(uint64_t flow_id);
   ReceiveFlowRoute RecordUnknown(const RoqReceivedPacket& packet,
                                  Timestamp now);
+  void ExpirePending(Timestamp now);
 
   static constexpr size_t kMaximumPackets = 32;
   static constexpr size_t kMaximumPacketsPerFlow = 24;
@@ -60,6 +68,10 @@ class ReceiveFlowRegistry {
   static constexpr TimeDelta kUnknownWindow = TimeDelta::Seconds(1);
 
   std::map<uint64_t, ReceiveFlowPolicy> flows_;
+  std::set<uint64_t> retired_flows_;
+  std::set<uint64_t> preparing_flows_;
+  bool buffer_dynamic_flows_ = false;
+  bool unknown_abuse_ = false;
   std::deque<BufferedPacket> pending_;
   size_t pending_bytes_ = 0;
   size_t buffered_count_ = 0;

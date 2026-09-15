@@ -104,6 +104,9 @@ struct RoqSessionConfig {
   TimeDelta resumption_cache_max_age = TimeDelta::Seconds(24 * 60 * 60);
   std::function<Timestamp()> resumption_clock;
   bool allow_early_datagrams = false;
+  // Buffer new receive flows for at most 100 ms while unsolicited control
+  // updates install their mappings. Disabled for static-flow applications.
+  bool buffer_dynamic_receive_flows = false;
   size_t maximum_udp_payload = 1350;
   uint64_t max_idle_timeout_ms = 5000;
   size_t outgoing_queue_capacity = 512;
@@ -229,6 +232,8 @@ class RoqSession {
   virtual void BeginReceiveFlowUpdate() = 0;
   virtual void UpdateReceiveFlowIds(std::vector<uint64_t> flow_ids) = 0;
   virtual void BeginFlowUpdate() { BeginReceiveFlowUpdate(); }
+  // Control has validated these flows, but their media consumers are not ready.
+  virtual void PrepareReceiveFlowIds(std::vector<uint64_t>) {}
   virtual void CommitFlowUpdate(std::vector<RoqFlowConfig> flows) {
     std::vector<uint64_t> receive_flow_ids;
     receive_flow_ids.reserve(flows.size());

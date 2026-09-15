@@ -157,5 +157,77 @@ TEST(ReceiveFlowRegistryTest, UnknownFlowAbuseWindowExpires) {
       ReceiveFlowRoute::kDiscard);
 }
 
+TEST(ReceiveFlowRegistryTest, DynamicFlowWaitsForUnsolicitedMapping) {
+  ReceiveFlowRegistry registry({1}, true);
+  EXPECT_EQ(registry.Route({.flow_id = 7, .packet = {10}}, Timestamp::Millis(100)),
+            ReceiveFlowRoute::kBuffered);
+  EXPECT_EQ(registry.Route({.flow_id = 8, .packet = {20}}, Timestamp::Millis(101)),
+            ReceiveFlowRoute::kBuffered);
+  registry.BeginUpdate(Timestamp::Millis(105));
+  // Installing the video flow first must not drop pending audio.
+  auto first = registry.Update({1, 7}, Timestamp::Millis(110));
+  ASSERT_EQ(first.size(), 1u);
+  EXPECT_EQ(first[0].packet, std::vector<uint8_t>({10}));
+  auto second = registry.Update({1, 7, 8}, Timestamp::Millis(115));
+  ASSERT_EQ(second.size(), 1u);
+  EXPECT_EQ(second[0].packet, std::vector<uint8_t>({20}));
+}
+
+TEST(ReceiveFlowRegistryTest, DynamicFlowGraceExpiresWithoutAnotherPacket) {
+  ReceiveFlowRegistry registry({1}, true);
+  ASSERT_EQ(registry.Route({.flow_id = 7, .packet = {10}}, Timestamp::Millis(100)),
+            ReceiveFlowRoute::kBuffered);
+  EXPECT_TRUE(registry.Update({1, 7}, Timestamp::Millis(201)).empty());
+  EXPECT_EQ(registry.dropped(), 1u);
+}
+
+TEST(ReceiveFlowRegistryTest, DynamicFlowAbuseCannotExtendGraceForever) {
+  ReceiveFlowRegistry registry({1}, true);
+  // 24 retained packets plus 31 evicted unannounced packets.
+  for (int i = 0; i < 55; ++i)
+    EXPECT_EQ(registry.Route({.flow_id = 7, .packet = {10}}, Timestamp::Millis(100)),
+              ReceiveFlowRoute::kBuffered);
+  EXPECT_EQ(registry.Route({.flow_id = 7, .packet = {10}}, Timestamp::Millis(101)),
+            ReceiveFlowRoute::kClose);
+}
+
+TEST(ReceiveFlowRegistryTest, RemovedAndUnsupportedDynamicFlowsStayDiscarded) {
+  ReceiveFlowRegistry registry({1}, true);
+  registry.Update({{2, ReceiveFlowPolicy::kDiscard}}, Timestamp::Millis(100));
+  EXPECT_EQ(registry.Route({.flow_id = 1, .packet = {10}}, Timestamp::Millis(101)),
+            ReceiveFlowRoute::kDiscard);
+  EXPECT_EQ(registry.Route({.flow_id = 2, .packet = {10}}, Timestamp::Millis(102)),
+            ReceiveFlowRoute::kDiscard);
+  registry.Update({{3, ReceiveFlowPolicy::kDeliver}}, Timestamp::Millis(105));
+  EXPECT_EQ(registry.Route({.flow_id = 2, .packet = {10}}, Timestamp::Millis(106)),
+            ReceiveFlowRoute::kDiscard);
+}
+
+TEST(ReceiveFlowRegistryTest, DynamicFlowTrafficCannotExtendAnotherPacketsLifetime) {
+  ReceiveFlowRegistry registry({1}, true);
+  registry.Route({.flow_id = 7, .packet = {10}}, Timestamp::Millis(100));
+  registry.Route({.flow_id = 8, .packet = {20}}, Timestamp::Millis(190));
+  registry.BeginUpdate(Timestamp::Millis(199));
+  auto released = registry.Update({1, 7, 8}, Timestamp::Millis(201));
+  ASSERT_EQ(released.size(), 1u);
+  EXPECT_EQ(released.front().flow_id, 8u);
+  EXPECT_EQ(registry.dropped(), 1u);
+}
+
+TEST(ReceiveFlowRegistryTest, AnnouncedFlowDoesNotCountSlowMediaSetupAsAbuse) {
+  ReceiveFlowRegistry registry({1}, true);
+  registry.Prepare({7});
+  for (int i = 0; i < 100; ++i) {
+    ASSERT_EQ(registry.Route({.flow_id = 7, .packet = {static_cast<uint8_t>(i)}},
+                            Timestamp::Millis(100 + i * 10)),
+              ReceiveFlowRoute::kBuffered);
+  }
+  auto packets = registry.Update({1, 7}, Timestamp::Millis(1100));
+  ASSERT_EQ(packets.size(), 10u);
+  EXPECT_EQ(packets.front().packet, std::vector<uint8_t>({90}));
+  EXPECT_EQ(packets.back().packet, std::vector<uint8_t>({99}));
+  EXPECT_EQ(registry.dropped(), 90u);
+}
+
 }  // namespace
 }  // namespace webrtc::roq
