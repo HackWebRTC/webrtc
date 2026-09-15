@@ -8,6 +8,7 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <thread>
 
@@ -21,6 +22,7 @@
 #include "media/engine/fake_video_codec_factory.h"
 #include "modules/audio_device/include/mock_audio_device.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/nack.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -164,7 +166,7 @@ TEST(RoqMediaEngineTest, StartsPlayoutForTheFirstAudioSubscription) {
   ASSERT_TRUE(engine->AddReceiveBinding({.binding_id = "speaker",
                                          .kind = RoqMediaKind::kAudio,
                                          .primary_ssrc = 1001,
-                                         .payload_type = 111,
+                                         .payload_type = 63,
                                          .transport = &transport},
                                         &error))
       << error;
@@ -199,7 +201,7 @@ TEST(RoqMediaEngineTest, RejectsAudioSubscriptionWithoutAPlayoutDevice) {
   EXPECT_FALSE(engine->AddReceiveBinding({.binding_id = "speaker",
                                           .kind = RoqMediaKind::kAudio,
                                           .primary_ssrc = 1001,
-                                          .payload_type = 111,
+                                          .payload_type = 63,
                                           .transport = &transport},
                                          &error));
   EXPECT_EQ(error, "failed to start audio playout device");
@@ -249,7 +251,7 @@ TEST(RoqMediaEngineTest, StartsRecordingForTheFirstDeviceAudioPublication) {
       engine->AddSendBinding({.binding_id = "microphone",
                               .kind = RoqMediaKind::kAudio,
                               .primary_ssrc = 1001,
-                              .payload_type = 111,
+                              .payload_type = 63,
                               .transport = &transport,
                               .audio_input_mode = RoqAudioInputMode::kDevice,
                               .audio_bitrate_bps = 128000},
@@ -339,7 +341,7 @@ TEST(RoqMediaEngineTest, EnablesNackForOpusSendAndReceiveBindings) {
   ASSERT_TRUE(engine->AddSendBinding({.binding_id = "microphone",
                                       .kind = RoqMediaKind::kAudio,
                                       .primary_ssrc = 1001,
-                                      .payload_type = 111,
+                                      .payload_type = 63,
                                       .transport = &transport,
                                       .audio_bitrate_bps = 128000},
                                      &error))
@@ -347,7 +349,7 @@ TEST(RoqMediaEngineTest, EnablesNackForOpusSendAndReceiveBindings) {
   ASSERT_TRUE(engine->AddReceiveBinding({.binding_id = "speaker",
                                          .kind = RoqMediaKind::kAudio,
                                          .primary_ssrc = 2001,
-                                         .payload_type = 111,
+                                         .payload_type = 63,
                                          .transport = &transport},
                                         &error))
       << error;
@@ -381,7 +383,7 @@ TEST(RoqMediaEngineTest, AllowsAudioReceiveNackToBeDisabled) {
   ASSERT_TRUE(engine->AddReceiveBinding({.binding_id = "speaker",
                                          .kind = RoqMediaKind::kAudio,
                                          .primary_ssrc = 2001,
-                                         .payload_type = 111,
+                                         .payload_type = 63,
                                          .transport = &transport,
                                          .enable_nack = false},
                                         &error));
@@ -451,7 +453,7 @@ TEST(RoqMediaEngineTest, CountsAudioAndVideoSenderNackStats) {
   ASSERT_TRUE(engine->AddSendBinding({.binding_id = "microphone",
                                       .kind = RoqMediaKind::kAudio,
                                       .primary_ssrc = 1001,
-                                      .payload_type = 111,
+                                      .payload_type = 63,
                                       .transport = &transport,
                                       .audio_bitrate_bps = 128000},
                                      &error));
@@ -529,7 +531,7 @@ TEST(RoqMediaEngineTest, StopsRecordingAfterTheLastDevicePublicationCloses) {
       engine->AddSendBinding({.binding_id = "microphone",
                               .kind = RoqMediaKind::kAudio,
                               .primary_ssrc = 1001,
-                              .payload_type = 111,
+                              .payload_type = 63,
                               .transport = &transport,
                               .audio_input_mode = RoqAudioInputMode::kDevice,
                               .audio_bitrate_bps = 128000},
@@ -697,14 +699,14 @@ TEST(RoqMediaEngineTest, ManagesMultipleBindingsInOneCall) {
   EXPECT_TRUE(engine->AddReceiveBinding({.binding_id = "first",
                                          .kind = RoqMediaKind::kAudio,
                                          .primary_ssrc = 1001,
-                                         .payload_type = 111,
+                                         .payload_type = 63,
                                          .transport = &first_transport},
                                         &error))
       << error;
   EXPECT_TRUE(engine->AddReceiveBinding({.binding_id = "second",
                                          .kind = RoqMediaKind::kAudio,
                                          .primary_ssrc = 1002,
-                                         .payload_type = 111,
+                                         .payload_type = 63,
                                          .transport = &second_transport},
                                         &error))
       << error;
@@ -740,7 +742,7 @@ TEST(RoqMediaEngineTest, RejectsDuplicateBindingAndSsrc) {
   const RoqMediaBindingConfig first{.binding_id = "first",
                                     .kind = RoqMediaKind::kAudio,
                                     .primary_ssrc = 1001,
-                                    .payload_type = 111,
+                                    .payload_type = 63,
                                     .transport = &transport};
   ASSERT_TRUE(engine->AddReceiveBinding(first, &error)) << error;
 
@@ -749,7 +751,7 @@ TEST(RoqMediaEngineTest, RejectsDuplicateBindingAndSsrc) {
   EXPECT_FALSE(engine->AddReceiveBinding({.binding_id = "second",
                                           .kind = RoqMediaKind::kAudio,
                                           .primary_ssrc = 1001,
-                                          .payload_type = 111,
+                                          .payload_type = 63,
                                           .transport = &transport},
                                          &error));
   EXPECT_EQ(error, "SSRC is already active");
@@ -781,7 +783,7 @@ TEST(RoqMediaEngineTest, AddsIndependentSendBindingsToTheSameCall) {
   EXPECT_TRUE(engine->AddSendBinding({.binding_id = "microphone",
                                       .kind = RoqMediaKind::kAudio,
                                       .primary_ssrc = 1001,
-                                      .payload_type = 111,
+                                      .payload_type = 63,
                                       .transport = &audio_transport,
                                       .audio_bitrate_bps = 128000},
                                      &error))
@@ -840,7 +842,7 @@ TEST(RoqMediaEngineTest, QuicControllerDoesNotProbePadOrUseCongestionWindow) {
   ASSERT_TRUE(engine->AddSendBinding({.binding_id = "microphone",
                                       .kind = RoqMediaKind::kAudio,
                                       .primary_ssrc = 1001,
-                                      .payload_type = 111,
+                                      .payload_type = 63,
                                       .transport = &transport,
                                       .audio_bitrate_bps = 128000},
                                      &error))
@@ -888,7 +890,7 @@ TEST(RoqMediaEngineTest, DynamicSendBitrateConstraintsReachQuicController) {
   ASSERT_TRUE(engine->AddSendBinding({.binding_id = "microphone",
                                       .kind = RoqMediaKind::kAudio,
                                       .primary_ssrc = 1001,
-                                      .payload_type = 111,
+                                      .payload_type = 63,
                                       .transport = &transport,
                                       .audio_bitrate_bps = 128000},
                                      &error))
@@ -917,7 +919,21 @@ TEST(RoqMediaEngineTest, CountsAcceptedExternalAudioPackets) {
   ASSERT_EQ(audio->Init(), 0);
   auto video_encoder = CreateBuiltinVideoEncoderFactory();
   auto video_decoder = CreateBuiltinVideoDecoderFactory();
-  NullTransport transport;
+  class RecordingTransport final : public Transport {
+   public:
+    bool SendRtp(std::span<const uint8_t> packet,
+                 const PacketOptions&) override {
+      std::lock_guard lock(mutex);
+      if (first_packet.empty())
+        first_packet.assign(packet.begin(), packet.end());
+      return true;
+    }
+    bool SendRtcp(std::span<const uint8_t>, const PacketOptions&) override {
+      return true;
+    }
+    std::mutex mutex;
+    std::vector<uint8_t> first_packet;
+  } transport;
   std::string error;
   std::unique_ptr<RoqMediaEngine> engine = RoqMediaEngine::Create(
       {.audio_device_module = audio,
@@ -931,7 +947,7 @@ TEST(RoqMediaEngineTest, CountsAcceptedExternalAudioPackets) {
   ASSERT_TRUE(engine->AddSendBinding({.binding_id = "microphone",
                                       .kind = RoqMediaKind::kAudio,
                                       .primary_ssrc = 1001,
-                                      .payload_type = 111,
+                                      .payload_type = 63,
                                       .transport = &transport,
                                       .audio_bitrate_bps = 128000},
                                      &error));
@@ -949,6 +965,56 @@ TEST(RoqMediaEngineTest, CountsAcceptedExternalAudioPackets) {
   EXPECT_TRUE(sent);
   ASSERT_TRUE(engine->RemoveBinding("microphone"));
   EXPECT_GT(engine->stats().sent_audio_packets, 0);
+  engine->Stop();
+  RtpPacketReceived packet;
+  std::lock_guard lock(transport.mutex);
+  ASSERT_TRUE(packet.Parse(transport.first_packet));
+  EXPECT_EQ(packet.PayloadType(), 63);
+  ASSERT_FALSE(packet.payload().empty());
+  EXPECT_EQ(packet.payload()[0], 111)
+      << "RED primary block must identify LiveKit's Opus payload type";
+}
+
+TEST(RoqMediaEngineTest, DecodesCanonicalRedOpusBeforeAndAfterResume) {
+  const Environment env = CreateTestEnvironment();
+  auto audio = CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_EQ(audio->Init(), 0);
+  auto video_encoder = CreateBuiltinVideoEncoderFactory();
+  auto video_decoder = CreateBuiltinVideoDecoderFactory();
+  NullTransport transport;
+  std::string error;
+  auto engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = video_encoder.get(),
+       .video_decoder_factory = video_decoder.get()}, env, &error);
+  ASSERT_TRUE(engine->Start(&error)) << error;
+  ASSERT_TRUE(engine->AddReceiveBinding(
+      {.binding_id = "audio", .kind = RoqMediaKind::kAudio,
+       .primary_ssrc = 1001, .payload_type = 63, .transport = &transport},
+      &error)) << error;
+
+  for (int generation = 0; generation < 2; ++generation) {
+    if (generation != 0) {
+      ASSERT_TRUE(engine->SuspendReceiveBinding("audio"));
+      ASSERT_TRUE(engine->ResumeReceiveBinding("audio", &error)) << error;
+    }
+    // RTP PT 63, one RED primary block for PT 111, and a valid Opus
+    // silence frame. This fixture is independent of the RoQ encoder.
+    const std::array<uint8_t, 16> packet = {
+        0x80, 63, 0, 1, 0, 0, 3, 0xc0, 0, 0, 3, 0xe9,
+        111, 0xfc, 0xff, 0xfe};
+    engine->DeliverRtp("audio", packet);
+    int decoded = 0;
+    for (int attempt = 0; attempt < 100; ++attempt) {
+      decoded = engine->stats().audio_decoding_normal;
+      if (decoded > 0)
+        break;
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    EXPECT_GT(decoded, 0) << "generation " << generation;
+  }
   engine->Stop();
 }
 
@@ -974,7 +1040,7 @@ TEST(RoqMediaEngineTest, QueriesStatsByStableBindingId) {
   ASSERT_TRUE(engine->AddReceiveBinding({.binding_id = "subscription",
                                          .kind = RoqMediaKind::kAudio,
                                          .primary_ssrc = 1001,
-                                         .payload_type = 111,
+                                         .payload_type = 63,
                                          .transport = &transport},
                                         &error));
 
@@ -1051,7 +1117,7 @@ TEST(RoqMediaEngineTest, RetainsTerminalBindingStatsAfterRemoval) {
   ASSERT_TRUE(engine->AddReceiveBinding({.binding_id = "subscription",
                                          .kind = RoqMediaKind::kAudio,
                                          .primary_ssrc = 1001,
-                                         .payload_type = 111,
+                                         .payload_type = 63,
                                          .transport = &transport},
                                         &error));
 
@@ -1085,7 +1151,7 @@ TEST(RoqMediaEngineTest, SuspendsReceiveBindingWithoutRemovingIt) {
   ASSERT_TRUE(engine->AddReceiveBinding({.binding_id = "subscription",
                                          .kind = RoqMediaKind::kAudio,
                                          .primary_ssrc = 1001,
-                                         .payload_type = 111,
+                                         .payload_type = 63,
                                          .transport = &transport},
                                         &error));
 
@@ -1117,7 +1183,7 @@ TEST(RoqMediaEngineTest, ResumesSuspendedReceiveBinding) {
   ASSERT_TRUE(engine->AddReceiveBinding({.binding_id = "subscription",
                                          .kind = RoqMediaKind::kAudio,
                                          .primary_ssrc = 1001,
-                                         .payload_type = 111,
+                                         .payload_type = 63,
                                          .transport = &transport},
                                         &error));
   ASSERT_TRUE(engine->SuspendReceiveBinding("subscription"));

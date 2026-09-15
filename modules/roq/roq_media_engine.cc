@@ -221,8 +221,8 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         opus_parameters["useinbandfec"] = "1";
         opus_parameters["usedtx"] = "1";
         receive.decoder_map = {
-            {config.payload_type, {"red", 48000, 2, {{"", "112/112"}}}},
-            {112, {"opus", 48000, 2, opus_parameters}}};
+            {config.payload_type, {"red", 48000, 2, {{"", "111/111"}}}},
+            {111, {"opus", 48000, 2, opus_parameters}}};
         binding.audio = call_->CreateAudioReceiveStream(std::move(receive));
         binding.audio_nack_enabled = config.enable_nack;
         if (config.audio_sink)
@@ -294,7 +294,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         opus_parameters["useinbandfec"] = "1";
         opus_parameters["usedtx"] = "1";
         send.send_codec_spec = AudioSendStream::Config::SendCodecSpec(
-            112, {"opus", 48000, 2, opus_parameters});
+            111, {"opus", 48000, 2, opus_parameters});
         send.send_codec_spec->red_payload_type = config.payload_type;
         send.send_codec_spec->nack_enabled = true;
         send.send_codec_spec->target_bitrate_bps = config.audio_bitrate_bps;
@@ -425,8 +425,8 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         opus_parameters["useinbandfec"] = "1";
         opus_parameters["usedtx"] = "1";
         receive.decoder_map = {
-            {config.payload_type, {"red", 48000, 2, {{"", "112/112"}}}},
-            {112, {"opus", 48000, 2, opus_parameters}}};
+            {config.payload_type, {"red", 48000, 2, {{"", "111/111"}}}},
+            {111, {"opus", 48000, 2, opus_parameters}}};
         replacement.audio =
             call_->CreateAudioReceiveStream(std::move(receive));
         replacement.audio_nack_enabled = config.enable_nack;
