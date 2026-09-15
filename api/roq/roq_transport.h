@@ -33,12 +33,6 @@ struct RoqPacketTransportConfig {
   uint32_t rtx_ssrc = 0;
   bool allow_early_publisher_media = false;
   Clock* clock = nullptr;
-  TimeDelta critical_rtcp_deadline = TimeDelta::Millis(50);
-  TimeDelta audio_deadline = TimeDelta::Millis(60);
-  TimeDelta video_delta_deadline = TimeDelta::Millis(100);
-  TimeDelta video_key_deadline = TimeDelta::Millis(150);
-  TimeDelta periodic_rtcp_deadline = TimeDelta::Millis(250);
-  std::function<void()> request_key_frame;
   std::function<void(uint32_t, uint32_t, uint16_t)> key_frame_submitted;
 };
 
@@ -57,7 +51,6 @@ class RoqPacketTransport final : public Transport {
   RtpPacingMode GetRtpPacingMode() const override {
     return RtpPacingMode::kExternalTransport;
   }
-  bool ReserveRtpBatch(const RtpPacketBatch& batch) override;
   uint64_t accepted_rtp_packets() const {
     return accepted_rtp_packets_->load();
   }

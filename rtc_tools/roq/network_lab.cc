@@ -220,14 +220,12 @@ class ImpairmentDirection {
                                         0x9e3779b97f4a7c15ULL));
     const auto now = SteadyClock::now();
     const auto profile_elapsed = now - profile_start_;
-    // Exercise RTP repair while the path is still unconstrained, so the M4
-    // product test does not depend on a random loss happening early enough
-    // for the one-second repair window. Large server-to-client datagrams are
-    // media-bearing in this profile; ACK-only packets remain untouched.
-    if (profile_ == "m4" && std::string_view(name_) == "server_to_client" &&
-        !m4_repair_probe_injected_ &&
+    // Drop one media-sized packet in each direction while unconstrained.
+    // This covers publisher-hop and subscriber-hop repair independently of
+    // whether random impaired-phase loss hits video rather than audio.
+    if (profile_ == "m4" && !m4_repair_probe_injected_ &&
         profile_elapsed >= std::chrono::seconds(2) &&
-        profile_elapsed < std::chrono::seconds(4) && size > 200) {
+        profile_elapsed < std::chrono::seconds(4) && size > 1000) {
       m4_repair_probe_injected_ = true;
       ++result_->injected_loss;
       event_log_->Write("injected_loss", name_, sequence);
@@ -270,10 +268,10 @@ class ImpairmentDirection {
                 (profile_ == "m4" && !constrained_m4)
             ? 0
             : random.Jitter(constrained_m4 ? 20000 : kJitterUs);
-    const int64_t base_delay_us =
-        profile_ == "m4" ? (constrained_m4 ? 100000 : 25000)
-                         : profile_ == "m5" ? 0
-                                            : kBaseDelayUs;
+    const int64_t base_delay_us = profile_ == "m4"
+                                      ? (constrained_m4 ? 100000 : 25000)
+                                  : profile_ == "m5" ? 0
+                                                     : kBaseDelayUs;
     const int64_t delay_us = std::max<int64_t>(
         0, base_delay_us + jitter_us + (reordered ? kReorderDelayUs : 0));
     std::vector<uint8_t> payload(size);

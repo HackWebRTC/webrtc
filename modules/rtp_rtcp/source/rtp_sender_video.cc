@@ -227,7 +227,7 @@ RTPSenderVideo::~RTPSenderVideo() {
     frame_transformer_delegate_->Reset();
 }
 
-RtpPacketEnqueueResult RTPSenderVideo::LogAndSendToNetwork(
+void RTPSenderVideo::LogAndSendToNetwork(
     std::vector<std::unique_ptr<RtpPacketToSend>> packets,
     size_t encoder_output_size) {
   size_t packetized_payload_size = 0;
@@ -236,11 +236,7 @@ RtpPacketEnqueueResult RTPSenderVideo::LogAndSendToNetwork(
       packetized_payload_size += packet->payload_size();
     }
   }
-  RtpPacketEnqueueResult result =
-      rtp_sender_->EnqueuePackets(std::move(packets));
-  if (result != RtpPacketEnqueueResult::kEnqueued) {
-    return result;
-  }
+  rtp_sender_->EnqueuePackets(std::move(packets));
   {
     MutexLock lock(&stats_mutex_);
     // AV1 and H264 packetizers may produce less packetized bytes than
@@ -250,7 +246,6 @@ RtpPacketEnqueueResult RTPSenderVideo::LogAndSendToNetwork(
           packetized_payload_size - encoder_output_size, clock_->CurrentTime());
     }
   }
-  return result;
 }
 
 size_t RTPSenderVideo::FecPacketOverhead() const {
@@ -816,12 +811,7 @@ bool RTPSenderVideo::SendVideoFrame(int payload_type,
     }
   }
 
-  switch (LogAndSendToNetwork(std::move(rtp_packets), encoder_output_size)) {
-    case RtpPacketEnqueueResult::kDroppedByTransport:
-      return true;
-    case RtpPacketEnqueueResult::kEnqueued:
-      break;
-  }
+  LogAndSendToNetwork(std::move(rtp_packets), encoder_output_size);
 
   // Update details about the last sent frame.
   last_rotation_ = video_header.rotation;

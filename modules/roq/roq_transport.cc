@@ -81,8 +81,7 @@ RoqPacketTransport::RoqPacketTransport(RoqPacketTransportConfig config,
                                        PacketAcceptedCallback packet_accepted)
     : packet_accepted_(std::move(packet_accepted)),
       config_(std::move(config)),
-      key_frame_submission_state_(
-          std::make_shared<KeyFrameSubmissionState>()) {
+      key_frame_submission_state_(std::make_shared<KeyFrameSubmissionState>()) {
   key_frame_submission_state_->video_codec = config_.video_codec;
   key_frame_submission_state_->on_submitted = config_.key_frame_submitted;
 }
@@ -95,28 +94,6 @@ bool RoqPacketTransport::SendRtp(std::span<const uint8_t> packet,
 bool RoqPacketTransport::SendRtcp(std::span<const uint8_t> packet,
                                   const PacketOptions& options) {
   return Send(config_.rtcp_flow_id, packet, options);
-}
-
-bool RoqPacketTransport::ReserveRtpBatch(const RtpPacketBatch& batch) {
-  if (config_.media_type != RoqMediaType::kVideo)
-    return true;
-  const Timestamp now = config_.clock->CurrentTime();
-  RoqDatagramMetadata metadata = {
-      .binding_id = config_.binding_id,
-      .media_type = config_.media_type,
-      .enqueue_time = now,
-      .deadline = now + (batch.key_frame ? config_.video_key_deadline
-                                         : config_.video_delta_deadline),
-      .priority = batch.key_frame ? RoqDatagramPriority::kVideoKey
-                                  : RoqDatagramPriority::kVideoDelta,
-      .frame_id = RoqFrameId{batch.ssrc, batch.timestamp, config_.binding_id},
-      .frame_complete = true,
-      .video_codec = config_.video_codec,
-      .is_key = batch.key_frame,
-      .request_key_frame = config_.request_key_frame,
-  };
-  return config_.session->ReserveMediaBatch(metadata, batch.packet_count,
-                                             batch.byte_size);
 }
 
 bool RoqPacketTransport::Send(uint64_t flow_id,
@@ -138,8 +115,6 @@ bool RoqPacketTransport::Send(uint64_t flow_id,
     datagram.media_type = RoqMediaType::kRtcp;
     datagram.priority = critical ? RoqDatagramPriority::kRtcp
                                  : RoqDatagramPriority::kPeriodicRtcp;
-    datagram.deadline = now + (critical ? config_.critical_rtcp_deadline
-                                        : config_.periodic_rtcp_deadline);
   } else {
     RtpPacketMetadata metadata;
     if (config_.media_type == RoqMediaType::kAudio) {
@@ -150,7 +125,6 @@ bool RoqPacketTransport::Send(uint64_t flow_id,
         return false;
       }
       datagram.priority = RoqDatagramPriority::kAudio;
-      datagram.deadline = now + config_.audio_deadline;
       datagram.packet_id = RoqPacketId{metadata.ssrc, metadata.sequence_number};
     } else if (ParseVideoRtpPacketMetadata(packet, config_.video_codec,
                                            &metadata) &&
@@ -160,8 +134,6 @@ bool RoqPacketTransport::Send(uint64_t flow_id,
                        metadata.contains_sps || metadata.contains_pps;
       datagram.priority = key ? RoqDatagramPriority::kVideoKey
                               : RoqDatagramPriority::kVideoDelta;
-      datagram.deadline = now + (key ? config_.video_key_deadline
-                                     : config_.video_delta_deadline);
       datagram.frame_id =
           RoqFrameId{metadata.ssrc, metadata.timestamp, config_.binding_id};
       datagram.packet_id = RoqPacketId{metadata.ssrc, metadata.sequence_number};
@@ -170,7 +142,6 @@ bool RoqPacketTransport::Send(uint64_t flow_id,
       datagram.contains_vps = metadata.contains_vps;
       datagram.contains_sps = metadata.contains_sps;
       datagram.contains_pps = metadata.contains_pps;
-      datagram.request_key_frame = config_.request_key_frame;
       track_video_submission = true;
       submitted_metadata = metadata;
       key_frame_submission_state_->Register(metadata);
@@ -206,7 +177,7 @@ bool RoqPacketTransport::Send(uint64_t flow_id,
         if (track_video_submission)
           key_frame_submission_state->Submitted(submitted_metadata);
       });
-  if (result != RoqSendResult::kQueued && result != RoqSendResult::kDropped) {
+  if (result != RoqSendResult::kQueued) {
     return false;
   }
   return true;

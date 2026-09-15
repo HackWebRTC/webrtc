@@ -84,6 +84,8 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "bounded_datagram_queue_unittest.cc",
+      "external_audio_transport_unittest.cc",
+      "packet_forwarding_unittest.cc",
       "quic_bandwidth_policy_unittest.cc",
       "quic_network_controller_unittest.cc",
       "receive_flow_registry_unittest.cc",
@@ -96,6 +98,12 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":roq_core",
+      "../../audio",
+      "../../api/crypto:options",
+      "../../api/audio:audio_frame_api",
+      "../../api:transport_api",
+      "../../call:rtp_sender",
+      "../../test/time_controller:time_controller",
       "../../api/audio:create_audio_device_module",
       "../../api/audio_codecs:builtin_audio_decoder_factory",
       "../../api/audio_codecs:builtin_audio_encoder_factory",

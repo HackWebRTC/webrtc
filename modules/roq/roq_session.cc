@@ -277,14 +277,6 @@ class RoqSessionImpl final : public RoqSession {
     }
   }
 
-  void RequireIndependentVideoFrame(const std::string& binding_id,
-                                    uint32_t ssrc) override {
-    std::lock_guard lock(mutex_);
-    outgoing_.RequireIndependentVideoFrame(binding_id, ssrc,
-                                           config_.clock->CurrentTime());
-    CopyQueueStatsLocked();
-  }
-
   void RequestPing() override {
     std::lock_guard lock(mutex_);
     ping_requested_ = true;
@@ -388,19 +380,10 @@ class RoqSessionImpl final : public RoqSession {
         .contains_vps = metadata.contains_vps,
         .contains_sps = metadata.contains_sps,
         .contains_pps = metadata.contains_pps,
-        .request_key_frame = std::move(metadata.request_key_frame),
         .on_submitted = std::move(on_submitted),
     };
     const DatagramEnqueueResult result =
         outgoing_.Enqueue(std::move(datagram), config_.clock->CurrentTime());
-    if (result == DatagramEnqueueResult::kQueued && metadata.frame_id &&
-        quiche_slot_datagram_ &&
-        quiche_slot_datagram_->frame_id == metadata.frame_id) {
-      const std::optional<Timestamp> frame_deadline =
-          outgoing_.FrameDeadline(*metadata.frame_id);
-      if (frame_deadline)
-        quiche_slot_datagram_->deadline = *frame_deadline;
-    }
     CopyQueueStatsLocked();
     switch (result) {
       case DatagramEnqueueResult::kQueued:
@@ -414,39 +397,6 @@ class RoqSessionImpl final : public RoqSession {
       case DatagramEnqueueResult::kInvalid:
         return RoqSendResult::kInvalid;
     }
-  }
-
-  bool ReserveMediaBatch(const RoqDatagramMetadata& metadata,
-                         size_t packet_count,
-                         size_t byte_size) override {
-    std::lock_guard lock(mutex_);
-    if (close_requested_ || closed_ || !metadata.frame_id)
-      return false;
-    QueuedDatagram frame = {
-        .binding_id = metadata.binding_id,
-        .media_type = metadata.media_type,
-        .enqueue_time = metadata.enqueue_time,
-        .deadline = metadata.deadline,
-        .priority = metadata.priority,
-        .frame_id = metadata.frame_id,
-        .frame_complete = true,
-        .video_codec = metadata.video_codec,
-        .is_key = metadata.is_key,
-        .contains_vps = metadata.contains_vps,
-        .contains_sps = metadata.contains_sps,
-        .contains_pps = metadata.contains_pps,
-        .independent_frame =
-            metadata.is_key && metadata.contains_sps && metadata.contains_pps &&
-            (metadata.video_codec != VideoCodecType::kVideoCodecH265 ||
-             metadata.contains_vps),
-        .request_key_frame = metadata.request_key_frame,
-    };
-    const bool reserved = outgoing_.ReserveVideoFrame(
-        std::move(frame), packet_count,
-        byte_size + packet_count * sizeof(uint64_t),
-        config_.clock->CurrentTime());
-    CopyQueueStatsLocked();
-    return reserved;
   }
 
   void RecordInvalidDatagram() override {
@@ -636,7 +586,6 @@ class RoqSessionImpl final : public RoqSession {
     if (quiche_conn_path_stats(connection, 0, &path) != 0)
       return;
     quiche_conn_stats(connection, &connection_stats);
-    std::vector<std::function<void()>> callbacks;
     {
       std::lock_guard lock(mutex_);
       stats_.rtt_ns = path.rtt;
@@ -657,15 +606,7 @@ class RoqSessionImpl final : public RoqSession {
         last_path_ack_at_ = now;
         stats_.last_ack_monotonic_us = now.us();
       }
-      const bool fresh = path.startup_exit_cwnd > 0 && path.delivery_rate > 0 &&
-                         path.max_bandwidth > 0 &&
-                         last_path_ack_at_.IsFinite() &&
-                         now - last_path_ack_at_ <= TimeDelta::Seconds(1);
-      callbacks = outgoing_.RecoveryCallbacks(
-          now, TimeDelta::Micros(path.rtt / 1000), fresh);
     }
-    for (auto& callback : callbacks)
-      callback();
   }
 
   void UpdateDatagramLimit(quiche_conn* connection) {
@@ -1107,6 +1048,11 @@ class RoqSessionImpl final : public RoqSession {
           return;
       }
       if (connection && !pending_udp) {
+        {
+          std::lock_guard lock(mutex_);
+          quiche_conn_set_external_dgram_queue_bytes(connection.get(),
+                                                     outgoing_.byte_size());
+        }
         quiche_send_info send_info = {};
         const ssize_t written =
             quiche_conn_send(connection.get(), packet.data(),
@@ -1144,33 +1090,26 @@ class RoqSessionImpl final : public RoqSession {
       for (size_t attempted = 0; can_send_datagram; ++attempted) {
         const ssize_t queue_length =
             quiche_conn_dgram_send_queue_len(connection.get());
-        bool purge_for_expiry = false;
         bool purge_for_pmtu = false;
         bool purge_for_binding = false;
         size_t pending_media = 0;
         {
           std::lock_guard lock(mutex_);
-          stats_.peak_quiche_queue_size = std::max(
-              stats_.peak_quiche_queue_size,
-              static_cast<size_t>(std::max<ssize_t>(queue_length, 0)));
-          purge_for_expiry = quiche_slot_datagram_.has_value() &&
-                             !quiche_slot_datagram_->committed &&
-                             quiche_slot_datagram_->deadline <=
-                                 config_.clock->CurrentTime();
+          stats_.peak_quiche_queue_size =
+              std::max(stats_.peak_quiche_queue_size,
+                       static_cast<size_t>(std::max<ssize_t>(queue_length, 0)));
           purge_for_pmtu = purge_quiche_slot_for_pmtu_;
           purge_for_binding = purge_quiche_slot_for_binding_;
-          pending_media = outgoing_.size() + outgoing_.reserved_packets();
+          pending_media = outgoing_.size();
         }
         if (queue_length == 0) {
           std::lock_guard lock(mutex_);
           quiche_slot_datagram_.reset();
           purge_quiche_slot_for_pmtu_ = false;
           purge_quiche_slot_for_binding_ = false;
-        } else if (purge_for_expiry || purge_for_pmtu || purge_for_binding) {
+        } else if (purge_for_pmtu || purge_for_binding) {
           quiche_conn_dgram_purge_outgoing(connection.get(), PurgeDatagram);
           std::lock_guard lock(mutex_);
-          if (purge_for_expiry)
-            ++stats_.quiche_slot_expired_drops;
           if (purge_for_pmtu)
             ++quiche_pmtu_purge_drops_;
           if (!purge_for_binding && quiche_slot_datagram_) {
@@ -1191,10 +1130,15 @@ class RoqSessionImpl final : public RoqSession {
           break;
         }
         if (queue_length != 0) {
+          {
+            std::lock_guard lock(mutex_);
+            quiche_conn_set_external_dgram_queue_bytes(connection.get(),
+                                                       outgoing_.byte_size());
+          }
           quiche_send_info send_info = {};
-          const ssize_t written = quiche_conn_send(
-              connection.get(), packet.data(), config_.maximum_udp_payload,
-              &send_info);
+          const ssize_t written =
+              quiche_conn_send(connection.get(), packet.data(),
+                               config_.maximum_udp_payload, &send_info);
           if (written == QUICHE_ERR_DONE)
             break;
           if (written < 0) {
@@ -1206,59 +1150,43 @@ class RoqSessionImpl final : public RoqSession {
                                packet.begin() + static_cast<size_t>(written));
           pending.destination = send_info.to;
           pending.destination_length = send_info.to_len;
-          pending.send_at = SteadyClock::now() +
-                            std::chrono::nanoseconds(
-                                send_info.pacing_delay_nanos);
+          pending.send_at =
+              SteadyClock::now() +
+              std::chrono::nanoseconds(send_info.pacing_delay_nanos);
           {
             std::lock_guard lock(mutex_);
-            stats_.max_pacing_delay_ns =
-                std::max(stats_.max_pacing_delay_ns,
-                         send_info.pacing_delay_nanos);
+            stats_.max_pacing_delay_ns = std::max(stats_.max_pacing_delay_ns,
+                                                  send_info.pacing_delay_nanos);
           }
           if (!send_or_defer_udp(std::move(pending)))
             return;
           continue;
         }
-        std::optional<QueuedDatagram> outgoing;
-        {
-          std::lock_guard lock(mutex_);
-          outgoing = outgoing_.Pop(
-              Timestamp::Micros(config_.clock->CurrentTime().us()));
-        }
+        std::unique_lock lock(mutex_);
+        auto outgoing = outgoing_.Pop(config_.clock->CurrentTime());
         if (!outgoing)
           break;
         const ssize_t queued = quiche_conn_dgram_send(
             connection.get(), outgoing->bytes.data(), outgoing->bytes.size());
         if (queued == static_cast<ssize_t>(outgoing->bytes.size())) {
-          {
-            std::lock_guard lock(mutex_);
-            outgoing_.RecordSubmitted(
-                *outgoing,
-                Timestamp::Micros(config_.clock->CurrentTime().us()));
-            ++stats_.sent_datagrams;
-            if (!stats_.established) {
-              ++stats_.early_datagrams_sent;
-              stats_.early_data_attempted = true;
-            }
-            quiche_slot_datagram_ = *outgoing;
+          outgoing_.RecordSubmitted(*outgoing, config_.clock->CurrentTime());
+          ++stats_.sent_datagrams;
+          if (!stats_.established) {
+            ++stats_.early_datagrams_sent;
+            stats_.early_data_attempted = true;
           }
+          quiche_slot_datagram_ = *outgoing;
+          lock.unlock();
           if (outgoing->on_submitted)
             outgoing->on_submitted();
         } else if (queued == QUICHE_ERR_BUFFER_TOO_SHORT) {
-          std::lock_guard lock(mutex_);
           ++quiche_oversize_drops_;
-          outgoing_.RecordDropped(
-              *outgoing,
-              Timestamp::Micros(config_.clock->CurrentTime().us()));
+          outgoing_.RecordDropped(*outgoing, config_.clock->CurrentTime());
           CopyQueueStatsLocked();
         } else if (queued == QUICHE_ERR_DONE) {
-          std::lock_guard lock(mutex_);
-          outgoing_.Enqueue(
-              std::move(*outgoing),
-              Timestamp::Micros(config_.clock->CurrentTime().us()));
+          outgoing_.Requeue(std::move(*outgoing));
           break;
         } else {
-          std::lock_guard lock(mutex_);
           error_ = "failed to queue RoQ DATAGRAM: " + std::to_string(queued);
           close_requested_ = true;
           close_code_ = static_cast<uint64_t>(RoqError::kInternalError);

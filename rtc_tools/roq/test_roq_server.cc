@@ -234,7 +234,6 @@ class TestRoqServerImpl final : public TestRoqServer {
     return true;
   }
   void SetEarlyDatagramsAllowed(bool) override {}
-  void RequireIndependentVideoFrame(const std::string&, uint32_t) override {}
   void RequestPing() override {}
   void Abort() override {}
   void BeginReceiveFlowUpdate() override {}
@@ -266,13 +265,6 @@ class TestRoqServerImpl final : public TestRoqServer {
     };
     const DatagramEnqueueResult result =
         outgoing_.Enqueue(std::move(datagram), config_.clock->CurrentTime());
-    if (result == DatagramEnqueueResult::kQueued && metadata.frame_id &&
-        quiche_slot_frame_id_ == metadata.frame_id) {
-      const std::optional<Timestamp> frame_deadline =
-          outgoing_.FrameDeadline(*metadata.frame_id);
-      if (frame_deadline)
-        quiche_slot_deadline_ = *frame_deadline;
-    }
     CopyQueueStatsLocked();
     switch (result) {
       case DatagramEnqueueResult::kQueued:
@@ -814,9 +806,7 @@ class TestRoqServerImpl final : public TestRoqServer {
               ++stats_.sent_datagrams;
               if (!stats_.established)
                 ++stats_.early_datagrams_sent;
-              quiche_slot_deadline_ = outgoing->deadline;
               quiche_slot_size_ = outgoing->bytes.size();
-              quiche_slot_frame_id_ = outgoing->frame_id;
             }
             if (outgoing->on_submitted)
               outgoing->on_submitted();
@@ -848,31 +838,21 @@ class TestRoqServerImpl final : public TestRoqServer {
       if (connection) {
         const ssize_t queue_length =
             quiche_conn_dgram_send_queue_len(connection.get());
-        bool purge_for_expiry = false;
         bool purge_for_pmtu = false;
         {
           std::lock_guard lock(mutex_);
-          purge_for_expiry =
-              quiche_slot_deadline_.has_value() &&
-              *quiche_slot_deadline_ <= config_.clock->CurrentTime();
           purge_for_pmtu = purge_quiche_slot_for_pmtu_;
         }
         if (queue_length == 0) {
           std::lock_guard lock(mutex_);
-          quiche_slot_deadline_.reset();
           quiche_slot_size_ = 0;
-          quiche_slot_frame_id_.reset();
           purge_quiche_slot_for_pmtu_ = false;
-        } else if (purge_for_expiry || purge_for_pmtu) {
+        } else if (purge_for_pmtu) {
           quiche_conn_dgram_purge_outgoing(connection.get(), PurgeDatagram);
           std::lock_guard lock(mutex_);
-          if (purge_for_expiry)
-            ++stats_.quiche_slot_expired_drops;
           if (purge_for_pmtu)
             ++quiche_pmtu_purge_drops_;
-          quiche_slot_deadline_.reset();
           quiche_slot_size_ = 0;
-          quiche_slot_frame_id_.reset();
           purge_quiche_slot_for_pmtu_ = false;
           CopyQueueStatsLocked();
         }
@@ -989,9 +969,7 @@ class TestRoqServerImpl final : public TestRoqServer {
   uint64_t close_code_ = 0;
   std::string close_reason_ = "complete";
   std::optional<size_t> application_datagram_limit_;
-  std::optional<Timestamp> quiche_slot_deadline_;
   size_t quiche_slot_size_ = 0;
-  std::optional<RoqFrameId> quiche_slot_frame_id_;
   bool purge_quiche_slot_for_pmtu_ = false;
   size_t quiche_pmtu_purge_drops_ = 0;
   size_t quiche_oversize_drops_ = 0;

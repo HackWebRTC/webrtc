@@ -91,7 +91,6 @@ struct RoqDatagramMetadata {
   bool contains_vps = false;
   bool contains_sps = false;
   bool contains_pps = false;
-  std::function<void()> request_key_frame;
 };
 
 struct RoqSessionConfig {
@@ -216,8 +215,6 @@ class RoqSession {
   virtual bool WaitUntilEstablished(TimeDelta timeout) = 0;
   virtual bool SendReplaySafeMessage(std::span<const uint8_t> message) = 0;
   virtual void SetEarlyDatagramsAllowed(bool allowed) = 0;
-  virtual void RequireIndependentVideoFrame(const std::string& binding_id,
-                                            uint32_t ssrc) = 0;
   virtual void RequestPing() = 0;
   virtual void Abort() = 0;
   virtual bool WaitUntilReliableMessagesSent(size_t count, TimeDelta timeout) {
@@ -245,14 +242,6 @@ class RoqSession {
                                   std::span<const uint8_t> packet,
                                   RoqDatagramMetadata metadata,
                                   std::function<void()> on_submitted) = 0;
-  virtual bool ReserveMediaBatch(const RoqDatagramMetadata& metadata,
-                                 size_t packet_count,
-                                 size_t byte_size) {
-    (void)metadata;
-    (void)packet_count;
-    (void)byte_size;
-    return true;
-  }
   virtual void PurgeSendBinding(const std::string& binding_id) {
     (void)binding_id;
   }

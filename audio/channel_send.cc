@@ -534,7 +534,10 @@ ChannelSend::ChannelSend(
   configuration.audio = true;
   configuration.outgoing_transport = rtp_transport;
 
-  configuration.paced_sender = rtp_packet_pacer_proxy_.get();
+  configuration.paced_sender =
+      rtp_transport->GetRtpPacingMode() == RtpPacingMode::kExternalTransport
+          ? nullptr
+          : rtp_packet_pacer_proxy_.get();
   configuration.rtt_stats = rtcp_rtt_stats;
   if (env_.field_trials().IsDisabled("WebRTC-DisableRtxRateLimiter")) {
     configuration.retransmission_rate_limiter =

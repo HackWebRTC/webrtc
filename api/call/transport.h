@@ -40,17 +40,6 @@ struct PacketOptions {
   bool last_packet_in_batch = false;
 };
 
-// Describes one packetized RTP access unit before sequence numbers are
-// allocated. Transports with frame-level admission may reject the whole batch
-// here instead of creating a partially visible RTP sequence range.
-struct RtpPacketBatch {
-  uint32_t ssrc = 0;
-  uint32_t timestamp = 0;
-  size_t packet_count = 0;
-  size_t byte_size = 0;
-  bool key_frame = false;
-};
-
 enum class RtpPacingMode {
   kLibwebrtc,
   kExternalTransport,
@@ -61,7 +50,6 @@ class Transport {
   virtual RtpPacingMode GetRtpPacingMode() const {
     return RtpPacingMode::kLibwebrtc;
   }
-  virtual bool ReserveRtpBatch(const RtpPacketBatch&) { return true; }
   virtual bool SendRtp(std::span<const uint8_t> packet,
                        const PacketOptions& options) = 0;
   virtual bool SendRtcp(std::span<const uint8_t> packet,
