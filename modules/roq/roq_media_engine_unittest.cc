@@ -4,9 +4,15 @@
 
 #include "api/roq/roq_media_engine.h"
 
+#include <arpa/inet.h>
+#include <mach-o/dyld.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <filesystem>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -23,6 +29,7 @@
 #include "modules/audio_device/include/mock_audio_device.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/nack.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "rtc_tools/roq/test_roq_server.h"
 #include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -68,6 +75,145 @@ class H265RecordingDecoderFactory final : public FakeVideoDecoderFactory {
   }
   std::optional<SdpVideoFormat> created_format;
 };
+
+class H264RecordingEncoderFactory final : public VideoEncoderFactory {
+ public:
+  explicit H264RecordingEncoderFactory(std::vector<SdpVideoFormat> formats)
+      : formats_(std::move(formats)) {}
+
+  std::vector<SdpVideoFormat> GetSupportedFormats() const override {
+    return formats_;
+  }
+
+  std::unique_ptr<VideoEncoder> Create(const Environment& env,
+                                     const SdpVideoFormat& format) override {
+    {
+      std::lock_guard lock(mutex_);
+      created_format_ = format;
+    }
+    return builtin_->Create(env, format);
+  }
+
+  std::optional<SdpVideoFormat> created_format() const {
+    std::lock_guard lock(mutex_);
+    return created_format_;
+  }
+
+ private:
+  const std::vector<SdpVideoFormat> formats_;
+  const std::unique_ptr<VideoEncoderFactory> builtin_ =
+      CreateBuiltinVideoEncoderFactory();
+  mutable std::mutex mutex_;
+  std::optional<SdpVideoFormat> created_format_;
+};
+
+TEST(RoqMediaEngineTest, SelectsAdvertisedH264EncoderFormatByProfile) {
+  // Include another legal encoding of Constrained Baseline to catch matching
+  // hex prefixes instead of parsing the profile. Level follows the factory.
+  for (const char* profile_level_id : {"42e01f", "42e02a", "4d8028"}) {
+    SCOPED_TRACE(profile_level_id);
+    const Environment env = CreateTestEnvironment();
+    auto audio = CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+    ASSERT_TRUE(audio);
+    ASSERT_EQ(audio->Init(), 0);
+    const SdpVideoFormat expected(
+        "H264", {{"profile-level-id", profile_level_id},
+                 {"level-asymmetry-allowed", "1"},
+                 {"packetization-mode", "1"}},
+        {ScalabilityMode::kL1T1});
+    H264RecordingEncoderFactory video_encoder({
+        SdpVideoFormat::VP8(),
+        SdpVideoFormat("H264", {{"profile-level-id", "42001f"},
+                                {"packetization-mode", "1"}}),
+        SdpVideoFormat("H264", {{"profile-level-id", "42e01f"},
+                                {"packetization-mode", "0"}}),
+        expected,
+        SdpVideoFormat("H264", {{"profile-level-id", "42e033"},
+                                {"packetization-mode", "1"}})});
+    auto video_decoder = CreateBuiltinVideoDecoderFactory();
+    NullTransport transport;
+    std::string error;
+    auto engine = RoqMediaEngine::Create(
+        {.audio_device_module = audio,
+         .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+         .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+         .video_encoder_factory = &video_encoder,
+         .video_decoder_factory = video_decoder.get()},
+        env, &error);
+    ASSERT_TRUE(engine) << error;
+    ASSERT_TRUE(engine->Start(&error)) << error;
+    ASSERT_TRUE(engine->AddSendBinding(
+        {.binding_id = "send-h264",
+         .kind = RoqMediaKind::kVideo,
+         .primary_ssrc = 3001,
+         .rtx_ssrc = 3002,
+         .payload_type = 102,
+         .rtx_payload_type = 103,
+         .transport = &transport,
+         .video_min_bitrate_bps = 256000,
+         .video_start_bitrate_bps = 1000000,
+         .video_max_bitrate_bps = 2000000},
+        &error)) << error;
+    auto frame = I420Buffer::Create(64, 48);
+    I420Buffer::SetBlack(frame.get());
+    engine->SendVideoFrame("send-h264", frame, 0);
+    for (int attempt = 0; attempt < 100 && !video_encoder.created_format();
+         ++attempt)
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    engine->Stop();
+
+    ASSERT_TRUE(video_encoder.created_format());
+    EXPECT_EQ(*video_encoder.created_format(), expected);
+  }
+}
+
+TEST(RoqMediaEngineTest, RejectsH264PublicationWithoutMatchingEncoderFormat) {
+  for (const std::vector<SdpVideoFormat>& formats : {
+           std::vector<SdpVideoFormat>{},
+           {SdpVideoFormat::VP8()},
+           {SdpVideoFormat("H264", {{"profile-level-id", "42001f"},
+                                   {"packetization-mode", "1"}})},
+           {SdpVideoFormat("H264", {{"profile-level-id", "42e01f"},
+                                   {"packetization-mode", "0"}})},
+           {SdpVideoFormat("H264", {{"profile-level-id", "42e01f"}})},
+           {SdpVideoFormat("H264", {{"profile-level-id", "invalid"},
+                                   {"packetization-mode", "1"}})}}) {
+    const Environment env = CreateTestEnvironment();
+    auto audio = CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+    ASSERT_TRUE(audio);
+    ASSERT_EQ(audio->Init(), 0);
+    H264RecordingEncoderFactory video_encoder(formats);
+    auto video_decoder = CreateBuiltinVideoDecoderFactory();
+    NullTransport transport;
+    std::string error;
+    auto engine = RoqMediaEngine::Create(
+        {.audio_device_module = audio,
+         .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+         .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+         .video_encoder_factory = &video_encoder,
+         .video_decoder_factory = video_decoder.get()},
+        env, &error);
+    ASSERT_TRUE(engine) << error;
+    ASSERT_TRUE(engine->Start(&error)) << error;
+
+    EXPECT_FALSE(engine->AddSendBinding(
+        {.binding_id = "send-h264",
+         .kind = RoqMediaKind::kVideo,
+         .primary_ssrc = 3001,
+         .rtx_ssrc = 3002,
+         .payload_type = 102,
+         .rtx_payload_type = 103,
+         .transport = &transport,
+         .video_min_bitrate_bps = 256000,
+         .video_start_bitrate_bps = 1000000,
+         .video_max_bitrate_bps = 2000000},
+        &error));
+    EXPECT_THAT(error, ::testing::HasSubstr("H264"));
+    EXPECT_FALSE(engine->HasBinding("send-h264"));
+    EXPECT_EQ(engine->binding_count(), 0u);
+    engine->Stop();
+  }
+}
 
 TEST(RoqMediaEngineTest, RoutesH265BindingsToCanonicalH265Factories) {
   const Environment env = CreateTestEnvironment();
@@ -163,6 +309,9 @@ TEST(RoqMediaEngineTest, StartsPlayoutForTheFirstAudioSubscription) {
   ASSERT_TRUE(engine) << error;
   ASSERT_TRUE(engine->Start(&error)) << error;
 
+  // Device work must be finished before a later subscription can delay PLI.
+  EXPECT_TRUE(playing) << "playout must be prepared before installing streams";
+
   ASSERT_TRUE(engine->AddReceiveBinding({.binding_id = "speaker",
                                          .kind = RoqMediaKind::kAudio,
                                          .primary_ssrc = 1001,
@@ -173,6 +322,144 @@ TEST(RoqMediaEngineTest, StartsPlayoutForTheFirstAudioSubscription) {
 
   EXPECT_TRUE(playout_device_selected);
   EXPECT_TRUE(playing);
+  ASSERT_TRUE(engine->RemoveBinding("speaker"));
+  EXPECT_TRUE(playing)
+      << "unsubscribing must not restart the device on the next binding";
+  engine->Stop();
+  EXPECT_FALSE(playing);
+}
+
+TEST(RoqMediaEngineTest, BoundedIngressReturnsWhileWorkerIsBlocked) {
+  const Environment env = CreateTestEnvironment();
+  auto audio = CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_EQ(audio->Init(), 0);
+  auto encoder = CreateBuiltinVideoEncoderFactory();
+  auto decoder = CreateBuiltinVideoDecoderFactory();
+  std::string error;
+  auto engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = encoder.get(),
+       .video_decoder_factory = decoder.get()},
+      env, &error);
+  ASSERT_TRUE(engine->Start(&error));
+  std::atomic<bool> entered = false, release = false;
+  engine->EnqueueReceivedPacket({.packet = {1}}, [&](RoqReceivedPacket) {
+    entered = true;
+    while (!release.load())
+      std::this_thread::yield();
+  });
+  for (int i = 0; i < 1000 && !entered; ++i)
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  EXPECT_TRUE(entered);
+  std::atomic<int> delivered = 0;
+  for (int i = 0; i < 600; ++i)
+    engine->EnqueueReceivedPacket({.packet = std::vector<uint8_t>(1400)},
+                                  [&](RoqReceivedPacket) { ++delivered; });
+  release = true;
+  engine->stats();
+  engine->Stop();
+  EXPECT_LE(delivered.load(),
+            374);  // floor(512 KiB / 1400), independent bound.
+}
+
+TEST(RoqMediaEngineTest, QuicProgressesWhileMediaWorkerIsBlocked) {
+  const Environment env = CreateTestEnvironment();
+  auto audio = CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_EQ(audio->Init(), 0);
+  auto encoder = CreateBuiltinVideoEncoderFactory();
+  auto decoder = CreateBuiltinVideoDecoderFactory();
+  std::string error;
+  auto engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = encoder.get(),
+       .video_decoder_factory = decoder.get()},
+      env, &error);
+  ASSERT_TRUE(engine->Start(&error));
+  const int fd = socket(AF_INET, SOCK_DGRAM, 0);
+  ASSERT_GE(fd, 0);
+  sockaddr_in address{};
+  address.sin_family = AF_INET;
+  address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  ASSERT_EQ(bind(fd, reinterpret_cast<sockaddr*>(&address), sizeof(address)),
+            0);
+  socklen_t size = sizeof(address);
+  ASSERT_EQ(getsockname(fd, reinterpret_cast<sockaddr*>(&address), &size), 0);
+  const auto endpoint = "127.0.0.1:" + std::to_string(ntohs(address.sin_port));
+  close(fd);
+  uint32_t path_size = 0;
+  _NSGetExecutablePath(nullptr, &path_size);
+  std::string executable(path_size, '\0');
+  ASSERT_EQ(_NSGetExecutablePath(executable.data(), &path_size), 0);
+  const auto binary_dir =
+      std::filesystem::path(executable.c_str()).parent_path();
+  std::atomic<int> server_received = 0, client_control = 0, callbacks = 0,
+                   delivered = 0;
+  auto server = CreateTestRoqServer(
+      {.address = endpoint,
+       .certificate_path = (binary_dir / "cert.crt").string(),
+       .private_key_path = (binary_dir / "cert.key").string(),
+       .allowed_flow_ids = {8}},
+      [&](RoqReceivedPacket) { ++server_received; });
+  ASSERT_TRUE(server->Start(&error));
+  ASSERT_TRUE(server->WaitUntilReady(TimeDelta::Seconds(2)));
+  auto client = RoqSession::Create(
+      {.address = endpoint,
+       .trusted_ca_file = (binary_dir / "cert.crt").string(),
+       .allowed_flow_ids = {8}},
+      [&](RoqReceivedPacket packet) {
+        engine->EnqueueReceivedPacket(std::move(packet),
+                                      [&](RoqReceivedPacket) { ++delivered; });
+        ++callbacks;
+      },
+      {}, [&](std::vector<uint8_t>) { ++client_control; });
+  // Stream 0 is client initiated; open it before the server replies.
+  ASSERT_TRUE(client->SendReplaySafeMessage(std::vector<uint8_t>{1}));
+  ASSERT_TRUE(client->Start(&error));
+  ASSERT_TRUE(client->WaitUntilEstablished(TimeDelta::Seconds(2)))
+      << client->error();
+  for (int i = 0; i < 1000 && server->stats().reliable_messages_received == 0;
+       ++i)
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  ASSERT_GT(server->stats().reliable_messages_received, 0u);
+  std::atomic<bool> entered = false, release = false;
+  engine->EnqueueReceivedPacket({.packet = {1}}, [&](RoqReceivedPacket) {
+    entered = true;
+    while (!release.load())
+      std::this_thread::yield();
+  });
+  for (int i = 0; i < 1000 && !entered; ++i)
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  EXPECT_TRUE(entered);
+  const auto acked_before = client->stats().acked_bytes;
+  const std::vector<uint8_t> packet = {0x80, 96, 0, 1, 0, 0,   0,
+                                       1,    0,  0, 0, 1, 0x65};
+  for (int i = 0; i < 8; ++i) {
+    server->SendMedia(8, packet, {}, {});
+    client->SendMedia(8, packet, {}, {});
+  }
+  server->SendReplaySafeMessage(packet);
+  client->RequestPing();
+  for (int i = 0; i < 1000 &&
+                  (callbacks < 8 || server_received < 8 || client_control < 1 ||
+                   client->stats().acked_bytes <= acked_before);
+       ++i)
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  EXPECT_EQ(callbacks, 8);
+  EXPECT_EQ(server_received, 8);
+  EXPECT_EQ(client_control, 1);
+  EXPECT_GT(client->stats().acked_bytes, acked_before);
+  EXPECT_EQ(delivered, 0);
+  release = true;
+  EXPECT_TRUE(client->error().empty()) << client->error();
+  EXPECT_TRUE(server->error().empty()) << server->error();
+  client->Close();
+  server->Close();
+  client->WaitUntilClosed(TimeDelta::Seconds(2));
+  server->WaitUntilClosed(TimeDelta::Seconds(2));
   engine->Stop();
 }
 

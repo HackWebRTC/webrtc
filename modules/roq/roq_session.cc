@@ -57,7 +57,6 @@ using SteadyClock = std::chrono::steady_clock;
 constexpr size_t kConnectionIdLength = 16;
 constexpr size_t kPacketBufferSize = 65535;
 constexpr uint64_t kControlStreamId = 0;
-constexpr size_t kEarlyDatagramPayloadLimit = 1000;
 constexpr uint64_t kNoTimeout = std::numeric_limits<uint64_t>::max();
 constexpr size_t kMediaBurstLimit = 64;
 
@@ -214,18 +213,27 @@ class RoqSessionImpl final : public RoqSession {
         datagram_size_callback_(std::move(datagram_size_callback)),
         reliable_message_callback_(std::move(reliable_message_callback)),
         outgoing_(config_.outgoing_queue_capacity,
-                  config_.maximum_udp_payload,
+                  std::min(config_.maximum_udp_payload,
+                           kRoqEarlyDatagramPayloadLimit),
                   config_.outgoing_queue_byte_capacity),
         receive_flows_(config_.receive_flow_ids.empty()
                            ? config_.allowed_flow_ids
                            : config_.receive_flow_ids,
                        config_.buffer_dynamic_receive_flows),
-        send_flow_ids_(config_.allowed_flow_ids) {}
+        send_flow_ids_(config_.allowed_flow_ids) {
+    stats_.max_datagram_payload =
+        std::min(config_.maximum_udp_payload, kRoqEarlyDatagramPayloadLimit);
+  }
 
   ~RoqSessionImpl() override {
     Close(0, "complete");
     if (thread_.joinable())
       thread_.join();
+    RTC_LOG(LS_INFO) << "roq_transport_summary oversize_drops="
+                     << stats_.oversize_drops
+                     << " pmtu_drops=" << stats_.pmtu_purge_drops
+                     << " early_datagrams_sent=" << stats_.early_datagrams_sent
+                     << " received_datagrams=" << stats_.received_datagrams;
   }
 
   bool Start(std::string* error) override {
@@ -310,18 +318,10 @@ class RoqSessionImpl final : public RoqSession {
   }
 
   void UpdateReceiveFlowIds(std::vector<uint64_t> flow_ids) override {
-    std::vector<RoqReceivedPacket> released;
-    ReceiveCallback callback;
-    {
-      std::lock_guard lock(mutex_);
-      released = receive_flows_.Update(std::move(flow_ids), config_.clock->CurrentTime());
-      CopyFlowStatsLocked();
-      callback = receive_callback_;
-    }
-    if (callback) {
-      for (RoqReceivedPacket& packet : released)
-        callback(std::move(packet));
-    }
+    std::lock_guard lock(mutex_);
+    QueueReceivedLocked(receive_flows_.Update(std::move(flow_ids),
+                                              config_.clock->CurrentTime()));
+    CopyFlowStatsLocked();
   }
 
   void BeginFlowUpdate() override { BeginReceiveFlowUpdate(); }
@@ -343,19 +343,50 @@ class RoqSessionImpl final : public RoqSession {
       if (flow.allow_send)
         send_flows.push_back(flow.flow_id);
     }
-    std::vector<RoqReceivedPacket> released;
-    ReceiveCallback callback;
+    size_t packet_limit;
     {
       std::lock_guard lock(mutex_);
-      released = receive_flows_.Update(std::move(receive_flows), config_.clock->CurrentTime());
+      receive_generations_.clear();
+      for (const auto& flow : flows)
+        receive_generations_[flow.flow_id] = flow.binding_generation;
+      QueueReceivedLocked(receive_flows_.Update(std::move(receive_flows),
+                                                config_.clock->CurrentTime()));
       send_flow_ids_ = std::move(send_flows);
+      packet_limit = PacketLimitLocked(stats_.max_datagram_payload);
       CopyFlowStatsLocked();
-      callback = receive_callback_;
     }
-    if (callback) {
-      for (RoqReceivedPacket& packet : released)
-        callback(std::move(packet));
+    if (datagram_size_callback_)
+      datagram_size_callback_(packet_limit);
+  }
+
+  void QueueReceivedLocked(std::vector<RoqReceivedPacket> packets) {
+    for (auto& packet : packets) {
+      packet.binding_generation = receive_generations_[packet.flow_id];
+      if (pending_received_.size() >= 512 ||
+          pending_received_bytes_ + packet.packet.size() > 512 * 1024)
+        continue;
+      pending_received_bytes_ += packet.packet.size();
+      pending_received_.push_back(std::move(packet));
     }
+  }
+
+  void DispatchReceived() {
+    std::deque<RoqReceivedPacket> packets;
+    {
+      std::lock_guard lock(mutex_);
+      packets.swap(pending_received_);
+      pending_received_bytes_ = 0;
+    }
+    if (receive_callback_)
+      for (auto& packet : packets) {
+        const auto now_us =
+            std::chrono::duration_cast<std::chrono::microseconds>(
+                SteadyClock::now().time_since_epoch())
+                .count();
+        if (packet.received_at_us < 0 ||
+            now_us - packet.received_at_us <= 250000)
+          receive_callback_(std::move(packet));
+      }
   }
 
   RoqSendResult SendMedia(uint64_t flow_id,
@@ -434,6 +465,18 @@ class RoqSessionImpl final : public RoqSession {
     stats_.controller_has_congestion_window = has_congestion_window;
   }
 
+  size_t maximum_packet_payload(uint64_t flow_id) const override {
+    std::lock_guard lock(mutex_);
+    return RoqPacketPayloadLimit(stats_.max_datagram_payload, flow_id);
+  }
+
+  size_t PacketLimitLocked(size_t datagram_bytes) const {
+    size_t result = datagram_bytes;
+    for (uint64_t flow : send_flow_ids_)
+      result = std::min(result, RoqPacketPayloadLimit(datagram_bytes, flow));
+    return result;
+  }
+
   void UpdatePeerDatagramPayloadLimit(size_t bytes) override {
     DatagramSizeCallback callback;
     size_t packet_limit = 0;
@@ -444,13 +487,14 @@ class RoqSessionImpl final : public RoqSession {
           stats_.max_datagram_payload == 0
               ? bytes
               : std::min(bytes, stats_.max_datagram_payload);
+      stats_.max_datagram_payload = effective;
       outgoing_.SetMaxDatagramSize(effective, config_.clock->CurrentTime());
       if (quiche_slot_datagram_ &&
           quiche_slot_datagram_->bytes.size() > effective)
         purge_quiche_slot_for_pmtu_ = true;
       CopyQueueStatsLocked();
       callback = datagram_size_callback_;
-      packet_limit = effective > 0 ? effective - 1 : 0;
+      packet_limit = PacketLimitLocked(effective);
     }
     if (callback && packet_limit > 0)
       callback(packet_limit);
@@ -636,7 +680,7 @@ class RoqSessionImpl final : public RoqSession {
         purge_quiche_slot_for_pmtu_ = true;
       CopyQueueStatsLocked();
       callback = datagram_size_callback_;
-      packet_limit = effective - 1;
+      packet_limit = PacketLimitLocked(effective);
     }
     if (callback)
       callback(packet_limit);
@@ -667,11 +711,22 @@ class RoqSessionImpl final : public RoqSession {
       }
       RoqReceivedPacket received = {
           decoded.flow_id,
-          std::vector<uint8_t>(decoded.packet.begin(), decoded.packet.end())};
+          std::vector<uint8_t>(decoded.packet.begin(), decoded.packet.end()),
+          std::chrono::duration_cast<std::chrono::microseconds>(
+              SteadyClock::now().time_since_epoch())
+              .count()};
       ReceiveFlowRoute route;
       {
         std::lock_guard lock(mutex_);
         route = receive_flows_.Route(received, config_.clock->CurrentTime());
+        if (route == ReceiveFlowRoute::kDeliver) {
+          ++stats_.received_datagrams;
+          if (!stats_.established)
+            ++stats_.early_datagrams_received;
+          std::vector<RoqReceivedPacket> ready;
+          ready.push_back(std::move(received));
+          QueueReceivedLocked(std::move(ready));
+        }
         CopyFlowStatsLocked();
       }
       if (route == ReceiveFlowRoute::kClose) {
@@ -683,17 +738,6 @@ class RoqSessionImpl final : public RoqSession {
       }
       if (route != ReceiveFlowRoute::kDeliver)
         continue;
-      ReceiveCallback callback;
-      {
-        std::lock_guard lock(mutex_);
-        ++stats_.received_datagrams;
-        if (!stats_.established)
-          ++stats_.early_datagrams_received;
-        callback = receive_callback_;
-      }
-      if (callback) {
-        callback(std::move(received));
-      }
     }
   }
 
@@ -843,8 +887,7 @@ class RoqSessionImpl final : public RoqSession {
           return;
         }
         cached_address_token = cached->address_token;
-        outgoing_.SetMaxDatagramSize(kEarlyDatagramPayloadLimit,
-                                     config_.clock->CurrentTime());
+        // The early budget is installed before producers can enqueue.
       }
     }
     receive_flows_.BeginUpdate(config_.clock->CurrentTime());
@@ -927,6 +970,7 @@ class RoqSessionImpl final : public RoqSession {
         }
       }
 
+      DispatchReceived();
       const auto now = SteadyClock::now();
       if ((quiche_conn_is_established(connection.get()) ||
            quiche_conn_is_in_early_data(connection.get())) &&
@@ -1119,7 +1163,7 @@ class RoqSessionImpl final : public RoqSession {
           if (purge_for_pmtu)
             ++quiche_pmtu_purge_drops_;
           if (!purge_for_binding && quiche_slot_datagram_) {
-            outgoing_.RecordDropped(
+            outgoing_.DiscardFrame(
                 *quiche_slot_datagram_,
                 Timestamp::Micros(config_.clock->CurrentTime().us()));
           }
@@ -1187,7 +1231,7 @@ class RoqSessionImpl final : public RoqSession {
             outgoing->on_submitted();
         } else if (queued == QUICHE_ERR_BUFFER_TOO_SHORT) {
           ++quiche_oversize_drops_;
-          outgoing_.RecordDropped(*outgoing, config_.clock->CurrentTime());
+          outgoing_.DiscardFrame(*outgoing, config_.clock->CurrentTime());
           CopyQueueStatsLocked();
         } else if (queued == QUICHE_ERR_DONE) {
           outgoing_.Requeue(std::move(*outgoing));
@@ -1251,6 +1295,9 @@ class RoqSessionImpl final : public RoqSession {
   bool early_datagrams_allowed_ = config_.allow_early_datagrams;
   bool ping_requested_ = false;
   bool abort_requested_ = false;
+  std::deque<RoqReceivedPacket> pending_received_;
+  std::map<uint64_t, uint64_t> receive_generations_;
+  size_t pending_received_bytes_ = 0;
   RoqSessionStats stats_;
   std::string error_;
   uint64_t last_path_acked_bytes_ = 0;

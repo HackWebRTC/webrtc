@@ -35,13 +35,13 @@ rtc_library("artc_device") {
   include_dirs = [ _artc_source_include_dir ]
   deps = [
     "//api/video:video_frame",
-    "//api/video_codecs:builtin_video_decoder_factory",
-    "//api/video_codecs:builtin_video_encoder_factory",
+    "//api/video_codecs:video_codecs_api",
     "//sdk:base_objc",
     "//sdk:default_codec_factory_objc",
     "//sdk:metal_objc",
     "//sdk:native_api",
     "//sdk:videocapture_objc",
+    "//sdk:videotoolbox_objc",
   ]
   frameworks = [ "AVFoundation.framework" ]
 }
@@ -92,6 +92,7 @@ rtc_shared_library("artc") {
     "//modules/roq:roq_core",
     "//modules/rtp_rtcp:rtp_rtcp_format",
     "//rtc_base:crypto_random",
+    "//rtc_base:logging",
     "//system_wrappers",
     "//third_party/protobuf:protobuf_lite",
   ]
@@ -138,6 +139,7 @@ if (rtc_include_tests) {
       "//modules/roq:roq_core",
       "//modules/rtp_rtcp:rtp_rtcp_format",
       "//rtc_base:crypto_random",
+      "//rtc_base:logging",
       "//system_wrappers",
       "//third_party/protobuf:protobuf_lite",
     ]
@@ -215,6 +217,7 @@ if (rtc_include_tests) {
       "//modules/rtp_rtcp:rtp_rtcp_format",
       "//modules/video_coding:video_codec_interface",
       "//rtc_base:crypto_random",
+      "//rtc_base:logging",
       "//system_wrappers",
       "//test:test_support",
       "//testing/gtest",

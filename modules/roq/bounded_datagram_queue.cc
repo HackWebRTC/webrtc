@@ -19,12 +19,32 @@ std::string SchedulerBinding(const QueuedDatagram& d) {
 }  // namespace
 DatagramEnqueueResult BoundedDatagramQueue::Enqueue(QueuedDatagram d,
                                                     Timestamp now) {
+  if (d.frame_id) {
+    const auto damaged = damaged_frames_.find(SchedulerBinding(d));
+    if (damaged != damaged_frames_.end()) {
+      if (damaged->second == *d.frame_id) {
+        RecordDropped(d, now);
+        return DatagramEnqueueResult::kDropped;
+      }
+      damaged_frames_.erase(damaged);
+    }
+  }
   if (d.bytes.empty()) {
     ++invalid_drops_;
     return DatagramEnqueueResult::kInvalid;
   }
   if (d.bytes.size() > max_datagram_size_) {
     ++oversize_drops_;
+    if (d.frame_id) {
+      RetireFrame(d);
+      std::erase_if(queue_, [&](const QueuedDatagram& queued) {
+        if (queued.frame_id != d.frame_id)
+          return false;
+        byte_size_ -= queued.bytes.size();
+        RecordDropped(queued, now);
+        return true;
+      });
+    }
     RecordDropped(d, now);
     return DatagramEnqueueResult::kOversize;
   }
@@ -141,9 +161,18 @@ void BoundedDatagramQueue::RecordDropped(const QueuedDatagram& d, Timestamp) {
 }
 size_t BoundedDatagramQueue::SetMaxDatagramSize(size_t size, Timestamp now) {
   max_datagram_size_ = size;
+  std::vector<DatagramFrameId> damaged;
+  for (const auto& d : queue_) {
+    if (d.bytes.size() > size && d.frame_id) {
+      damaged.push_back(*d.frame_id);
+      RetireFrame(d);
+    }
+  }
   const size_t before = queue_.size();
   std::erase_if(queue_, [&](const QueuedDatagram& d) {
-    if (d.bytes.size() <= size)
+    if (d.bytes.size() <= size &&
+        (!d.frame_id || std::find(damaged.begin(), damaged.end(),
+                                  *d.frame_id) == damaged.end()))
       return false;
     byte_size_ -= d.bytes.size();
     RecordDropped(d, now);
@@ -154,12 +183,41 @@ size_t BoundedDatagramQueue::SetMaxDatagramSize(size_t size, Timestamp now) {
 }
 size_t BoundedDatagramQueue::Clear() {
   const size_t count = queue_.size();
+  for (const auto& d : queue_)
+    RetireFrame(d);
   queue_.clear();
   byte_size_ = 0;
   deficits_.clear();
   last_binding_by_priority_.fill({});
   current_binding_by_priority_.fill({});
   return count;
+}
+void BoundedDatagramQueue::RetireFrame(const QueuedDatagram& d) {
+  if (!d.frame_id)
+    return;
+  const auto key = SchedulerBinding(d);
+  const auto previous = damaged_frames_.find(key);
+  if (previous == damaged_frames_.end() || previous->second != *d.frame_id) {
+    ++recovery_requests_;
+    ++binding_stats_[key].recovery_requests;
+  }
+  damaged_frames_[key] = *d.frame_id;
+}
+void BoundedDatagramQueue::DiscardFrame(const QueuedDatagram& d,
+                                        Timestamp now) {
+  if (!d.frame_id) {
+    RecordDropped(d, now);
+    return;
+  }
+  RetireFrame(d);
+  std::erase_if(queue_, [&](const QueuedDatagram& queued) {
+    if (queued.frame_id != d.frame_id)
+      return false;
+    byte_size_ -= queued.bytes.size();
+    RecordDropped(queued, now);
+    return true;
+  });
+  RecordDropped(d, now);
 }
 size_t BoundedDatagramQueue::PurgeBinding(const std::string& id) {
   const size_t before = queue_.size();
@@ -170,6 +228,7 @@ size_t BoundedDatagramQueue::PurgeBinding(const std::string& id) {
     return true;
   });
   deficits_.erase(id);
+  damaged_frames_.erase(id);
   return before - queue_.size();
 }
 DatagramBindingStats BoundedDatagramQueue::BindingStats(

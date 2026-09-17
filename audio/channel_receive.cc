@@ -429,6 +429,7 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
 
   env_.event_log().Log(std::make_unique<RtcEventAudioPlayout>(remote_ssrc_));
 
+  bool decoded_from_packet = false;
   {
     MutexLock lock(&neteq_mutex_);
     if (neteq_->GetAudio(audio_frame) != NetEq::kOK) {
@@ -442,6 +443,7 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
                        "error", 1);
       return AudioMixer::Source::AudioFrameInfo::kError;
     }
+    decoded_from_packet = neteq_->LastOutputDecodedFromPacket();
   }
 
   resampler_helper_.MaybeResample(sample_rate_hz, audio_frame);
@@ -461,7 +463,7 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
       AudioSinkInterface::Data data(
           audio_frame->data(), audio_frame->samples_per_channel_,
           audio_frame->sample_rate_hz_, audio_frame->num_channels_,
-          audio_frame->timestamp_, !audio_frame->packet_infos_.empty());
+          audio_frame->timestamp_, decoded_from_packet);
       audio_sink_->OnData(data);
     }
   }

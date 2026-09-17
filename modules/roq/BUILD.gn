@@ -94,10 +94,13 @@ if (rtc_include_tests) {
       "roq_media_engine_unittest.cc",
       "roq_session_unittest.cc",
       "roq_transport_unittest.cc",
+      "../../rtc_tools/roq/test_roq_server.cc",
+      "../../rtc_tools/roq/test_roq_server.h",
       "rtp_packet_metadata_unittest.cc",
     ]
     deps = [
       ":roq_core",
+      "../../rtc_tools/roq:roq_test_certificates",
       "../../audio",
       "../../api/crypto:options",
       "../../api/audio:audio_frame_api",

@@ -13,6 +13,8 @@
 
 #include "api/units/time_delta.h"
 #include "modules/roq/rtp_packet_metadata.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/time_utils.h"
 
 namespace webrtc::roq {
 
@@ -20,18 +22,21 @@ struct RoqPacketTransport::KeyFrameSubmissionState {
   struct Frame {
     size_t registered_packets = 0;
     size_t submitted_packets = 0;
+    size_t rtp_bytes = 0;
+    int64_t first_submit_us = -1;
     bool marker_seen = false;
     bool is_key = false;
     uint32_t ssrc = 0;
     uint16_t marker_sequence = 0;
   };
 
-  void Register(const RtpPacketMetadata& metadata) {
+  void Register(const RtpPacketMetadata& metadata, size_t bytes) {
     std::lock_guard lock(mutex);
     while (frames.size() >= 128 && !frames.contains(metadata.timestamp))
       frames.erase(frames.begin());
     Frame& frame = frames[metadata.timestamp];
     ++frame.registered_packets;
+    frame.rtp_bytes += bytes;
     frame.is_key |= metadata.is_key;
     frame.ssrc = metadata.ssrc;
     if (metadata.marker) {
@@ -52,10 +57,18 @@ struct RoqPacketTransport::KeyFrameSubmissionState {
       submitted_pps |= metadata.contains_pps;
       Frame& frame = frames[metadata.timestamp];
       ++frame.submitted_packets;
+      if (frame.first_submit_us < 0)
+        frame.first_submit_us = TimeMicros();
       if (frame.marker_seen &&
           frame.submitted_packets == frame.registered_packets) {
         if (frame.is_key && submitted_sps && submitted_pps &&
             (video_codec != kVideoCodecH265 || submitted_vps)) {
+          RTC_LOG(LS_INFO) << "roq_idr_submitted ssrc=" << frame.ssrc
+                           << " timestamp=" << metadata.timestamp
+                           << " packets=" << frame.registered_packets
+                           << " rtp_bytes=" << frame.rtp_bytes
+                           << " first_submit_us=" << frame.first_submit_us
+                           << " last_submit_us=" << TimeMicros();
           callback = on_submitted;
           ssrc = frame.ssrc;
           timestamp = metadata.timestamp;
@@ -81,6 +94,8 @@ RoqPacketTransport::RoqPacketTransport(RoqPacketTransportConfig config,
                                        PacketAcceptedCallback packet_accepted)
     : packet_accepted_(std::move(packet_accepted)),
       config_(std::move(config)),
+      rtp_flow_id_(config_.rtp_flow_id),
+      rtcp_flow_id_(config_.rtcp_flow_id),
       key_frame_submission_state_(std::make_shared<KeyFrameSubmissionState>()) {
   key_frame_submission_state_->video_codec = config_.video_codec;
   key_frame_submission_state_->on_submitted = config_.key_frame_submitted;
@@ -88,25 +103,26 @@ RoqPacketTransport::RoqPacketTransport(RoqPacketTransportConfig config,
 
 bool RoqPacketTransport::SendRtp(std::span<const uint8_t> packet,
                                  const PacketOptions& options) {
-  return Send(config_.rtp_flow_id, packet, options);
+  return Send(false, packet, options);
 }
 
 bool RoqPacketTransport::SendRtcp(std::span<const uint8_t> packet,
                                   const PacketOptions& options) {
-  return Send(config_.rtcp_flow_id, packet, options);
+  return Send(true, packet, options);
 }
 
-bool RoqPacketTransport::Send(uint64_t flow_id,
+bool RoqPacketTransport::Send(bool rtcp,
                               std::span<const uint8_t> packet,
                               const PacketOptions& options) {
   const Timestamp now = config_.clock->CurrentTime();
+  const uint64_t flow_id = rtcp ? rtcp_flow_id_.load() : rtp_flow_id_.load();
   bool track_video_submission = false;
   RtpPacketMetadata submitted_metadata;
   RoqDatagramMetadata datagram = {.binding_id = config_.binding_id,
                                   .media_type = config_.media_type,
                                   .enqueue_time = now,
                                   .video_codec = config_.video_codec};
-  if (flow_id == config_.rtcp_flow_id) {
+  if (rtcp) {
     bool critical = false;
     if (!ClassifyRtcpPacket(packet, &critical)) {
       config_.session->RecordInvalidDatagram();
@@ -144,7 +160,7 @@ bool RoqPacketTransport::Send(uint64_t flow_id,
       datagram.contains_pps = metadata.contains_pps;
       track_video_submission = true;
       submitted_metadata = metadata;
-      key_frame_submission_state_->Register(metadata);
+      key_frame_submission_state_->Register(metadata, packet.size());
     } else if (ParseRtpPacketMetadata(packet, &metadata) &&
                metadata.payload_type == config_.rtx_payload_type &&
                metadata.ssrc == config_.rtx_ssrc) {
@@ -163,7 +179,7 @@ bool RoqPacketTransport::Send(uint64_t flow_id,
   PacketAcceptedCallback accepted = packet_accepted_;
   auto key_frame_submission_state = key_frame_submission_state_;
   std::shared_ptr<std::atomic<uint64_t>> accepted_rtp_packets =
-      flow_id == config_.rtp_flow_id ? accepted_rtp_packets_ : nullptr;
+      rtcp ? nullptr : accepted_rtp_packets_;
   std::vector<uint8_t> accepted_packet(packet.begin(), packet.end());
   const RoqSendResult result = config_.session->SendMedia(
       flow_id, packet, std::move(datagram),

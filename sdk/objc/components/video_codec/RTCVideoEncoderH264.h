@@ -21,6 +21,12 @@ RTC_OBJC_EXPORT
 
 - (instancetype)initWithCodecInfo:(RTC_OBJC_TYPE(RTCVideoCodecInfo) *)codecInfo;
 
+/** Lets VideoToolbox choose the H264 or H265 level from the encoding settings.
+ * The caller must ensure that the receiver supports the resulting stream.
+ */
+- (instancetype)initWithCodecInfo:(RTC_OBJC_TYPE(RTCVideoCodecInfo) *)codecInfo
+                    useAutoLevel:(BOOL)useAutoLevel;
+
 /** Returns the list of supported codec formats (profiles) for the H264 encoder.
  */
 + (NSArray<RTC_OBJC_TYPE(RTCVideoCodecInfo) *> *)supportedCodecs;

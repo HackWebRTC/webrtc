@@ -22,6 +22,18 @@
 
 namespace webrtc::roq {
 
+// DATAGRAM payload, including the RoQ flow varint (not an RTP limit).
+inline constexpr size_t kRoqEarlyDatagramPayloadLimit = 1000;
+inline size_t RoqPacketPayloadLimit(size_t datagram_bytes, uint64_t flow_id) {
+  const size_t prefix = flow_id < (1ULL << 6)    ? 1
+                        : flow_id < (1ULL << 14) ? 2
+                        : flow_id < (1ULL << 30) ? 4
+                                                 : 8;
+  return flow_id < (1ULL << 62) && datagram_bytes > prefix
+             ? datagram_bytes - prefix
+             : 0;
+}
+
 enum class RoqSendResult {
   kQueued,
   kDropped,
@@ -59,6 +71,7 @@ struct RoqFlowConfig {
   uint64_t flow_id = 0;
   RoqReceiveFlowPolicy receive_policy = RoqReceiveFlowPolicy::kDeliver;
   bool allow_send = false;
+  uint64_t binding_generation = 0;
 };
 
 struct RoqFrameId {
@@ -120,6 +133,10 @@ struct RoqSessionConfig {
 struct RoqReceivedPacket {
   uint64_t flow_id = 0;
   std::vector<uint8_t> packet;
+  int64_t received_at_us = -1;
+  int64_t media_enqueued_at_us = -1;
+  uint64_t transport_generation = 0;
+  uint64_t binding_generation = 0;
 };
 
 struct RoqSessionStats {
@@ -262,6 +279,13 @@ class RoqSession {
     (void)has_congestion_window;
   }
   virtual void RecordInvalidDatagram() = 0;
+  virtual size_t maximum_packet_payload(uint64_t flow_id) const {
+    const auto current = stats();
+    return RoqPacketPayloadLimit(current.max_datagram_payload
+                                     ? current.max_datagram_payload
+                                     : kRoqEarlyDatagramPayloadLimit,
+                                 flow_id);
+  }
   virtual void UpdatePeerDatagramPayloadLimit(size_t bytes) = 0;
   virtual void Close(uint64_t application_error = 0,
                      std::string reason = "complete") = 0;

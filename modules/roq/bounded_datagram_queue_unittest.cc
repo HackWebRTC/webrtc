@@ -16,6 +16,54 @@
 namespace webrtc::roq {
 namespace {
 
+TEST(BoundedDatagramQueueTest, PmtuShrinkRetiresTheWholeDamagedFrame) {
+  BoundedDatagramQueue queue(10, 1200);
+  const Timestamp now = Timestamp::Millis(100);
+  const DatagramFrameId frame{.ssrc = 1, .timestamp = 9000, .binding_id = "v"};
+  ASSERT_EQ(queue.Enqueue({.bytes = std::vector<uint8_t>(1100),
+                           .binding_id = "v",
+                           .frame_id = frame},
+                          now),
+            DatagramEnqueueResult::kQueued);
+  ASSERT_EQ(queue.Enqueue({.bytes = std::vector<uint8_t>(200),
+                           .binding_id = "v",
+                           .frame_id = frame},
+                          now),
+            DatagramEnqueueResult::kQueued);
+  EXPECT_EQ(queue.SetMaxDatagramSize(1000, now), 2u);
+  EXPECT_EQ(queue.BindingStats("v").recovery_requests, 1u);
+  EXPECT_FALSE(queue.Pop(now));
+  EXPECT_EQ(queue.Enqueue({.bytes = std::vector<uint8_t>(200),
+                           .binding_id = "v",
+                           .frame_id = frame,
+                           .frame_complete = true},
+                          now),
+            DatagramEnqueueResult::kDropped);
+  EXPECT_EQ(queue.Enqueue({.bytes = std::vector<uint8_t>(200),
+                           .binding_id = "v",
+                           .frame_id = DatagramFrameId{.ssrc = 1,
+                                                       .timestamp = 12000,
+                                                       .binding_id = "v"}},
+                          now),
+            DatagramEnqueueResult::kQueued);
+}
+
+TEST(BoundedDatagramQueueTest, RejectedEarlyFrameCannotResumeWithItsTail) {
+  BoundedDatagramQueue queue(10, 1200);
+  const Timestamp now = Timestamp::Millis(100);
+  const DatagramFrameId frame{.ssrc = 1, .timestamp = 9000, .binding_id = "v"};
+  ASSERT_EQ(
+      queue.Enqueue({.bytes = {1}, .binding_id = "v", .frame_id = frame}, now),
+      DatagramEnqueueResult::kQueued);
+  queue.Clear();
+  EXPECT_EQ(queue.Enqueue({.bytes = {2},
+                           .binding_id = "v",
+                           .frame_id = frame,
+                           .frame_complete = true},
+                          now),
+            DatagramEnqueueResult::kDropped);
+}
+
 QueuedDatagram Datagram(uint8_t value,
                         DatagramPriority priority,
                         Timestamp enqueue_time,

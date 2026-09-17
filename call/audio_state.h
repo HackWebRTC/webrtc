@@ -38,6 +38,9 @@ class AudioState : public RefCountInterface {
 
     // TODO(solenberg): Temporary: audio device module.
     scoped_refptr<AudioDeviceModule> audio_device_module;
+    // RoQ prepares playout before publications start and keeps it warm until
+    // session shutdown, so subscription changes do not restart the device.
+    bool keep_playout_alive = false;
 
     scoped_refptr<AsyncAudioProcessing::Factory> async_audio_processing_factory;
   };

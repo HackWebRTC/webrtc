@@ -142,6 +142,32 @@ TEST(RoqPacketTransportTest, DeclaresExternalTransportPacing) {
   EXPECT_EQ(transport.GetRtpPacingMode(), RtpPacingMode::kExternalTransport);
 }
 
+TEST(RoqPacketTransportTest, RebindingUsesNewFlowsWithoutResettingRtpAccounting) {
+  SimulatedClock clock(Timestamp::Millis(100));
+  FakeRoqSession session;
+  RoqPacketTransport transport(VideoConfig(&session, &clock));
+  constexpr std::array<uint8_t, 14> rtp = {
+      0x80, 0xe0, 0, 42, 0, 1, 0x5f, 0x90, 1, 0x53, 0x15, 0x8e, 0x65, 0xaa};
+  constexpr std::array<uint8_t, 8> rtcp = {0x80, 201, 0, 1, 0, 0, 0, 1};
+  ASSERT_TRUE(transport.SendRtp(rtp, PacketOptions()));
+  session.on_submitted_();
+  ASSERT_EQ(transport.accepted_rtp_packets(), 1u);
+
+  EXPECT_TRUE(transport.SetFlowIds(46, 47));
+  EXPECT_FALSE(transport.SetFlowIds(46, 47));
+  ASSERT_TRUE(transport.SendRtp(rtp, PacketOptions()));
+  EXPECT_EQ(session.flow_id_, 46u);
+  EXPECT_EQ(session.metadata_.media_type, RoqMediaType::kVideo);
+  session.on_submitted_();
+  EXPECT_EQ(transport.accepted_rtp_packets(), 2u);
+
+  ASSERT_TRUE(transport.SendRtcp(rtcp, PacketOptions()));
+  EXPECT_EQ(session.flow_id_, 47u);
+  EXPECT_EQ(session.metadata_.media_type, RoqMediaType::kRtcp);
+  session.on_submitted_();
+  EXPECT_EQ(transport.accepted_rtp_packets(), 2u);
+}
+
 TEST(RoqPacketTransportTest, ReportsEachSubmittedKeyVideoFrame) {
   SimulatedClock clock(Timestamp::Millis(100));
   FakeRoqSession session;

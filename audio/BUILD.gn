@@ -253,6 +253,7 @@ if (rtc_include_tests) {
   rtc_library("channel_receive_unittest") {
     testonly = true
     sources = [ "channel_receive_unittest.cc" ]
+    data = [ "../resources/near48_mono.pcm" ]
     deps = [
       ":audio",
       "../api:make_ref_counted",
@@ -262,6 +263,7 @@ if (rtc_include_tests) {
       "../api/audio:audio_frame_api",
       "../api/audio_codecs:audio_codecs_api",
       "../api/audio_codecs:builtin_audio_decoder_factory",
+      "../api/audio_codecs:builtin_audio_encoder_factory",
       "../api/crypto:options",
       "../api/units:time_delta",
       "../api/units:timestamp",
@@ -274,6 +276,7 @@ if (rtc_include_tests) {
       "../rtc_base:stringutils",
       "../system_wrappers",
       "../test:create_test_environment",
+      "../test:fileutils",
       "../test:mock_transport",
       "../test:test_support",
       "../test/time_controller",

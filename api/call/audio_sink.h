@@ -40,7 +40,9 @@ class AudioSinkInterface {
     int sample_rate;             // Sample rate in Hz.
     size_t channels;             // Number of channels in the audio data.
     uint32_t timestamp;          // The RTP timestamp of the first sample.
-    bool decoded_from_packet;    // False for PLC/startup output without RTP.
+    // A successful speech decode this pull, including RED/FEC recovery.
+    // False for PLC, CNG, startup silence and buffered-only output.
+    bool decoded_from_packet;
   };
 
   virtual void OnData(const Data& audio) = 0;

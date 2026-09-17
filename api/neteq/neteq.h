@@ -230,6 +230,12 @@ class NetEq {
       int* current_sample_rate_hz = nullptr,
       std::optional<Operation> action_override = std::nullopt) = 0;
 
+  // Whether the last successful GetAudio decoded nonempty speech from an
+  // encoded packet, including RED and codec FEC. This is a decode milestone,
+  // not sample provenance across the sync buffer. PLC, CNG and buffered-only
+  // output are excluded. Query on the same sequence as GetAudio.
+  virtual bool LastOutputDecodedFromPacket() const { return false; }
+
   // Replaces the current set of decoders with the given one.
   virtual void SetCodecs(const std::map<int, SdpAudioFormat>& codecs) = 0;
 

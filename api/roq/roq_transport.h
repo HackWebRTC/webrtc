@@ -5,6 +5,7 @@
 #ifndef API_ROQ_ROQ_TRANSPORT_H_
 #define API_ROQ_ROQ_TRANSPORT_H_
 
+#include <algorithm>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -46,6 +47,19 @@ class RoqPacketTransport final : public Transport {
 
   bool SendRtp(std::span<const uint8_t> packet,
                const PacketOptions& options) override;
+  size_t MaxRtpPacketSize() const override {
+    return std::min(
+        application_packet_limit_.load(),
+        config_.session->maximum_packet_payload(rtp_flow_id_.load()));
+  }
+  void SetMaxRtpPacketSize(size_t bytes) {
+    application_packet_limit_.store(bytes);
+  }
+  bool SetFlowIds(uint64_t rtp_flow_id, uint64_t rtcp_flow_id) {
+    const bool rtp_changed = rtp_flow_id_.exchange(rtp_flow_id) != rtp_flow_id;
+    const bool rtcp_changed = rtcp_flow_id_.exchange(rtcp_flow_id) != rtcp_flow_id;
+    return rtp_changed || rtcp_changed;
+  }
   bool SendRtcp(std::span<const uint8_t> packet,
                 const PacketOptions& options) override;
   RtpPacingMode GetRtpPacingMode() const override {
@@ -57,12 +71,15 @@ class RoqPacketTransport final : public Transport {
 
  private:
   struct KeyFrameSubmissionState;
-  bool Send(uint64_t flow_id,
+  bool Send(bool rtcp,
             std::span<const uint8_t> packet,
             const PacketOptions& options);
 
   PacketAcceptedCallback packet_accepted_;
+  std::atomic<size_t> application_packet_limit_ = 1500;
   const RoqPacketTransportConfig config_;
+  std::atomic<uint64_t> rtp_flow_id_;
+  std::atomic<uint64_t> rtcp_flow_id_;
   std::shared_ptr<std::atomic<uint64_t>> accepted_rtp_packets_ =
       std::make_shared<std::atomic<uint64_t>>(0);
   std::shared_ptr<KeyFrameSubmissionState> key_frame_submission_state_;

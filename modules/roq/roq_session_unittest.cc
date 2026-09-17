@@ -18,6 +18,45 @@
 namespace webrtc::roq {
 namespace {
 
+TEST(RoqSessionTest, EarlyBudgetAppliesBeforeTransportStarts) {
+  auto session = RoqSession::Create({.address = "localhost:443",
+                                     .allow_early_datagrams = true,
+                                     .allowed_flow_ids = {0, 64, 16384}},
+                                    [](RoqReceivedPacket) {});
+  ASSERT_TRUE(session);
+  EXPECT_EQ(session->SendMedia(0, std::vector<uint8_t>(1000), {}, {}),
+            RoqSendResult::kOversize);
+  EXPECT_EQ(session->SendMedia(64, std::vector<uint8_t>(999), {}, {}),
+            RoqSendResult::kOversize);
+  EXPECT_EQ(session->SendMedia(16384, std::vector<uint8_t>(996), {}, {}),
+            RoqSendResult::kQueued);
+}
+
+TEST(RoqSessionTest, PacketBudgetIncludesTheActualFlowVarint) {
+  size_t packet_limit = 0;
+  auto session = RoqSession::Create(
+      {.address = "localhost:443", .allowed_flow_ids = {0, 64, 16384}},
+      [](RoqReceivedPacket) {}, [&](size_t bytes) { packet_limit = bytes; });
+  ASSERT_TRUE(session);
+  session->UpdatePeerDatagramPayloadLimit(1000);
+  EXPECT_EQ(packet_limit, 996u);
+  EXPECT_EQ(
+      session->SendMedia(16384, std::vector<uint8_t>(packet_limit), {}, {}),
+      RoqSendResult::kQueued);
+}
+
+TEST(RoqSessionTest,
+     FlowUpdateChangesThePacketBudgetWithoutRestartingTransport) {
+  size_t packet_limit = 0;
+  auto session = RoqSession::Create(
+      {.address = "localhost:443", .allowed_flow_ids = {0}},
+      [](RoqReceivedPacket) {}, [&](size_t bytes) { packet_limit = bytes; });
+  session->UpdatePeerDatagramPayloadLimit(1000);
+  ASSERT_EQ(packet_limit, 999u);
+  session->CommitFlowUpdate({{.flow_id = 16384, .allow_send = true}});
+  EXPECT_EQ(packet_limit, 996u);
+}
+
 TEST(RoqSessionTest, ReportsLowFrequencyLifecycleTransitions) {
   std::vector<RoqSessionLifecycleState> states;
   RoqSessionConfig config = {

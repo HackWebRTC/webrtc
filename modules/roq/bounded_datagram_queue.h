@@ -82,6 +82,7 @@ class BoundedDatagramQueue {
   size_t Clear();
   size_t PurgeBinding(const std::string& binding_id);
   void RecordDropped(const QueuedDatagram& datagram, Timestamp now);
+  void DiscardFrame(const QueuedDatagram& datagram, Timestamp now);
   void RecordInvalid() { ++invalid_drops_; }
 
   size_t size() const { return queue_.size(); }
@@ -94,7 +95,7 @@ class BoundedDatagramQueue {
   size_t expired_drops() const { return 0; }
   size_t invalid_drops() const { return invalid_drops_; }
   size_t dependency_drops() const { return 0; }
-  size_t recovery_requests() const { return 0; }
+  size_t recovery_requests() const { return recovery_requests_; }
   TimeDelta max_queue_delay() const { return max_queue_delay_; }
   size_t dropped_by_priority(DatagramPriority priority) const {
     return dropped_by_priority_[static_cast<size_t>(priority)];
@@ -105,6 +106,10 @@ class BoundedDatagramQueue {
   const size_t capacity_;
   const size_t byte_capacity_;
   size_t max_datagram_size_;
+  // At most one damaged access unit per binding; late fragments are discarded.
+  std::map<std::string, DatagramFrameId> damaged_frames_;
+  size_t recovery_requests_ = 0;
+  void RetireFrame(const QueuedDatagram& datagram);
   std::deque<QueuedDatagram> queue_;
   std::array<std::string, 5> last_binding_by_priority_;
   std::array<std::string, 5> current_binding_by_priority_;

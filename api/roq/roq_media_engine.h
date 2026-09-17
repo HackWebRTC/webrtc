@@ -66,11 +66,13 @@ struct RoqMediaBindingConfig {
   VideoSinkInterface<VideoFrame>* video_sink = nullptr;
   std::function<void(const RtpPacketInfo&, Timestamp)>
       video_frame_ready_for_decode;
+  std::function<uint64_t()> video_recovery_version;
   RoqAudioInputMode audio_input_mode = RoqAudioInputMode::kExternalPcm;
   RoqKeyFrameRequestMethod keyframe_request_method =
       RoqKeyFrameRequestMethod::kPli;
   bool enable_nack = true;
   int audio_bitrate_bps = 0;
+  bool opus_dtx_enabled = true;
   int video_min_bitrate_bps = 0;
   int video_start_bitrate_bps = 0;
   int video_max_bitrate_bps = 0;
@@ -165,6 +167,11 @@ class RoqMediaEngine {
                           std::span<const uint8_t> packet) = 0;
   virtual void DeliverRtcp(const std::string& binding_id,
                            std::span<const uint8_t> packet) = 0;
+  // Bounded ingress. The consumer runs on the existing joined Call worker;
+  // no packet task is posted to the client control/configuration sequence.
+  virtual void EnqueueReceivedPacket(
+      RoqReceivedPacket packet,
+      std::function<void(RoqReceivedPacket)> consume) = 0;
   virtual void GenerateSenderKeyFrame(const std::string& binding_id) = 0;
   virtual void RequestReceiverKeyFrame(const std::string& binding_id) = 0;
   virtual void NotifyPacketAccepted(const PacketOptions& options,

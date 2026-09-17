@@ -139,6 +139,7 @@ class RTPSender {
   size_t ExpectedPerPacketOverhead() const RTC_LOCKS_EXCLUDED(send_mutex_);
   // Including RTP headers.
   size_t MaxRtpPacketSize() const RTC_LOCKS_EXCLUDED(send_mutex_);
+  bool UsesExternalTransportPacing() const;
 
   uint32_t SSRC() const RTC_LOCKS_EXCLUDED(send_mutex_) { return ssrc_; }
 
@@ -181,6 +182,7 @@ class RTPSender {
 
   RtpPacketHistory* const packet_history_;
   RtpPacketSender* const paced_sender_;
+  Transport* const transport_;
 
   mutable Mutex send_mutex_;
 

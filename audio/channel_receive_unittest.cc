@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <fstream>
 #include <memory>
 #include <span>
 #include <vector>
@@ -21,6 +22,7 @@
 #include "api/audio/audio_frame.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/call/transport.h"
 #include "api/crypto/crypto_options.h"
 #include "api/make_ref_counted.h"
@@ -44,6 +46,7 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/mock_transport.h"
+#include "test/testsupport/file_utils.h"
 #include "test/time_controller/simulated_time_controller.h"
 
 namespace webrtc {
@@ -180,6 +183,124 @@ class ChannelReceiveTest : public Test {
 TEST_F(ChannelReceiveTest, CreateAndDestroy) {
   auto channel = CreateTestChannelReceive();
   EXPECT_THAT(channel, NotNull());
+}
+
+class DecodedAudioSink final : public AudioSinkInterface {
+ public:
+  void OnData(const Data& audio) override {
+    decoded.push_back(audio.decoded_from_packet);
+  }
+  std::vector<bool> decoded;
+};
+
+TEST_F(ChannelReceiveTest, FirstRedundantAudioCountsAsPacketDecode) {
+  // The first received RTP contains a lost 10 ms PCMA block as RED, followed
+  // by the current 10 ms block. Recovery must count before the primary block.
+  DecodedAudioSink sink;
+  auto channel = CreateTestChannelReceive();
+  channel->SetMaximumBufferPackets(200);
+  channel->SetReceiveCodecs({{63, {"red", 8000, 1}},
+                            {8, {"PCMA", 8000, 1}}});
+  channel->SetSink(&sink);
+  channel->StartPlayout();
+  auto packet = CreateRtpPacket();
+  packet.SetPayloadType(63);
+  packet.SetTimestamp(160);
+  // RFC 2198: PT=8, offset=80 samples, redundant length=80 bytes.
+  std::vector<uint8_t> payload = {0x88, 1, 0x40, 80, 8};
+  payload.resize(165, 0x55);
+  packet.SetPayload(payload);
+  channel->OnRtpPacket(packet);
+  AudioFrame frame;
+  channel->GetAudioFrameWithInfo(8000, &frame);
+  ASSERT_EQ(sink.decoded.size(), 1u);
+  ASSERT_TRUE(frame.packet_infos_.empty());
+  EXPECT_TRUE(sink.decoded.front()) << "RED recovery is real decoded audio";
+}
+
+TEST_F(ChannelReceiveTest, GeneratedAudioDoesNotCountAsPacketDecode) {
+  DecodedAudioSink sink;
+  auto channel = CreateTestChannelReceive();
+  channel->SetMaximumBufferPackets(200);
+  channel->SetSink(&sink);
+  channel->StartPlayout();
+  AudioFrame frame;
+  channel->GetAudioFrameWithInfo(8000, &frame);
+  ASSERT_EQ(sink.decoded.size(), 1u);
+  EXPECT_FALSE(sink.decoded.back()) << "startup silence is not decoded RTP";
+  channel->OnRtpPacket(CreateRtpPacket());
+  channel->GetAudioFrameWithInfo(8000, &frame);
+  EXPECT_TRUE(sink.decoded.back());
+  for (int i = 0; i < 20; ++i) {
+    time_controller_.AdvanceTime(TimeDelta::Millis(10));
+    channel->GetAudioFrameWithInfo(8000, &frame);
+  }
+  EXPECT_FALSE(sink.decoded.back()) << "PLC must not reuse a previous decode flag";
+}
+
+TEST_F(ChannelReceiveTest, FirstOpusFecAudioCountsAsPacketDecode) {
+  const auto env = CreateTestEnvironment();
+  const SdpAudioFormat format("opus", 48000, 2,
+                             {{"useinbandfec", "1"},
+                              {"maxaveragebitrate", "32000"},
+                              {"maxplaybackrate", "48000"}});
+  auto encoder = CreateBuiltinAudioEncoderFactory()->Create(
+      env, format, {.payload_type = 111});
+  auto probe = CreateBuiltinAudioDecoderFactory()->Create(env, format);
+  ASSERT_TRUE(encoder);
+  ASSERT_TRUE(probe);
+  encoder->OnReceivedUplinkPacketLossFraction(0.2);
+  Buffer fec_payload;
+  uint32_t fec_timestamp = 0;
+  std::vector<int16_t> samples(480 * encoder->NumChannels());
+  std::ifstream speech(test::ResourcePath("near48_mono", "pcm"), std::ios::binary);
+  ASSERT_TRUE(speech.is_open());
+  ASSERT_EQ(encoder->NumChannels(), 1u);
+  for (uint32_t block = 0; block < 500 && fec_payload.empty(); ++block) {
+    if (!speech.read(reinterpret_cast<char*>(samples.data()),
+                     samples.size() * sizeof(int16_t)))
+      break;
+    Buffer encoded;
+    const auto info = encoder->Encode(block * 480, samples, &encoded);
+    if (!encoded.empty() && probe->PacketHasFec(encoded.data(), encoded.size())) {
+      fec_timestamp = info.encoded_timestamp;
+      fec_payload = std::move(encoded);
+    }
+  }
+  ASSERT_FALSE(fec_payload.empty()) << "fixture must contain real Opus FEC";
+  DecodedAudioSink sink;
+  auto channel = CreateTestChannelReceive();
+  channel->SetMaximumBufferPackets(200);
+  channel->SetReceiveCodecs({{111, format}});
+  channel->SetSink(&sink);
+  channel->StartPlayout();
+  auto packet = CreateRtpPacket();
+  packet.SetPayloadType(111);
+  packet.SetTimestamp(fec_timestamp);
+  packet.SetPayload(fec_payload);
+  channel->OnRtpPacket(packet);
+  AudioFrame frame;
+  channel->GetAudioFrameWithInfo(48000, &frame);
+  ASSERT_EQ(sink.decoded.size(), 1u);
+  ASSERT_TRUE(frame.packet_infos_.empty()) << "first output is FEC, not primary";
+  EXPECT_TRUE(sink.decoded.front()) << "Opus FEC recovery is real decoded audio";
+}
+
+TEST_F(ChannelReceiveTest, ComfortNoiseDoesNotCountAsDecodedAudio) {
+  DecodedAudioSink sink;
+  auto channel = CreateTestChannelReceive();
+  channel->SetMaximumBufferPackets(200);
+  channel->SetReceiveCodecs({{13, {"CN", 8000, 1}}});
+  channel->SetSink(&sink);
+  channel->StartPlayout();
+  auto packet = CreateRtpPacket();
+  packet.SetPayloadType(13);
+  packet.SetPayload(std::vector<uint8_t>{30});
+  channel->OnRtpPacket(packet);
+  AudioFrame frame;
+  channel->GetAudioFrameWithInfo(8000, &frame);
+  ASSERT_EQ(sink.decoded.size(), 1u);
+  EXPECT_FALSE(sink.decoded.back());
 }
 
 TEST_F(ChannelReceiveTest, ReceiveReportGeneratedOnTime) {

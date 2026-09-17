@@ -730,6 +730,13 @@ bool RTPSenderVideo::SendVideoFrame(int payload_type,
       video_header);
 
   const size_t num_packets = packetizer->NumPackets();
+  if (video_header.frame_type == VideoFrameType::kVideoFrameKey &&
+      rtp_sender_->UsesExternalTransportPacing()) {
+    RTC_LOG(LS_INFO) << "roq_idr_packetized timestamp=" << rtp_timestamp
+                     << " encoded_bytes=" << encoder_output_size
+                     << " fragments=" << num_packets
+                     << " packet_budget=" << packet_capacity;
+  }
 
   if (num_packets == 0) {
     Timestamp now = clock_->CurrentTime();

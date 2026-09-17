@@ -106,7 +106,7 @@ void AudioState::RemoveReceivingStream(AudioReceiveStreamInterface* stream) {
   auto count = receiving_streams_.erase(stream);
   RTC_DCHECK_EQ(1, count);
   config_.audio_mixer->RemoveSource(stream->source());
-  if (receiving_streams_.empty()) {
+  if (receiving_streams_.empty() && !config_.keep_playout_alive) {
     config_.audio_device_module->StopPlayout();
   }
   UpdateNullAudioPollerState();

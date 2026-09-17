@@ -167,6 +167,7 @@ RTPSender::RTPSender(const Environment& env,
                                          : std::nullopt),
       packet_history_(packet_history),
       paced_sender_(packet_sender),
+      transport_(config.outgoing_transport),
       sending_media_(true),                   // Default to sending media.
       max_packet_size_(IP_PACKET_SIZE - 28),  // Default is IP-v4/UDP.
       rtp_header_extension_map_(config.extmap_allow_mixed),
@@ -246,7 +247,17 @@ void RTPSender::SetMaxRtpPacketSize(size_t max_packet_size) {
 }
 
 size_t RTPSender::MaxRtpPacketSize() const {
+  if (transport_) {
+    const size_t limit = transport_->MaxRtpPacketSize();
+    if (limit > 0)
+      return std::min(max_packet_size_, limit);
+  }
   return max_packet_size_;
+}
+
+bool RTPSender::UsesExternalTransportPacing() const {
+  return transport_ &&
+         transport_->GetRtpPacingMode() == RtpPacingMode::kExternalTransport;
 }
 
 void RTPSender::SetRtxStatus(int mode) {

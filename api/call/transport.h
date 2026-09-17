@@ -47,6 +47,8 @@ enum class RtpPacingMode {
 
 class Transport {
  public:
+  // Zero means the transport imposes no additional packetization limit.
+  virtual size_t MaxRtpPacketSize() const { return 0; }
   virtual RtpPacingMode GetRtpPacingMode() const {
     return RtpPacingMode::kLibwebrtc;
   }

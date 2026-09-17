@@ -196,14 +196,16 @@ void compressionOutputCallback(void *encoder,
                                 rotation:encodeParams->rotation];
 }
 
-// Extract VideoToolbox profile out of the webrtc::SdpVideoFormat. If there is
-// no specific VideoToolbox profile for the specified level, AutoLevel will be
-// returned. The user must initialize the encoder with a resolution and
-// framerate conforming to the selected H264 level regardless.
-CFStringRef ExtractProfile(const webrtc::H264ProfileLevelId &profile_level_id) {
+// Extract the VideoToolbox profile from the webrtc::SdpVideoFormat. AutoLevel
+// is used when requested or when there is no matching fixed-level constant.
+// With a fixed level, the caller must provide conforming dimensions and fps.
+CFStringRef ExtractProfile(const webrtc::H264ProfileLevelId &profile_level_id,
+                           bool use_auto_level) {
   switch (profile_level_id.profile) {
     case webrtc::H264Profile::kProfileConstrainedBaseline:
     case webrtc::H264Profile::kProfileBaseline:
+      if (use_auto_level)
+        return kVTProfileLevel_H264_Baseline_AutoLevel;
       switch (profile_level_id.level) {
         case webrtc::H264Level::kLevel3:
           return kVTProfileLevel_H264_Baseline_3_0;
@@ -235,6 +237,8 @@ CFStringRef ExtractProfile(const webrtc::H264ProfileLevelId &profile_level_id) {
       }
 
     case webrtc::H264Profile::kProfileMain:
+      if (use_auto_level)
+        return kVTProfileLevel_H264_Main_AutoLevel;
       switch (profile_level_id.level) {
         case webrtc::H264Level::kLevel3:
           return kVTProfileLevel_H264_Main_3_0;
@@ -268,6 +272,8 @@ CFStringRef ExtractProfile(const webrtc::H264ProfileLevelId &profile_level_id) {
     case webrtc::H264Profile::kProfileConstrainedHigh:
     case webrtc::H264Profile::kProfileHigh:
     case webrtc::H264Profile::kProfilePredictiveHigh444:
+      if (use_auto_level)
+        return kVTProfileLevel_H264_High_AutoLevel;
       switch (profile_level_id.level) {
         case webrtc::H264Level::kLevel3:
           return kVTProfileLevel_H264_High_3_0;
@@ -348,6 +354,7 @@ NSUInteger GetMaxSampleRate(
   uint32_t _maxAllowedFrameRate;
   RTCH264PacketizationMode _packetizationMode;
   std::optional<webrtc::H264ProfileLevelId> _profile_level_id;
+  BOOL _useAutoLevel;
   RTCVideoEncoderCallback _callback;
   int32_t _width;
   int32_t _height;
@@ -394,9 +401,15 @@ NSUInteger GetMaxSampleRate(
 // of time.
 - (instancetype)initWithCodecInfo:
     (RTC_OBJC_TYPE(RTCVideoCodecInfo) *)codecInfo {
+  return [self initWithCodecInfo:codecInfo useAutoLevel:NO];
+}
+
+- (instancetype)initWithCodecInfo:(RTC_OBJC_TYPE(RTCVideoCodecInfo) *)codecInfo
+                    useAutoLevel:(BOOL)useAutoLevel {
   self = [super init];
   if (self) {
     _codecInfo = codecInfo;
+    _useAutoLevel = useAutoLevel;
     _bitrateAdjuster = std::make_unique<webrtc::BitrateAdjuster>(
         webrtc::Clock::GetRealTimeClock(), .5, .95);
     _packetizationMode = RTCH264PacketizationModeNonInterleaved;
@@ -405,7 +418,8 @@ NSUInteger GetMaxSampleRate(
           [codecInfo nativeSdpVideoFormat].parameters);
       RTC_DCHECK(_profile_level_id);
       RTC_LOG(LS_INFO) << "Using profile "
-                       << CFStringToString(ExtractProfile(*_profile_level_id));
+                       << CFStringToString(
+                              ExtractProfile(*_profile_level_id, _useAutoLevel));
     }
 #if defined(RTC_ENABLE_H265)
     RTC_CHECK([codecInfo.name isEqualToString:kRTCVideoCodecH264Name] ||
@@ -433,7 +447,7 @@ NSUInteger GetMaxSampleRate(
 
   uint32_t aligned_width = (((_width + 15) >> 4) << 4);
   uint32_t aligned_height = (((_height + 15) >> 4) << 4);
-  _maxAllowedFrameRate = _profile_level_id
+  _maxAllowedFrameRate = _profile_level_id && !_useAutoLevel
                              ? static_cast<uint32_t>(
                                    GetMaxSampleRate(*_profile_level_id) /
                                    (aligned_width * aligned_height))
@@ -786,8 +800,16 @@ NSUInteger GetMaxSampleRate(
   if (_profile_level_id) {
     SetVTSessionProperty(_compressionSession,
                          kVTCompressionPropertyKey_ProfileLevel,
-                         ExtractProfile(*_profile_level_id));
+                         ExtractProfile(*_profile_level_id, _useAutoLevel));
   }
+#if defined(RTC_ENABLE_H265)
+  else if (_useAutoLevel &&
+           [_codecInfo.name isEqualToString:kRTCVideoCodecH265Name]) {
+    SetVTSessionProperty(_compressionSession,
+                         kVTCompressionPropertyKey_ProfileLevel,
+                         kVTProfileLevel_HEVC_Main_AutoLevel);
+  }
+#endif
   SetVTSessionProperty(_compressionSession,
                        kVTCompressionPropertyKey_AllowFrameReordering,
                        false);

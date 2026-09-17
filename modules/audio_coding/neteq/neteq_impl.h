@@ -147,6 +147,10 @@ class NetEqImpl : public NetEq {
       int* current_sample_rate_hz = nullptr,
       std::optional<Operation> action_override = std::nullopt) override;
 
+  bool LastOutputDecodedFromPacket() const override {
+    return last_output_decoded_from_packet_;
+  }
+
   void SetCodecs(const std::map<int, SdpAudioFormat>& codecs) override;
 
   void SetMaximumBufferPackets(size_t max_packets) override;
@@ -373,6 +377,7 @@ class NetEqImpl : public NetEq {
   const bool enable_muted_state_;
   std::unique_ptr<TickTimer::Stopwatch> generated_noise_stopwatch_;
   std::vector<RtpPacketInfo> last_decoded_packet_infos_;
+  bool last_output_decoded_from_packet_ = false;
   bool no_time_stretching_;  // Only used for test.
   BufferT<int16_t> concealment_audio_;
 };

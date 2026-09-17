@@ -439,7 +439,9 @@ int NetEqImpl::GetAudio(AudioFrame* audio_frame,
                         int* current_sample_rate_hz,
                         std::optional<Operation> action_override) {
   TRACE_EVENT0("webrtc", "NetEqImpl::GetAudio");
+  last_output_decoded_from_packet_ = false;
   if (GetAudioInternal(audio_frame, action_override) != kNoError) {
+    last_output_decoded_from_packet_ = false;
     return kFail;
   }
   stats_->IncreaseCounter(output_size_samples_, fs_hz_);
@@ -1357,6 +1359,10 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list,
       const auto& result = *opt_result;
       *speech_type = result.speech_type;
       if (result.num_decoded_samples > 0) {
+        // RED/FEC frames intentionally have no packet_info. Decode success,
+        // rather than source metadata, determines the audio milestone.
+        if (result.speech_type == AudioDecoder::kSpeech)
+          last_output_decoded_from_packet_ = true;
         *decoded_length += dchecked_cast<int>(result.num_decoded_samples);
         // Update `decoder_frame_length_` with number of samples per channel.
         decoder_frame_length_ =
@@ -1367,6 +1373,7 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list,
       // TODO(ossu): What to put here?
       RTC_LOG(LS_WARNING) << "Decode error";
       *decoded_length = -1;
+      last_output_decoded_from_packet_ = false;
       last_decoded_packet_infos_.clear();
       packet_list->clear();
       break;
