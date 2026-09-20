@@ -104,6 +104,19 @@ std::optional<SdpVideoFormat> H264EncoderFormat(VideoEncoderFactory* factory) {
   return std::nullopt;
 }
 
+bool IsRecoveryFeedback(std::span<const uint8_t> packet) {
+  while (!packet.empty()) {
+    rtcp::CommonHeader header;
+    if (!header.Parse(packet.data(), packet.size()))
+      return false;
+    if ((header.type() == 205 && header.fmt() == 1) ||
+        (header.type() == 206 && (header.fmt() == 1 || header.fmt() == 4)))
+      return true;
+    packet = packet.subspan(header.packet_size());
+  }
+  return false;
+}
+
 uint32_t CountNackPackets(std::span<const uint8_t> packet) {
   uint32_t count = 0;
   while (!packet.empty()) {
@@ -333,8 +346,9 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
                          ? SdpVideoFormat::H265()
                          : H264EncoderFormat(config_.video_encoder_factory);
       if (!video_format) {
-        *error = "H264 encoder does not support Constrained Baseline with "
-                 "packetization-mode=1";
+        *error =
+            "H264 encoder does not support Constrained Baseline with "
+            "packetization-mode=1";
         return false;
       }
     }
@@ -502,8 +516,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         receive.decoder_map = {
             {config.payload_type, {"red", 48000, 2, {{"", "111/111"}}}},
             {111, {"opus", 48000, 2, opus_parameters}}};
-        replacement.audio =
-            call_->CreateAudioReceiveStream(std::move(receive));
+        replacement.audio = call_->CreateAudioReceiveStream(std::move(receive));
         replacement.audio_nack_enabled = config.enable_nack;
         if (config.audio_sink)
           replacement.audio->SetSink(config.audio_sink);
@@ -528,8 +541,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
             config.video_frame_ready_for_decode;
         receive.decoders.emplace_back(VideoFormat(config.video_codec),
                                       config.payload_type);
-        replacement.video =
-            call_->CreateVideoReceiveStream(std::move(receive));
+        replacement.video = call_->CreateVideoReceiveStream(std::move(receive));
         replacement.video->Start();
       }
     });
@@ -654,13 +666,40 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
     std::lock_guard lock(ingress_mutex_);
     if (!accepting_packets_)
       return;
-    if (now - packet.received_at_us > 250000 || ingress_.size() >= 512 ||
-        packet.packet.size() > 512 * 1024 - ingress_bytes_) {
+    const bool recovery = IsRecoveryFeedback(packet.packet);
+    if ((!recovery && now - packet.received_at_us > 250000) ||
+        packet.packet.size() > 512 * 1024) {
       ++ingress_drops_;
       return;
     }
+    while (ingress_.size() >= 512 ||
+           packet.packet.size() > 512 * 1024 - ingress_bytes_) {
+      auto victim = ingress_.end();
+      if (recovery) {
+        for (auto it = ingress_.end(); it != ingress_.begin();) {
+          --it;
+          if (!it->recovery) {
+            victim = it;
+            break;
+          }
+        }
+      }
+      ++ingress_drops_;
+      if (victim == ingress_.end())
+        return;
+      ingress_bytes_ -= victim->packet.packet.size();
+      ingress_.erase(victim);
+    }
     ingress_bytes_ += packet.packet.size();
-    ingress_.push_back({std::move(packet), std::move(consume)});
+    Ingress item{std::move(packet), std::move(consume), recovery};
+    if (recovery) {
+      auto first_media =
+          std::find_if(ingress_.begin(), ingress_.end(),
+                       [](const Ingress& queued) { return !queued.recovery; });
+      ingress_.insert(first_media, std::move(item));
+    } else {
+      ingress_.push_back(std::move(item));
+    }
     if (!ingress_scheduled_) {
       ingress_scheduled_ = true;
       worker_->PostTask([this] { DrainIngress(); });
@@ -686,7 +725,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         ingress_bytes_ -= item.packet.packet.size();
       }
       const int64_t wait_us = IngressNowMicros() - item.packet.received_at_us;
-      if (wait_us <= 250000) {
+      if (item.recovery || wait_us <= 250000) {
         ingress_receive_time_ =
             env_.clock().CurrentTime() -
             TimeDelta::Micros(std::max<int64_t>(0, wait_us));
@@ -966,7 +1005,8 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
     if (!worker_ || !call_)
       return result;
     if (binding.audio) {
-      result.received_audio_packets = binding.audio->GetStats().packets_received;
+      result.received_audio_packets =
+          binding.audio->GetStats().packets_received;
     }
     if (binding.video) {
       const auto video = binding.video->GetStats();
@@ -979,7 +1019,8 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
     if (binding.audio_send) {
       const auto audio = binding.audio_send->GetStats();
       result.sent_audio_packets = audio.packets_sent;
-      result.audio_retransmitted_packets_sent = audio.retransmitted_packets_sent;
+      result.audio_retransmitted_packets_sent =
+          audio.retransmitted_packets_sent;
     }
     if (binding.video_send) {
       const auto video = binding.video_send->GetStats();
@@ -1053,6 +1094,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
   struct Ingress {
     RoqReceivedPacket packet;
     std::function<void(RoqReceivedPacket)> consume;
+    bool recovery = false;
   };
   std::mutex ingress_mutex_;
   std::deque<Ingress> ingress_;

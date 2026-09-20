@@ -56,6 +56,7 @@ enum class RoqDatagramPriority {
   kPeriodicRtcp,
   kVideoDelta,
   kVideoKey,
+  kRetransmission,
   kAudio,
   kRtcp,
 };

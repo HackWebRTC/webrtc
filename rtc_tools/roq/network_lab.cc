@@ -220,13 +220,11 @@ class ImpairmentDirection {
                                         0x9e3779b97f4a7c15ULL));
     const auto now = SteadyClock::now();
     const auto profile_elapsed = now - profile_start_;
-    // Drop one media-sized packet in each direction while unconstrained.
-    // This covers publisher-hop and subscriber-hop repair independently of
-    // whether random impaired-phase loss hits video rather than audio.
-    if (profile_ == "m4" && !m4_repair_probe_injected_ &&
+    // A short pre-congestion burst loss exercises both media hops even when
+    // early bandwidth adaptation produces video packets smaller than audio.
+    if (profile_ == "m4" &&
         profile_elapsed >= std::chrono::seconds(2) &&
-        profile_elapsed < std::chrono::seconds(4) && size > 1000) {
-      m4_repair_probe_injected_ = true;
+        profile_elapsed < std::chrono::milliseconds(2250)) {
       ++result_->injected_loss;
       event_log_->Write("injected_loss", name_, sequence);
       return;
@@ -340,7 +338,6 @@ class ImpairmentDirection {
   EventLog* event_log_;
   UdpSelfTestResult* result_;
   const std::string profile_;
-  bool m4_repair_probe_injected_ = false;
   const SteadyClock::time_point profile_start_;
   SteadyClock::time_point next_serialization_ = SteadyClock::now();
   std::priority_queue<ScheduledPacket,

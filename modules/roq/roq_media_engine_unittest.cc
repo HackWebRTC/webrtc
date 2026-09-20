@@ -329,6 +329,50 @@ TEST(RoqMediaEngineTest, StartsPlayoutForTheFirstAudioSubscription) {
   EXPECT_FALSE(playing);
 }
 
+TEST(RoqMediaEngineTest, RecoveryFeedbackSurvivesMediaWorkerBacklog) {
+  const Environment env = CreateTestEnvironment();
+  auto audio = CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);
+  ASSERT_EQ(audio->Init(), 0);
+  auto encoder = CreateBuiltinVideoEncoderFactory();
+  auto decoder = CreateBuiltinVideoDecoderFactory();
+  std::string error;
+  auto engine = RoqMediaEngine::Create(
+      {.audio_device_module = audio,
+       .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+       .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+       .video_encoder_factory = encoder.get(),
+       .video_decoder_factory = decoder.get()},
+      env, &error);
+  ASSERT_TRUE(engine->Start(&error));
+  std::atomic<bool> entered = false, release = false;
+  engine->EnqueueReceivedPacket({.packet = {1}}, [&](RoqReceivedPacket) {
+    entered = true;
+    while (!release.load())
+      std::this_thread::yield();
+  });
+  for (int i = 0; i < 1000 && !entered; ++i)
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  EXPECT_TRUE(entered);
+  for (int i = 0; i < 512; ++i)
+    engine->EnqueueReceivedPacket({.packet = std::vector<uint8_t>(1000)},
+                                  [](RoqReceivedPacket) {});
+  std::atomic<int> feedback = 0;
+  // A valid PLI that has already waited longer than the media ingress deadline.
+  auto received_at = std::chrono::duration_cast<std::chrono::microseconds>(
+                         std::chrono::steady_clock::now().time_since_epoch())
+                         .count() -
+                     300000;
+  engine->EnqueueReceivedPacket(
+      {.packet = {0x81, 206, 0, 2, 0, 0, 0, 1, 0, 0, 0, 2},
+       .received_at_us = received_at},
+      [&](RoqReceivedPacket) { ++feedback; });
+  release = true;
+  for (int i = 0; i < 1000 && feedback == 0; ++i)
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  engine->Stop();
+  EXPECT_EQ(feedback.load(), 1);
+}
+
 TEST(RoqMediaEngineTest, BoundedIngressReturnsWhileWorkerIsBlocked) {
   const Environment env = CreateTestEnvironment();
   auto audio = CreateAudioDeviceModule(env, AudioDeviceModule::kDummyAudio);

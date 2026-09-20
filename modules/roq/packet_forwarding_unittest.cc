@@ -31,16 +31,16 @@ TEST(PacketForwardingTest, RTXDoesNotRequireOriginalTransportSubmission) {
   ASSERT_EQ(q.Enqueue(std::move(rtx), now), DatagramEnqueueResult::kQueued);
   EXPECT_TRUE(q.Pop(now + TimeDelta::Seconds(2)));
 }
-TEST(PacketForwardingTest, FullQueueRejectsOnlyIncomingPacket) {
+TEST(PacketForwardingTest, FullQueueRejectsEqualPriorityIncomingPacket) {
   const auto now = Timestamp::Millis(100);
   BoundedDatagramQueue q(1, 1024);
   auto first = VideoPacket(100, now);
   first.frame_complete = true;
   ASSERT_EQ(q.Enqueue(std::move(first), now), DatagramEnqueueResult::kQueued);
-  QueuedDatagram audio{.bytes = {9},
-                       .binding_id = "audio",
-                       .priority = DatagramPriority::kAudio};
-  EXPECT_EQ(q.Enqueue(std::move(audio), now),
+  QueuedDatagram video{.bytes = {9},
+                       .binding_id = "other-video",
+                       .priority = DatagramPriority::kVideoDelta};
+  EXPECT_EQ(q.Enqueue(std::move(video), now),
             DatagramEnqueueResult::kQueueFull);
   auto packet = q.Pop(now);
   ASSERT_TRUE(packet);

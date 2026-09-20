@@ -5,6 +5,17 @@
 #include "api/roq/roq_session.h"
 
 #include <errno.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#if defined(__APPLE__)
+#include <mach-o/dyld.h>
+#endif
+
+#include <atomic>
+#include <filesystem>
+#include <future>
+#include <thread>
 
 #include <condition_variable>
 #include <memory>
@@ -14,6 +25,7 @@
 
 #include "api/units/time_delta.h"
 #include "test/gtest.h"
+#include "rtc_tools/roq/test_roq_server.h"
 
 namespace webrtc::roq {
 namespace {
@@ -192,6 +204,127 @@ TEST(RoqSessionTest, ClientUsesFreshConnectionIdForEverySession) {
   second->Close();
   EXPECT_TRUE(first->WaitUntilClosed(TimeDelta::Seconds(1)));
   EXPECT_TRUE(second->WaitUntilClosed(TimeDelta::Seconds(1)));
+}
+
+class RoqSessionEventLoopTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    const int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    ASSERT_GE(fd, 0);
+    sockaddr_in address{};
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    ASSERT_EQ(bind(fd, reinterpret_cast<sockaddr*>(&address), sizeof(address)), 0);
+    socklen_t size = sizeof(address);
+    ASSERT_EQ(getsockname(fd, reinterpret_cast<sockaddr*>(&address), &size), 0);
+    const std::string endpoint = "127.0.0.1:" + std::to_string(ntohs(address.sin_port));
+    close(fd);
+    std::filesystem::path binary;
+#if defined(__APPLE__)
+    uint32_t path_size = 0;
+    _NSGetExecutablePath(nullptr, &path_size);
+    std::string executable(path_size, '\0');
+    ASSERT_EQ(_NSGetExecutablePath(executable.data(), &path_size), 0);
+    binary = std::filesystem::path(executable.c_str()).parent_path();
+#else
+    binary = std::filesystem::read_symlink("/proc/self/exe").parent_path();
+#endif
+    server_ = CreateTestRoqServer(
+        {.address = endpoint,
+         .certificate_path = (binary / "cert.crt").string(),
+         .private_key_path = (binary / "cert.key").string(),
+         .allowed_flow_ids = {8, 12}},
+        [&](RoqReceivedPacket packet) {
+          std::lock_guard lock(mutex_);
+          received_.push_back(std::move(packet.packet));
+          condition_.notify_all();
+        }, {}, [&](std::vector<uint8_t> message) {
+          std::lock_guard lock(mutex_);
+          controls_.push_back(std::move(message));
+          condition_.notify_all();
+        });
+    std::string error;
+    ASSERT_TRUE(server_->Start(&error)) << error;
+    ASSERT_TRUE(server_->WaitUntilReady(TimeDelta::Seconds(2)));
+    client_ = RoqSession::Create(
+        {.address = endpoint,
+         .trusted_ca_file = (binary / "cert.crt").string(),
+         .buffer_dynamic_receive_flows = true,
+         .max_idle_timeout_ms = 20000,
+         .allowed_flow_ids = {8}},
+        [&](RoqReceivedPacket packet) {
+          std::lock_guard lock(mutex_);
+          downstream_.push_back(std::move(packet.packet));
+          condition_.notify_all();
+        });
+    ASSERT_TRUE(client_->SendReplaySafeMessage(std::vector<uint8_t>{1}));
+    ASSERT_TRUE(client_->Start(&error)) << error;
+    ASSERT_TRUE(client_->WaitUntilEstablished(TimeDelta::Seconds(2))) << client_->error();
+    std::unique_lock lock(mutex_);
+    ASSERT_TRUE(condition_.wait_for(lock, std::chrono::seconds(2), [&] { return controls_.size() == 1; }));
+  }
+  void TearDown() override {
+    if (client_) { client_->Abort(); client_.reset(); }
+    if (server_) { server_->Abort(); server_.reset(); }
+  }
+  std::mutex mutex_;
+  std::condition_variable condition_;
+  std::vector<std::vector<uint8_t>> received_, controls_, downstream_;
+  std::unique_ptr<TestRoqServer> server_;
+  std::unique_ptr<RoqSession> client_;
+};
+
+TEST_F(RoqSessionEventLoopTest, IdleConnectionWakesForMediaAndControl) {
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ASSERT_EQ(client_->SendMedia(8, std::vector<uint8_t>{7, 8, 9}, {}, {}), RoqSendResult::kQueued);
+  ASSERT_TRUE(client_->SendReplaySafeMessage(std::vector<uint8_t>{2, 3}));
+  std::unique_lock lock(mutex_);
+  ASSERT_TRUE(condition_.wait_for(lock, std::chrono::milliseconds(200), [&] {
+    return received_.size() == 1 && controls_.size() == 2;
+  }));
+  EXPECT_EQ(received_[0], (std::vector<uint8_t>{7, 8, 9}));
+  EXPECT_EQ(controls_[1], (std::vector<uint8_t>{2, 3}));
+}
+
+TEST_F(RoqSessionEventLoopTest, FlowCommitDeliversBufferedMediaWithoutNewNetworkInput) {
+  client_->BeginFlowUpdate();
+  client_->PrepareReceiveFlowIds({8, 12});
+  ASSERT_EQ(server_->SendMedia(12, std::vector<uint8_t>{42}, {}, {}), RoqSendResult::kQueued);
+  const auto limit = std::chrono::steady_clock::now() + std::chrono::milliseconds(200);
+  while (client_->stats().unknown_flow_buffered == 0 && std::chrono::steady_clock::now() < limit)
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  ASSERT_GT(client_->stats().unknown_flow_buffered, 0u);
+  client_->CommitFlowUpdate({{.flow_id = 8, .allow_send = true}, {.flow_id = 12}});
+  std::unique_lock lock(mutex_);
+  ASSERT_TRUE(condition_.wait_for(lock, std::chrono::milliseconds(50), [&] { return downstream_.size() == 1; }));
+  EXPECT_EQ(downstream_[0], (std::vector<uint8_t>{42}));
+}
+
+TEST_F(RoqSessionEventLoopTest, MediaBurstLargerThanOneBatchIsNotStranded) {
+  for (int i = 0; i < 130; ++i)
+    ASSERT_EQ(client_->SendMedia(8, std::vector<uint8_t>{static_cast<uint8_t>(i)}, {}, {}), RoqSendResult::kQueued);
+  std::unique_lock lock(mutex_);
+  ASSERT_TRUE(condition_.wait_for(lock, std::chrono::seconds(2), [&] { return received_.size() == 130; }));
+  for (int i = 0; i < 130; ++i)
+    EXPECT_EQ(received_[i], std::vector<uint8_t>{static_cast<uint8_t>(i)});
+}
+
+TEST_F(RoqSessionEventLoopTest, AbortInterruptsIdleWait) {
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  client_->Abort();
+  EXPECT_TRUE(client_->WaitUntilClosed(TimeDelta::Millis(100)));
+}
+
+TEST_F(RoqSessionEventLoopTest, PingAndCloseProgressAfterIdle) {
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  const auto sent_before = client_->stats().sent_udp_packets;
+  client_->RequestPing();
+  const auto limit = std::chrono::steady_clock::now() + std::chrono::milliseconds(200);
+  while (client_->stats().sent_udp_packets <= sent_before && std::chrono::steady_clock::now() < limit)
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  EXPECT_GT(client_->stats().sent_udp_packets, sent_before);
+  client_->Close();
+  EXPECT_TRUE(client_->WaitUntilClosed(TimeDelta::Millis(200)));
 }
 
 TEST(RoqSessionTest, RetriesOnlyTransientUdpSendFailures) {

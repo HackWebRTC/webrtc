@@ -48,11 +48,41 @@ DatagramEnqueueResult BoundedDatagramQueue::Enqueue(QueuedDatagram d,
     RecordDropped(d, now);
     return DatagramEnqueueResult::kOversize;
   }
-  if (queue_.size() >= capacity_ ||
-      d.bytes.size() > byte_capacity_ - byte_size_) {
-    ++queue_full_drops_;
-    RecordDropped(d, now);
-    return DatagramEnqueueResult::kQueueFull;
+  if (d.priority == DatagramPriority::kVideoKey)
+    d.priority = DatagramPriority::kVideoDelta;
+  if (d.original_packet_id)
+    d.priority = DatagramPriority::kRetransmission;
+  auto fits = [&](size_t packets, size_t bytes) {
+    return packets < capacity_ && d.bytes.size() <= byte_capacity_ - bytes;
+  };
+  if (!fits(queue_.size(), byte_size_)) {
+    size_t removable = 0, bytes = 0;
+    if (d.priority >= DatagramPriority::kRetransmission) {
+      for (const auto& queued : queue_) {
+        if (queued.priority < d.priority) {
+          ++removable;
+          bytes += queued.bytes.size();
+        }
+      }
+    }
+    if (!fits(queue_.size() - removable, byte_size_ - bytes)) {
+      ++queue_full_drops_;
+      RecordDropped(d, now);
+      return DatagramEnqueueResult::kQueueFull;
+    }
+    while (!fits(queue_.size(), byte_size_)) {
+      auto victim = queue_.end();
+      for (auto it = queue_.end(); it != queue_.begin();) {
+        --it;
+        if (it->priority < d.priority &&
+            (victim == queue_.end() || it->priority < victim->priority))
+          victim = it;
+      }
+      ++queue_full_drops_;
+      byte_size_ -= victim->bytes.size();
+      RecordDropped(*victim, now);
+      queue_.erase(victim);
+    }
   }
   if (!d.enqueue_time.IsFinite())
     d.enqueue_time = now;

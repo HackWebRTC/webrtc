@@ -111,8 +111,8 @@ class BoundedDatagramQueue {
   size_t recovery_requests_ = 0;
   void RetireFrame(const QueuedDatagram& datagram);
   std::deque<QueuedDatagram> queue_;
-  std::array<std::string, 5> last_binding_by_priority_;
-  std::array<std::string, 5> current_binding_by_priority_;
+  std::array<std::string, 6> last_binding_by_priority_;
+  std::array<std::string, 6> current_binding_by_priority_;
   std::map<std::string, size_t> deficits_;
   std::map<std::string, DatagramBindingStats> binding_stats_;
   size_t peak_size_ = 0;
@@ -123,7 +123,7 @@ class BoundedDatagramQueue {
   size_t pmtu_purge_drops_ = 0;
   size_t invalid_drops_ = 0;
   TimeDelta max_queue_delay_ = TimeDelta::Zero();
-  std::array<size_t, 5> dropped_by_priority_ = {};
+  std::array<size_t, 6> dropped_by_priority_ = {};
 };
 
 }  // namespace webrtc::roq

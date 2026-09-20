@@ -135,7 +135,9 @@ bool RoqPacketTransport::Send(bool rtcp,
     RtpPacketMetadata metadata;
     if (config_.media_type == RoqMediaType::kAudio) {
       if (!ParseRtpPacketMetadata(packet, &metadata) ||
-          metadata.payload_type != config_.primary_payload_type ||
+          (metadata.payload_type != config_.primary_payload_type &&
+           !(config_.primary_payload_type == 63 &&
+             metadata.payload_type == 111)) ||
           metadata.ssrc != config_.primary_ssrc) {
         config_.session->RecordInvalidDatagram();
         return false;

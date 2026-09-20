@@ -25,15 +25,37 @@ QuicBandwidthSample Sample(int64_t time_ms,
           .round_trip_time = TimeDelta::Millis(rtt_ms)};
 }
 
-TEST(QuicBandwidthPolicyTest, KeepsStartupFallbackUntilBbr2ExitsStartup) {
+TEST(QuicBandwidthPolicyTest, UsesAcknowledgedCapacityBeforeBbr2ExitsStartup) {
   QuicBandwidthPolicy policy;
   QuicBandwidthSample sample = Sample(100, 1000, 400'000, 200'000);
   sample.startup_complete = false;
 
   QuicMediaBudget budget = policy.Update(sample);
 
-  EXPECT_FALSE(budget.fresh);
-  EXPECT_EQ(budget.target_rate, DataRate::KilobitsPerSec(1000));
+  EXPECT_TRUE(budget.fresh);
+  EXPECT_EQ(budget.target_rate, DataRate::KilobitsPerSec(150));
+}
+
+TEST(QuicBandwidthPolicyTest, StopsMediaBudgetWhenAcknowledgmentsGoStale) {
+  QuicBandwidthPolicy policy;
+  auto sample = Sample(100, 10000, 2'000'000, 2'000'000);
+  EXPECT_TRUE(policy.Update(sample).fresh);
+  sample.at_time = Timestamp::Millis(2100);
+  EXPECT_EQ(policy.Update(sample).target_rate, DataRate::Zero());
+  sample.at_time = Timestamp::Millis(2200);
+  sample.acked_bytes += 1000;
+  EXPECT_GT(policy.Update(sample).target_rate, DataRate::Zero());
+}
+
+TEST(QuicBandwidthPolicyTest,
+     NewConnectionAckCounterRestoresBudgetImmediately) {
+  QuicBandwidthPolicy policy;
+  ASSERT_TRUE(policy.Update(Sample(100, 10000000, 2000000, 2000000)).fresh);
+  EXPECT_EQ(policy.Update(Sample(2100, 10000000, 2000000, 2000000)).target_rate,
+            DataRate::Zero());
+  auto new_connection = Sample(2200, 1000, 2000000, 2000000);
+  EXPECT_TRUE(policy.Update(new_connection).fresh);
+  EXPECT_GT(policy.Update(new_connection).target_rate, DataRate::Zero());
 }
 
 TEST(QuicBandwidthPolicyTest, StartsAtOneMegabitWithoutSample) {
@@ -118,7 +140,7 @@ TEST(QuicBandwidthPolicyTest, DoesNotInflateCapacityToEncoderMinimum) {
       DataRate::BitsPerSec(4'128'000));
 }
 
-TEST(QuicBandwidthPolicyTest, FallsBackAfterAckSampleBecomesStale) {
+TEST(QuicBandwidthPolicyTest, StopsAfterAckSampleBecomesStale) {
   QuicBandwidthPolicy policy;
   EXPECT_EQ(policy.Update(Sample(100, 1000, 8'000'000, 4'000'000)).target_rate,
             DataRate::BitsPerSec(1'400'000));
@@ -127,7 +149,7 @@ TEST(QuicBandwidthPolicyTest, FallsBackAfterAckSampleBecomesStale) {
   QuicMediaBudget stale =
       policy.Update(Sample(1200, 1000, 8'000'000, 4'000'000));
   EXPECT_FALSE(stale.fresh);
-  EXPECT_EQ(stale.target_rate, DataRate::KilobitsPerSec(1000));
+  EXPECT_EQ(stale.target_rate, DataRate::Zero());
 }
 
 TEST(QuicBandwidthPolicyTest, KeepsFreshSampleWithoutNewAckForOneSecond) {
@@ -147,7 +169,7 @@ TEST(QuicBandwidthPolicyTest, RecoversFromFallbackWithEwma) {
   policy.Update(Sample(1200, 1000, 8'000'000, 4'000'000));
 
   EXPECT_EQ(policy.Update(Sample(1300, 2000, 8'000'000, 4'000'000)).target_rate,
-            DataRate::BitsPerSec(1'400'000));
+            DataRate::BitsPerSec(600'000));
 }
 
 }  // namespace

@@ -29,12 +29,19 @@ void QuicBandwidthPolicy::SetLimits(DataRate minimum_rate,
 }
 
 QuicMediaBudget QuicBandwidthPolicy::Update(const QuicBandwidthSample& sample) {
+  // ACK totals belong to one QUIC connection. A retained Call observes a
+  // counter reset during reconnect, which must not wait for the old total.
+  if (sample.acked_bytes < last_acked_bytes_) {
+    last_acked_bytes_ = 0;
+    last_ack_time_.reset();
+    has_fresh_sample_ = false;
+    target_rate_ = startup_rate_;
+  }
   if (sample.acked_bytes > last_acked_bytes_) {
     last_acked_bytes_ = sample.acked_bytes;
     last_ack_time_ = sample.at_time;
   }
-  const bool valid = sample.startup_complete &&
-                     sample.round_trip_time > TimeDelta::Zero() &&
+  const bool valid = sample.round_trip_time > TimeDelta::Zero() &&
                      sample.max_bandwidth > DataRate::Zero() &&
                      sample.delivery_rate > DataRate::Zero();
   const bool fresh = valid && last_ack_time_.has_value() &&
@@ -65,7 +72,7 @@ QuicMediaBudget QuicBandwidthPolicy::Update(const QuicBandwidthSample& sample) {
     target_rate_ =
         DataRate::BitsPerSec(std::min(filtered, maximum_rate_.bps()));
   } else {
-    target_rate_ = std::min(target_rate_, startup_rate_);
+    target_rate_ = has_fresh_sample_ ? DataRate::Zero() : startup_rate_;
   }
   return {.fresh = fresh,
           .raw_capacity = raw_capacity,

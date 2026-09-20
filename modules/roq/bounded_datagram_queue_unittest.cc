@@ -16,6 +16,40 @@
 namespace webrtc::roq {
 namespace {
 
+TEST(BoundedDatagramQueueTest, CriticalTrafficDisplacesNewestVideoWhenFull) {
+  for (const auto priority :
+       {DatagramPriority::kAudio, DatagramPriority::kRtcp}) {
+    BoundedDatagramQueue q(2, 4, 8);
+    const auto now = Timestamp::Millis(100);
+    ASSERT_EQ(q.Enqueue({.bytes = {1, 1, 1, 1}, .binding_id = "v"}, now),
+              DatagramEnqueueResult::kQueued);
+    ASSERT_EQ(q.Enqueue({.bytes = {2, 2, 2, 2}, .binding_id = "v"}, now),
+              DatagramEnqueueResult::kQueued);
+    EXPECT_EQ(
+        q.Enqueue(
+            {.bytes = {9, 9, 9, 9}, .binding_id = "f", .priority = priority},
+            now),
+        DatagramEnqueueResult::kQueued);
+    EXPECT_EQ(q.Pop(now)->bytes, (std::vector<uint8_t>{9, 9, 9, 9}));
+    EXPECT_EQ(q.Pop(now)->bytes, (std::vector<uint8_t>{1, 1, 1, 1}));
+    EXPECT_FALSE(q.Pop(now));
+    EXPECT_EQ(q.BindingStats("v").dropped_packets, 1u);
+  }
+}
+TEST(BoundedDatagramQueueTest, RTXPrecedesQueuedNewVideo) {
+  BoundedDatagramQueue q(4, 10);
+  const auto now = Timestamp::Millis(100);
+  ASSERT_EQ(q.Enqueue({.bytes = {1}, .binding_id = "v"}, now),
+            DatagramEnqueueResult::kQueued);
+  ASSERT_EQ(q.Enqueue({.bytes = {2},
+                       .binding_id = "v",
+                       .original_packet_id = RoqPacketId{7, 1}},
+                      now),
+            DatagramEnqueueResult::kQueued);
+  EXPECT_EQ(q.Pop(now)->bytes, (std::vector<uint8_t>{2}));
+  EXPECT_EQ(q.Pop(now)->bytes, (std::vector<uint8_t>{1}));
+}
+
 TEST(BoundedDatagramQueueTest, PmtuShrinkRetiresTheWholeDamagedFrame) {
   BoundedDatagramQueue queue(10, 1200);
   const Timestamp now = Timestamp::Millis(100);

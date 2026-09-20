@@ -50,8 +50,12 @@ class FakeRoqSession final : public RoqSession {
   void Close(uint64_t, std::string) override {}
   bool WaitUntilClosed(TimeDelta) override { return true; }
   RoqSessionStats stats() const override { return {}; }
+  size_t maximum_packet_payload(uint64_t) const override {
+    return packet_limit_;
+  }
   std::string error() const override { return {}; }
 
+  size_t packet_limit_ = 1350;
   uint64_t flow_id_ = 0;
   std::vector<uint8_t> bytes_;
   RoqDatagramMetadata metadata_;
@@ -142,7 +146,8 @@ TEST(RoqPacketTransportTest, DeclaresExternalTransportPacing) {
   EXPECT_EQ(transport.GetRtpPacingMode(), RtpPacingMode::kExternalTransport);
 }
 
-TEST(RoqPacketTransportTest, RebindingUsesNewFlowsWithoutResettingRtpAccounting) {
+TEST(RoqPacketTransportTest,
+     RebindingUsesNewFlowsWithoutResettingRtpAccounting) {
   SimulatedClock clock(Timestamp::Millis(100));
   FakeRoqSession session;
   RoqPacketTransport transport(VideoConfig(&session, &clock));
@@ -229,6 +234,35 @@ TEST(RoqPacketTransportTest,
     EXPECT_EQ(submitted_key_frames, index == 2 ? 1 : 0);
   }
   EXPECT_EQ(submitted_key_frames, 1);
+}
+
+TEST(RoqPacketTransportTest, ReservesQuicMinimumPathBudgetForDownstreamRTX) {
+  SimulatedClock clock(Timestamp::Millis(100));
+  FakeRoqSession session;
+  RoqPacketTransport transport(VideoConfig(&session, &clock));
+  transport.SetMaxRtpPacketSize(1200);
+  EXPECT_LE(transport.MaxRtpPacketSize() + 8 + 2 + 1 + 20 + 4 + 16 + 3, 1200u);
+  transport.SetMaxRtpPacketSize(700);
+  EXPECT_EQ(transport.MaxRtpPacketSize(), 700u);
+}
+
+TEST(RoqPacketTransportTest, RedAudioAllowsPrimaryOpusFallback) {
+  SimulatedClock clock(Timestamp::Millis(100));
+  FakeRoqSession session;
+  RoqPacketTransport transport({.session = &session,
+                                .media_type = RoqMediaType::kAudio,
+                                .rtp_flow_id = 1,
+                                .primary_payload_type = 63,
+                                .primary_ssrc = 22222222,
+                                .clock = &clock});
+  std::array<uint8_t, 15> packet = {0x80, 111,  0,    42,   0,
+                                    1,    0x5f, 0x90, 1,    0x53,
+                                    0x15, 0x8e, 0xfc, 0xff, 0xfe};
+  EXPECT_TRUE(transport.SendRtp(packet, PacketOptions()));
+  EXPECT_EQ(session.bytes_,
+            (std::vector<uint8_t>(packet.begin(), packet.end())));
+  packet[1] = 112;
+  EXPECT_FALSE(transport.SendRtp(packet, PacketOptions()));
 }
 
 TEST(RoqPacketTransportTest, MapsRtxToOriginalPrimaryPacket) {

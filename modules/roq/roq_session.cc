@@ -34,6 +34,7 @@
 #include "modules/roq/receive_flow_registry.h"
 #include "modules/roq/reliable_message_framer.h"
 #include "modules/roq/resumption_cache.h"
+#include "modules/roq/roq_socket_waiter.h"
 #include "modules/roq/roq_wire.h"
 #include "quiche.h"
 #include "rtc_base/crypto_random.h"
@@ -59,6 +60,7 @@ constexpr size_t kPacketBufferSize = 65535;
 constexpr uint64_t kControlStreamId = 0;
 constexpr uint64_t kNoTimeout = std::numeric_limits<uint64_t>::max();
 constexpr size_t kMediaBurstLimit = 64;
+constexpr size_t kReceiveBurstLimit = 64;
 
 struct ConfigDeleter {
   void operator()(quiche_config* config) const { quiche_config_free(config); }
@@ -246,6 +248,11 @@ class RoqSessionImpl final : public RoqSession {
       *error = "at least one RoQ flow ID is required";
       return false;
     }
+    if (waiter_.error()) {
+      *error = "failed to initialize network event waiter: " +
+               std::to_string(waiter_.error());
+      return false;
+    }
     thread_ = std::thread([this] { Run(); });
     return true;
   }
@@ -273,12 +280,14 @@ class RoqSessionImpl final : public RoqSession {
     if (close_requested_ || closed_)
       return false;
     reliable_messages_.push_back(std::move(framed));
+    WakeNetworkLocked();
     return true;
   }
 
   void SetEarlyDatagramsAllowed(bool allowed) override {
     std::lock_guard lock(mutex_);
     early_datagrams_allowed_ = allowed;
+    WakeNetworkLocked();
     if (!allowed && !stats_.established) {
       stats_.early_rejection_queue_drops += outgoing_.Clear();
       purge_quiche_slot_for_binding_ = true;
@@ -289,11 +298,13 @@ class RoqSessionImpl final : public RoqSession {
   void RequestPing() override {
     std::lock_guard lock(mutex_);
     ping_requested_ = true;
+    WakeNetworkLocked();
   }
 
   void Abort() override {
     std::lock_guard lock(mutex_);
     abort_requested_ = true;
+    WakeNetworkLocked();
     condition_.notify_all();
   }
 
@@ -322,6 +333,7 @@ class RoqSessionImpl final : public RoqSession {
     QueueReceivedLocked(receive_flows_.Update(std::move(flow_ids),
                                               config_.clock->CurrentTime()));
     CopyFlowStatsLocked();
+    WakeNetworkLocked();
   }
 
   void BeginFlowUpdate() override { BeginReceiveFlowUpdate(); }
@@ -354,6 +366,7 @@ class RoqSessionImpl final : public RoqSession {
       send_flow_ids_ = std::move(send_flows);
       packet_limit = PacketLimitLocked(stats_.max_datagram_payload);
       CopyFlowStatsLocked();
+      WakeNetworkLocked();
     }
     if (datagram_size_callback_)
       datagram_size_callback_(packet_limit);
@@ -424,6 +437,7 @@ class RoqSessionImpl final : public RoqSession {
     CopyQueueStatsLocked();
     switch (result) {
       case DatagramEnqueueResult::kQueued:
+        WakeNetworkLocked();
         return RoqSendResult::kQueued;
       case DatagramEnqueueResult::kDropped:
         return RoqSendResult::kDropped;
@@ -449,6 +463,7 @@ class RoqSessionImpl final : public RoqSession {
         quiche_slot_datagram_->binding_id == binding_id)
       purge_quiche_slot_for_binding_ = true;
     CopyQueueStatsLocked();
+    WakeNetworkLocked();
   }
 
   void RecordNetworkControlState(size_t probe_cluster_count,
@@ -495,6 +510,7 @@ class RoqSessionImpl final : public RoqSession {
       CopyQueueStatsLocked();
       callback = datagram_size_callback_;
       packet_limit = PacketLimitLocked(effective);
+      WakeNetworkLocked();
     }
     if (callback && packet_limit > 0)
       callback(packet_limit);
@@ -507,6 +523,7 @@ class RoqSessionImpl final : public RoqSession {
     CopyQueueStatsLocked();
     close_code_ = application_error;
     close_reason_ = std::move(reason);
+    WakeNetworkLocked();
   }
 
   bool WaitUntilClosed(TimeDelta timeout) override {
@@ -538,6 +555,14 @@ class RoqSessionImpl final : public RoqSession {
   }
 
  private:
+  void WakeNetworkLocked() {
+    if (!waiter_.WakeUp()) {
+      if (error_.empty()) error_ = "failed to wake network event waiter";
+      abort_requested_ = true;
+      condition_.notify_all();
+    }
+  }
+
   void Fail(std::string error) {
     std::string failure;
     {
@@ -812,6 +837,11 @@ class RoqSessionImpl final : public RoqSession {
       Fail(std::move(setup_error));
       return;
     }
+    if (!waiter_.AttachSocket(socket_fd.get())) {
+      Fail("failed to attach UDP socket to event waiter: " +
+           std::to_string(waiter_.error()));
+      return;
+    }
     ConfigPtr quiche_config = CreateConfig(&setup_error);
     if (!quiche_config) {
       Fail(std::move(setup_error));
@@ -899,20 +929,28 @@ class RoqSessionImpl final : public RoqSession {
     NotifyLifecycle(RoqSessionLifecycleState::kReady);
 
     std::optional<PendingUdpPacket> pending_udp;
+    bool socket_write_blocked = false;
     auto send_or_defer_udp = [&](PendingUdpPacket pending) {
       const auto send_now = SteadyClock::now();
       if (pending.send_at > send_now) {
         pending_udp = std::move(pending);
         return true;
       }
-      const ssize_t sent =
-          sendto(socket_fd.get(), pending.bytes.data(), pending.bytes.size(), 0,
-                 reinterpret_cast<const sockaddr*>(&pending.destination),
-                 pending.destination_length);
+      ssize_t sent;
+      do {
+        sent = sendto(socket_fd.get(), pending.bytes.data(), pending.bytes.size(),
+                      0, reinterpret_cast<const sockaddr*>(&pending.destination),
+                      pending.destination_length);
+      } while (sent < 0 && errno == EINTR);
+      const int send_error = sent < 0 ? errno : 0;
       const RoqUdpSendDisposition disposition =
-          ClassifyUdpSendResult(sent, pending.bytes.size(), errno);
+          ClassifyUdpSendResult(sent, pending.bytes.size(), send_error);
       if (disposition == RoqUdpSendDisposition::kRetry) {
-        pending.send_at = send_now + std::chrono::milliseconds(1);
+        socket_write_blocked = send_error == EAGAIN || send_error == EWOULDBLOCK;
+        // ENOBUFS need not make the socket non-writable. Back off on a timer;
+        // EAGAIN waits for the kernel's writable notification.
+        if (!socket_write_blocked)
+          pending.send_at = SteadyClock::now() + std::chrono::milliseconds(1);
         pending_udp = std::move(pending);
         return true;
       }
@@ -933,19 +971,23 @@ class RoqSessionImpl final : public RoqSession {
         if (abort_requested_)
           break;
       }
-      while (true) {
+      bool send_progress = false;
+      size_t received_in_batch = 0;
+      while (received_in_batch < kReceiveBurstLimit) {
         sockaddr_storage peer_address = {};
         socklen_t peer_length = sizeof(peer_address);
         const ssize_t received =
             recvfrom(socket_fd.get(), packet.data(), packet.size(), 0,
                      reinterpret_cast<sockaddr*>(&peer_address), &peer_length);
         if (received < 0) {
+          if (errno == EINTR) continue;
           if (errno != EAGAIN && errno != EWOULDBLOCK) {
             Fail("UDP receive failed");
             return;
           }
           break;
         }
+        ++received_in_batch;
         {
           std::lock_guard lock(mutex_);
           ++stats_.received_udp_packets;
@@ -971,7 +1013,6 @@ class RoqSessionImpl final : public RoqSession {
       }
 
       DispatchReceived();
-      const auto now = SteadyClock::now();
       if ((quiche_conn_is_established(connection.get()) ||
            quiche_conn_is_in_early_data(connection.get())) &&
           !SendReliableMessages(connection.get())) {
@@ -1091,7 +1132,8 @@ class RoqSessionImpl final : public RoqSession {
         if (timeout != kNoTimeout && timeout == 0)
           quiche_conn_on_timeout(connection.get());
       }
-      if (pending_udp && now >= pending_udp->send_at) {
+      if (pending_udp && !socket_write_blocked &&
+          SteadyClock::now() >= pending_udp->send_at) {
         PendingUdpPacket pending = std::move(*pending_udp);
         pending_udp.reset();
         if (!send_or_defer_udp(std::move(pending)))
@@ -1108,13 +1150,15 @@ class RoqSessionImpl final : public RoqSession {
             quiche_conn_send(connection.get(), packet.data(),
                              config_.maximum_udp_payload, &send_info);
         if (written >= 0) {
+          send_progress = true;
           PendingUdpPacket pending;
           pending.bytes.assign(packet.begin(),
                                packet.begin() + static_cast<size_t>(written));
           pending.destination = send_info.to;
           pending.destination_length = send_info.to_len;
           pending.send_at =
-              now + std::chrono::nanoseconds(send_info.pacing_delay_nanos);
+              SteadyClock::now() +
+              std::chrono::nanoseconds(send_info.pacing_delay_nanos);
           {
             std::lock_guard lock(mutex_);
             stats_.max_pacing_delay_ns = std::max(stats_.max_pacing_delay_ns,
@@ -1195,6 +1239,7 @@ class RoqSessionImpl final : public RoqSession {
             Fail("quiche send failed: " + std::to_string(written));
             return;
           }
+          send_progress = true;
           PendingUdpPacket pending;
           pending.bytes.assign(packet.begin(),
                                packet.begin() + static_cast<size_t>(written));
@@ -1219,6 +1264,7 @@ class RoqSessionImpl final : public RoqSession {
         const ssize_t queued = quiche_conn_dgram_send(
             connection.get(), outgoing->bytes.data(), outgoing->bytes.size());
         if (queued == static_cast<ssize_t>(outgoing->bytes.size())) {
+          send_progress = true;
           outgoing_.RecordSubmitted(*outgoing, config_.clock->CurrentTime());
           ++stats_.sent_datagrams;
           if (!stats_.established) {
@@ -1241,6 +1287,9 @@ class RoqSessionImpl final : public RoqSession {
           close_requested_ = true;
           close_code_ = static_cast<uint64_t>(RoqError::kInternalError);
           close_reason_ = error_;
+          // The failure created immediate close work on this thread. Do not
+          // park until a remote event or a transport timeout to apply it.
+          send_progress = true;
           break;
         }
       }
@@ -1251,7 +1300,30 @@ class RoqSessionImpl final : public RoqSession {
       }
       if (local_close_sent && close_drained && !pending_udp)
         break;
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      // Continue productive batches, but do not spin just because media is
+      // queued: pacing and cwnd may require a deadline or an incoming ACK.
+      if (received_in_batch == kReceiveBurstLimit ||
+          (send_progress && !pending_udp))
+        continue;
+
+      RoqSocketWaiter::Deadline deadline;
+      const auto wait_now = SteadyClock::now();
+      const uint64_t timeout_ns = quiche_conn_timeout_as_nanos(connection.get());
+      if (timeout_ns != kNoTimeout) {
+        const auto maximum = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            SteadyClock::time_point::max() - wait_now).count();
+        deadline = wait_now + std::chrono::nanoseconds(
+            std::min(timeout_ns, static_cast<uint64_t>(maximum)));
+      }
+      if (pending_udp && !socket_write_blocked &&
+          (!deadline || pending_udp->send_at < *deadline))
+        deadline = pending_udp->send_at;
+      const auto events = waiter_.Wait(deadline, socket_write_blocked);
+      if (events.error) {
+        Fail("network event wait failed: " + std::to_string(events.error));
+        return;
+      }
+      if (events.writable) socket_write_blocked = false;
     }
 
     if (connection)
@@ -1266,6 +1338,7 @@ class RoqSessionImpl final : public RoqSession {
     NotifyLifecycle(RoqSessionLifecycleState::kClosed);
   }
 
+  RoqSocketWaiter waiter_;
   const RoqSessionConfig config_;
   const ReceiveCallback receive_callback_;
   const DatagramSizeCallback datagram_size_callback_;
