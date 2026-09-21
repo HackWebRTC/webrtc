@@ -114,6 +114,8 @@ bool RoqPacketTransport::SendRtcp(std::span<const uint8_t> packet,
 bool RoqPacketTransport::Send(bool rtcp,
                               std::span<const uint8_t> packet,
                               const PacketOptions& options) {
+  auto completion =
+      std::make_shared<RoqDatagramCompletion>(options.on_send_complete);
   const Timestamp now = config_.clock->CurrentTime();
   const uint64_t flow_id = rtcp ? rtcp_flow_id_.load() : rtp_flow_id_.load();
   bool track_video_submission = false;
@@ -122,12 +124,17 @@ bool RoqPacketTransport::Send(bool rtcp,
                                   .media_type = config_.media_type,
                                   .enqueue_time = now,
                                   .video_codec = config_.video_codec};
+  datagram.completion = std::move(completion);
+  if (options.retransmission_deadline_us >= 0)
+    datagram.deadline = Timestamp::Micros(options.retransmission_deadline_us);
   if (rtcp) {
     bool critical = false;
     if (!ClassifyRtcpPacket(packet, &critical)) {
       config_.session->RecordInvalidDatagram();
       return false;
     }
+    if (!critical)
+      datagram.periodic_rtcp_key = PeriodicRtcpKey(packet);
     datagram.media_type = RoqMediaType::kRtcp;
     datagram.priority = critical ? RoqDatagramPriority::kRtcp
                                  : RoqDatagramPriority::kPeriodicRtcp;
@@ -144,6 +151,10 @@ bool RoqPacketTransport::Send(bool rtcp,
       }
       datagram.priority = RoqDatagramPriority::kAudio;
       datagram.packet_id = RoqPacketId{metadata.ssrc, metadata.sequence_number};
+      if (options.is_retransmission) {
+        datagram.original_packet_id = datagram.packet_id;
+        datagram.rtp_timestamp = metadata.timestamp;
+      }
     } else if (ParseVideoRtpPacketMetadata(packet, config_.video_codec,
                                            &metadata) &&
                metadata.payload_type == config_.primary_payload_type &&
@@ -173,16 +184,30 @@ bool RoqPacketTransport::Send(bool rtcp,
       }
       datagram.original_packet_id =
           RoqPacketId{config_.primary_ssrc, original_sequence_number};
+      datagram.rtp_timestamp = metadata.timestamp;
     } else {
       config_.session->RecordInvalidDatagram();
       return false;
     }
+  }
+  if (!rtcp && !datagram.original_packet_id) {
+    const auto cost = ParseRtpPayloadCost(
+        packet,
+        config_.media_type == RoqMediaType::kAudio && (packet[1] & 0x7f) == 63);
+    if (!cost) {
+      config_.session->RecordInvalidDatagram();
+      return false;
+    }
+    datagram.primary_payload_bytes = cost->primary_bytes;
+    datagram.redundant_payload_bytes = cost->redundant_bytes;
+    datagram.redundant_blocks = cost->redundant_blocks;
   }
   PacketAcceptedCallback accepted = packet_accepted_;
   auto key_frame_submission_state = key_frame_submission_state_;
   std::shared_ptr<std::atomic<uint64_t>> accepted_rtp_packets =
       rtcp ? nullptr : accepted_rtp_packets_;
   std::vector<uint8_t> accepted_packet(packet.begin(), packet.end());
+  auto terminal = datagram.completion;
   const RoqSendResult result = config_.session->SendMedia(
       flow_id, packet, std::move(datagram),
       [accepted = std::move(accepted), accepted_rtp_packets, flow_id,
@@ -196,6 +221,7 @@ bool RoqPacketTransport::Send(bool rtcp,
           key_frame_submission_state->Submitted(submitted_metadata);
       });
   if (result != RoqSendResult::kQueued) {
+    terminal->Complete(false);
     return false;
   }
   return true;

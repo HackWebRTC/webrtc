@@ -56,7 +56,10 @@ NetworkControlUpdate QuicNetworkController::Update(Timestamp at_time) const {
   NetworkControlUpdate update;
   update.pacer_config = PacerConfig::Create(
       at_time, budget_.target_rate, DataRate::Zero(), TimeDelta::Millis(40));
-  const DataRate applied_rate = update.pacer_config->data_rate();
+  // PacerConfig quantizes to whole bytes per 40 ms. The media target must not
+  // inherit that rounding: a fast resume exactly at the native threshold can
+  // otherwise arrive below it. quiche, not this metadata, owns wire pacing.
+  const DataRate applied_rate = budget_.target_rate;
   TargetTransferRate target;
   target.at_time = at_time;
   target.network_estimate.at_time = at_time;
@@ -84,13 +87,37 @@ NetworkControlUpdate QuicNetworkController::OnProcessInterval(
   const RoqSessionStats stats = stats_provider_();
   const QuicBandwidthSample sample = {
       .at_time = msg.at_time,
+      .connection_id = stats.source_connection_id,
       .acked_bytes = stats.acked_bytes,
       .startup_complete = stats.startup_exit_cwnd > 0,
       .max_bandwidth =
           DataRate::BytesPerSec(stats.max_bandwidth_bytes_per_second),
       .delivery_rate =
           DataRate::BytesPerSec(stats.delivery_rate_bytes_per_second),
-      .round_trip_time = TimeDelta::Micros(stats.rtt_ns / 1000)};
+      .round_trip_time = TimeDelta::Micros(stats.rtt_ns / 1000),
+      .audio_payload_rate =
+          DataRate::BitsPerSec(stats.configured_audio_bitrate_bps),
+      .maximum_media_rate =
+          DataRate::BitsPerSec(stats.configured_max_media_bitrate_bps),
+      .resume_media_rate =
+          DataRate::BitsPerSec(stats.configured_resume_media_bitrate_bps),
+      .evidence_round = stats.bandwidth_evidence_round,
+      .evidence_rate = DataRate::BytesPerSec(stats.bandwidth_evidence_bytes_per_second),
+      .evidence_age = stats.bandwidth_evidence_age_ns == UINT64_MAX
+                          ? TimeDelta::PlusInfinity()
+                          : TimeDelta::Micros(stats.bandwidth_evidence_age_ns / 1000),
+      .audio_payload_bytes = stats.audio_payload_bytes,
+      .audio_wire_bytes = stats.audio_wire_bytes,
+      .audio_packets = stats.audio_packets,
+      .audio_redundant_payload_bytes = stats.audio_redundant_payload_bytes,
+      .audio_redundant_blocks = stats.audio_redundant_blocks,
+      .audio_packet_rate = stats.configured_audio_packet_rate,
+      .video_payload_bytes = stats.video_payload_bytes,
+      .video_wire_bytes = stats.video_wire_bytes,
+      .rtcp_wire_bytes = stats.rtcp_wire_bytes,
+      .oldest_video_queue_age =
+          TimeDelta::Micros(stats.oldest_video_queue_age_us),
+      .expired_video_frames = stats.expired_video_frames};
   budget_ = policy_.Update(sample);
   NetworkControlUpdate update = Update(msg.at_time);
   if (update_observer_) {
@@ -103,10 +130,17 @@ NetworkControlUpdate QuicNetworkController::OnProcessInterval(
         .max_bandwidth_bytes_per_second = stats.max_bandwidth_bytes_per_second,
         .round_trip_time = sample.round_trip_time,
         .fresh = budget_.fresh,
+        .capacity_known = budget_.capacity_known,
+        .capacity_state = budget_.capacity_state,
+        .audio_redundancy_multiplier = budget_.audio_redundancy_multiplier,
+        .audio_header_rate = budget_.audio_header_rate,
         .raw_capacity = budget_.raw_capacity,
         .overhead = budget_.overhead,
         .recovery_reserve = budget_.recovery_reserve,
         .safety_headroom = budget_.safety_headroom,
+        .probe_max_rate = budget_.probe_max_rate,
+        .maintenance_rate = budget_.maintenance_rate,
+        .resume_fast_path = budget_.resume_fast_path,
         .usable_media_rate = budget_.usable_media_rate,
         .target_rate = update.target_rate->target_rate,
         .pacer_rate = pacer.data_rate(),

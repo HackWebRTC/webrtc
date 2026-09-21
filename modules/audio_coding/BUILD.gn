@@ -2230,6 +2230,14 @@ if (rtc_include_tests) {
     ]
   }
 
+  rtc_test("neteq_statistics_unittests") {
+    testonly = true
+    deps = [
+      ":statistics_calculator_unittest",
+      "../../test:test_main",
+    ]
+  }
+
   rtc_library("statistics_calculator_unittest") {
     testonly = true
     defines = audio_coding_defines

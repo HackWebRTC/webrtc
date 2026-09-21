@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include <cstddef>
+#include <functional>
 #include <span>
 
 namespace webrtc {
@@ -38,6 +39,13 @@ struct PacketOptions {
   bool batchable = false;
   // Whether this packet is the last of a batch.
   bool last_packet_in_batch = false;
+  // Opt-in asynchronous transports call exactly once, including rejection,
+  // cancellation and shutdown. submitted_at_us is actual UDP submission time.
+  // Callback may run on any thread and must not call back into the transport.
+  std::function<void(bool sent, int64_t submitted_at_us)> on_send_complete;
+  bool is_retransmission = false;
+  // Native history lifetime for queued repair; negative means no deadline.
+  int64_t retransmission_deadline_us = -1;
 };
 
 enum class RtpPacingMode {
@@ -49,6 +57,8 @@ class Transport {
  public:
   // Zero means the transport imposes no additional packetization limit.
   virtual size_t MaxRtpPacketSize() const { return 0; }
+  virtual bool HasAsyncSendCompletion() const { return false; }
+  virtual bool UsesMediaPayloadBudget() const { return false; }
   virtual RtpPacingMode GetRtpPacingMode() const {
     return RtpPacingMode::kLibwebrtc;
   }

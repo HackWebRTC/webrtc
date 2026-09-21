@@ -2,6 +2,7 @@
 #include "modules/roq/bounded_datagram_queue.h"
 
 #include <algorithm>
+#include <cmath>
 #include <utility>
 
 namespace webrtc::roq {
@@ -17,8 +18,229 @@ std::string SchedulerBinding(const QueuedDatagram& d) {
   return d.binding_id.empty() ? std::to_string(d.flow_id) : d.binding_id;
 }
 }  // namespace
+bool BoundedDatagramQueue::IsPrimaryVideo(const QueuedDatagram& d) {
+  return !d.original_packet_id &&
+         (d.priority == DatagramPriority::kVideoDelta ||
+          d.priority == DatagramPriority::kVideoKey);
+}
+size_t BoundedDatagramQueue::DiagnosticClass(const QueuedDatagram& d) {
+  if (d.original_packet_id)
+    return static_cast<size_t>(DatagramPriority::kRetransmission);
+  if (IsPrimaryVideo(d) &&
+      (d.is_key || d.contains_vps || d.contains_sps || d.contains_pps))
+    return static_cast<size_t>(DatagramPriority::kVideoKey);
+  return static_cast<size_t>(d.priority);
+}
+DatagramQueueDiagnostics BoundedDatagramQueue::Diagnostics(
+    Timestamp now,
+    const QueuedDatagram* slot) const {
+  auto result = diagnostic_totals_;
+  auto observe = [&](const QueuedDatagram& d, bool in_slot) {
+    auto& stats = result[DiagnosticClass(d)];
+    if (in_slot) {
+      ++stats.slot_packets;
+    } else {
+      ++stats.queued_packets;
+      stats.queued_bytes += d.bytes.size();
+    }
+    if (d.enqueue_time.IsFinite())
+      stats.oldest_age_us =
+          std::max(stats.oldest_age_us, (now - d.enqueue_time).us());
+  };
+  for (const auto& d : queue_)
+    observe(d, false);
+  if (slot)
+    observe(*slot, true);
+  return result;
+}
+BoundedDatagramQueue::VideoStream BoundedDatagramQueue::Stream(
+    const QueuedDatagram& d) {
+  return {SchedulerBinding(d), d.flow_id, d.frame_id ? d.frame_id->ssrc : 0};
+}
+BoundedDatagramQueue::VideoFrame BoundedDatagramQueue::Frame(
+    const QueuedDatagram& d) {
+  return {Stream(d), d.frame_id->timestamp};
+}
+bool BoundedDatagramQueue::IsExpiredFrame(const QueuedDatagram& d) const {
+  return IsPrimaryVideo(d) && d.frame_id && expired_frames_.contains(Frame(d));
+}
+void BoundedDatagramQueue::ExpireVideo(const QueuedDatagram& d, Timestamp now) {
+  ++expired_drops_;
+  RecordDropped(d, now);
+  if (d.frame_id && !expired_frames_.contains(Frame(d))) {
+    // Bounded late-fragment tombstones, independent of subsequent timestamps.
+    if (expired_frames_.size() >= 4096) {
+      auto oldest = std::min_element(
+          expired_frames_.begin(), expired_frames_.end(),
+          [](const auto& a, const auto& b) { return a.second < b.second; });
+      expired_frames_.erase(oldest);
+    }
+    expired_frames_.insert_or_assign(Frame(d), now + TimeDelta::Seconds(5));
+    ++expired_video_frames_;
+  }
+  const auto binding = SchedulerBinding(d);
+  auto last = last_video_recovery_.find(binding);
+  if (last == last_video_recovery_.end() ||
+      now - last->second >= TimeDelta::Seconds(1)) {
+    last_video_recovery_.insert_or_assign(binding, now);
+    ++recovery_requests_;
+    ++binding_stats_[binding].recovery_requests;
+  }
+}
+TimeDelta BoundedDatagramQueue::OldestVideoAge(
+    Timestamp now,
+    const QueuedDatagram* slot) const {
+  TimeDelta age = TimeDelta::Zero();
+  auto observe = [&](const QueuedDatagram& d) {
+    if (IsPrimaryVideo(d) && d.enqueue_time.IsFinite())
+      age = std::max(age, now - d.enqueue_time);
+  };
+  for (const auto& d : queue_)
+    observe(d);
+  if (slot)
+    observe(*slot);
+  return age;
+}
+Timestamp BoundedDatagramQueue::NextVideoExpiry(
+    const QueuedDatagram* slot) const {
+  Timestamp next = Timestamp::PlusInfinity();
+  auto observe = [&](const QueuedDatagram& d) {
+    if (IsPrimaryVideo(d) && d.enqueue_time.IsFinite())
+      next = std::min(next, d.enqueue_time + kVideoHighWater);
+    if (d.original_packet_id && d.deadline.IsFinite())
+      next = std::min(next, d.deadline);
+  };
+  for (const auto& d : queue_)
+    observe(d);
+  if (slot)
+    observe(*slot);
+  return next;
+}
+bool BoundedDatagramQueue::TrimVideo(Timestamp now,
+                                     const QueuedDatagram* slot) {
+  std::erase_if(expired_frames_,
+                [&](const auto& item) { return item.second <= now; });
+  std::erase_if(last_video_recovery_, [&](const auto& item) {
+    return now - item.second > TimeDelta::Seconds(5);
+  });
+  max_video_queue_age_ =
+      std::max(max_video_queue_age_, OldestVideoAge(now, slot));
+  std::set<VideoStream> congested;
+  std::set<VideoFrame> frames;
+  auto high = [&](const QueuedDatagram& d) {
+    if (IsPrimaryVideo(d) && d.enqueue_time.IsFinite() &&
+        now - d.enqueue_time >= kVideoHighWater)
+      congested.insert(Stream(d));
+  };
+  for (const auto& d : queue_)
+    high(d);
+  if (slot)
+    high(*slot);
+  auto old = [&](const QueuedDatagram& d) {
+    return IsPrimaryVideo(d) && d.enqueue_time.IsFinite() &&
+           congested.contains(Stream(d)) &&
+           now - d.enqueue_time >= kVideoLowWater;
+  };
+  auto select_frame = [&](const QueuedDatagram& d) {
+    if (d.frame_id && old(d))
+      frames.insert(Frame(d));
+  };
+  for (const auto& d : queue_)
+    select_frame(d);
+  if (slot)
+    select_frame(*slot);
+  auto drop = [&](const QueuedDatagram& d) {
+    return old(d) || IsExpiredFrame(d) ||
+           (IsPrimaryVideo(d) && d.frame_id && frames.contains(Frame(d)));
+  };
+  // Use RTP history's own repair lifetime, not the primary-video age gate.
+  auto stale_repair = [&](const QueuedDatagram& d) {
+    return d.original_packet_id && d.deadline.IsFinite() && now >= d.deadline;
+  };
+  const bool purge_slot = slot && (drop(*slot) || stale_repair(*slot));
+  if (purge_slot) {
+    if (stale_repair(*slot))
+      RecordDropped(*slot, now);
+    else
+      ExpireVideo(*slot, now);
+  }
+  std::erase_if(queue_, [&](const QueuedDatagram& d) {
+    if (!drop(d) && !stale_repair(d))
+      return false;
+    byte_size_ -= d.bytes.size();
+    if (stale_repair(d))
+      RecordDropped(d, now);
+    else
+      ExpireVideo(d, now);
+    return true;
+  });
+  return purge_slot;
+}
+void BoundedDatagramQueue::RefillRecovery(Timestamp now) {
+  if (!recovery_rate_)
+    return;
+  const double burst =
+      std::max<double>(2 * max_datagram_size_, *recovery_rate_ / 10.0);
+  if (recovery_updated_.IsFinite())
+    recovery_tokens_ +=
+        std::max(0.0, (now - recovery_updated_).seconds<double>()) *
+        *recovery_rate_;
+  recovery_tokens_ = std::min(recovery_tokens_, burst);
+  recovery_updated_ = now;
+}
+bool BoundedDatagramQueue::RecoveryEligible(const QueuedDatagram& d) const {
+  return !d.original_packet_id || !recovery_rate_ ||
+         (*recovery_rate_ > 0 && recovery_tokens_ >= d.bytes.size() + 96);
+}
+Timestamp BoundedDatagramQueue::NextRecoveryService(Timestamp now) {
+  RefillRecovery(now);
+  Timestamp next = Timestamp::PlusInfinity();
+  if (!recovery_rate_ || *recovery_rate_ == 0)
+    return next;
+  for (const auto& d : queue_) {
+    if (!d.original_packet_id)
+      continue;
+    const double missing = d.bytes.size() + 96 - recovery_tokens_;
+    // An eligible packet is waiting on QUIC, not on recovery credit.
+    if (missing <= 0)
+      return Timestamp::PlusInfinity();
+    next = std::min(next,
+                    now + TimeDelta::Micros(static_cast<int64_t>(
+                              std::ceil(missing * 1000000 / *recovery_rate_))));
+  }
+  return next;
+}
+void BoundedDatagramQueue::SetRecoveryRate(uint64_t rate, Timestamp now) {
+  if (recovery_rate_) {
+    RefillRecovery(now);
+  } else {
+    recovery_tokens_ = 2 * max_datagram_size_;
+  }
+  recovery_rate_ = rate;
+  RefillRecovery(now);
+}
 DatagramEnqueueResult BoundedDatagramQueue::Enqueue(QueuedDatagram d,
                                                     Timestamp now) {
+  TrimVideo(now);
+  if (d.original_packet_id && d.deadline.IsFinite() && now >= d.deadline) {
+    RecordDropped(d, now);
+    return DatagramEnqueueResult::kDropped;
+  }
+  if (d.original_packet_id &&
+      std::any_of(queue_.begin(), queue_.end(), [&](const auto& queued) {
+        return queued.binding_id == d.binding_id &&
+               queued.flow_id == d.flow_id &&
+               queued.original_packet_id == d.original_packet_id &&
+               queued.rtp_timestamp == d.rtp_timestamp;
+      })) {
+    RecordDropped(d, now);
+    return DatagramEnqueueResult::kDropped;
+  }
+  if (IsExpiredFrame(d)) {
+    ++expired_drops_;
+    RecordDropped(d, now);
+    return DatagramEnqueueResult::kDropped;
+  }
   if (d.frame_id) {
     const auto damaged = damaged_frames_.find(SchedulerBinding(d));
     if (damaged != damaged_frames_.end()) {
@@ -52,6 +274,25 @@ DatagramEnqueueResult BoundedDatagramQueue::Enqueue(QueuedDatagram d,
     d.priority = DatagramPriority::kVideoDelta;
   if (d.original_packet_id)
     d.priority = DatagramPriority::kRetransmission;
+  RefillRecovery(now);
+  if (!d.periodic_rtcp_key.empty() &&
+      d.priority == DatagramPriority::kPeriodicRtcp) {
+    auto old =
+        std::find_if(queue_.begin(), queue_.end(), [&](const auto& queued) {
+          return queued.priority == DatagramPriority::kPeriodicRtcp &&
+                 queued.binding_id == d.binding_id &&
+                 queued.flow_id == d.flow_id &&
+                 queued.periodic_rtcp_key == d.periodic_rtcp_key;
+        });
+    if (old != queue_.end()) {
+      // Preserve waiting age so continuous replacement cannot postpone service.
+      d.enqueue_time = old->enqueue_time;
+      byte_size_ -= old->bytes.size();
+      RecordDropped(*old, now);
+      queue_.erase(old);
+      ++coalesced_reports_;
+    }
+  }
   auto fits = [&](size_t packets, size_t bytes) {
     return packets < capacity_ && d.bytes.size() <= byte_capacity_ - bytes;
   };
@@ -89,6 +330,9 @@ DatagramEnqueueResult BoundedDatagramQueue::Enqueue(QueuedDatagram d,
   if (d.priority == DatagramPriority::kVideoKey)
     d.priority = DatagramPriority::kVideoDelta;
   ++binding_stats_[SchedulerBinding(d)].enqueued_packets;
+  auto& diagnostic = diagnostic_totals_[DiagnosticClass(d)];
+  ++diagnostic.enqueued_packets;
+  diagnostic.enqueued_bytes += d.bytes.size();
   byte_size_ += d.bytes.size();
   queue_.push_back(std::move(d));
   peak_size_ = std::max(peak_size_, queue_.size());
@@ -99,11 +343,15 @@ std::optional<QueuedDatagram> BoundedDatagramQueue::Pop() {
   return Pop(Timestamp::Zero());
 }
 std::optional<QueuedDatagram> BoundedDatagramQueue::Pop(Timestamp now) {
+  TrimVideo(now);
+  RefillRecovery(now);
   if (queue_.empty())
     return std::nullopt;
   DatagramPriority highest = DatagramPriority::kPeriodicRtcp;
   bool found = false;
   for (const QueuedDatagram& datagram : queue_) {
+    if (!RecoveryEligible(datagram))
+      continue;
     if (!found || datagram.priority > highest) {
       highest = datagram.priority;
       found = true;
@@ -111,10 +359,21 @@ std::optional<QueuedDatagram> BoundedDatagramQueue::Pop(Timestamp now) {
   }
   if (!found)
     return std::nullopt;
+  // Low frequency reports get one opportunity after 100 ms, but never
+  // preempt audio or critical feedback. Unlike strict priority, this cannot
+  // starve indefinitely behind primary video or retransmissions.
+  if (highest < DatagramPriority::kAudio &&
+      std::any_of(
+          queue_.begin(), queue_.end(),
+          [&](const auto& d) {
+            return d.priority == DatagramPriority::kPeriodicRtcp &&
+                   now - d.enqueue_time >= TimeDelta::Millis(100);
+          }))
+    highest = DatagramPriority::kPeriodicRtcp;
 
   std::vector<std::string> bindings;
   for (const QueuedDatagram& datagram : queue_) {
-    if (datagram.priority != highest)
+    if (datagram.priority != highest || !RecoveryEligible(datagram))
       continue;
     const std::string binding = SchedulerBinding(datagram);
     if (std::find(bindings.begin(), bindings.end(), binding) == bindings.end())
@@ -126,9 +385,11 @@ std::optional<QueuedDatagram> BoundedDatagramQueue::Pop(Timestamp now) {
   auto find_head = [&](const std::string& binding) {
     auto head = std::find_if(
         queue_.begin(), queue_.end(), [&](const QueuedDatagram& d) {
-          return d.priority == highest && SchedulerBinding(d) == binding;
+          return d.priority == highest && SchedulerBinding(d) == binding &&
+                 RecoveryEligible(d);
         });
-    if (head != queue_.end() && head->bytes.size() > deficits_[binding])
+    if (head != queue_.end() &&
+        (head->bytes.size() > deficits_[binding] || !RecoveryEligible(*head)))
       return queue_.end();
     return head;
   };
@@ -162,6 +423,8 @@ std::optional<QueuedDatagram> BoundedDatagramQueue::Pop(Timestamp now) {
   if (selected == queue_.end())
     return std::nullopt;
   QueuedDatagram datagram = std::move(*selected);
+  if (datagram.original_packet_id && recovery_rate_)
+    recovery_tokens_ -= datagram.bytes.size() + 96;
   byte_size_ -= datagram.bytes.size();
   queue_.erase(selected);
   deficits_[selected_binding] -= datagram.bytes.size();
@@ -179,15 +442,25 @@ std::optional<QueuedDatagram> BoundedDatagramQueue::Pop(Timestamp now) {
 // Called under the session lock held since Pop. Producers cannot use the
 // vacated capacity while quiche is deciding whether to accept this packet.
 void BoundedDatagramQueue::Requeue(QueuedDatagram d) {
+  if (d.original_packet_id && recovery_rate_)
+    recovery_tokens_ += d.bytes.size() + 96;
   byte_size_ += d.bytes.size();
   queue_.push_front(std::move(d));
 }
 void BoundedDatagramQueue::RecordSubmitted(const QueuedDatagram& d, Timestamp) {
   ++binding_stats_[SchedulerBinding(d)].submitted_packets;
+  auto& diagnostic = diagnostic_totals_[DiagnosticClass(d)];
+  ++diagnostic.submitted_packets;
+  diagnostic.submitted_bytes += d.bytes.size();
 }
 void BoundedDatagramQueue::RecordDropped(const QueuedDatagram& d, Timestamp) {
+  if (d.completion)
+    d.completion->Complete(false);
   ++binding_stats_[SchedulerBinding(d)].dropped_packets;
   ++dropped_by_priority_[static_cast<size_t>(d.priority)];
+  auto& diagnostic = diagnostic_totals_[DiagnosticClass(d)];
+  ++diagnostic.dropped_packets;
+  diagnostic.dropped_bytes += d.bytes.size();
 }
 size_t BoundedDatagramQueue::SetMaxDatagramSize(size_t size, Timestamp now) {
   max_datagram_size_ = size;
@@ -213,8 +486,12 @@ size_t BoundedDatagramQueue::SetMaxDatagramSize(size_t size, Timestamp now) {
 }
 size_t BoundedDatagramQueue::Clear() {
   const size_t count = queue_.size();
-  for (const auto& d : queue_)
+  for (const auto& d : queue_) {
     RetireFrame(d);
+    ++diagnostic_totals_[DiagnosticClass(d)].purged_packets;
+    if (d.completion)
+      d.completion->Complete(false);
+  }
   queue_.clear();
   byte_size_ = 0;
   deficits_.clear();
@@ -255,9 +532,16 @@ size_t BoundedDatagramQueue::PurgeBinding(const std::string& id) {
     if (d.binding_id != id)
       return false;
     byte_size_ -= d.bytes.size();
+    ++diagnostic_totals_[DiagnosticClass(d)].purged_packets;
+    if (d.completion)
+      d.completion->Complete(false);
     return true;
   });
   deficits_.erase(id);
+  last_video_recovery_.erase(id);
+  std::erase_if(expired_frames_, [&](const auto& item) {
+    return std::get<0>(std::get<0>(item.first)) == id;
+  });
   damaged_frames_.erase(id);
   return before - queue_.size();
 }

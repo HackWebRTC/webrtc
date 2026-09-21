@@ -106,6 +106,7 @@ struct PendingUdpPacket {
   sockaddr_storage destination = {};
   socklen_t destination_length = 0;
   SteadyClock::time_point send_at;
+  std::optional<QueuedDatagram> datagram;
 };
 
 struct ResolvedAddress {
@@ -431,7 +432,29 @@ class RoqSessionImpl final : public RoqSession {
         .contains_sps = metadata.contains_sps,
         .contains_pps = metadata.contains_pps,
         .on_submitted = std::move(on_submitted),
+        .rtp_timestamp = metadata.rtp_timestamp,
+        .primary_payload_bytes = metadata.primary_payload_bytes,
+        .periodic_rtcp_key = std::move(metadata.periodic_rtcp_key),
+        .completion = std::move(metadata.completion),
     };
+    // 96 bytes conservatively covers QUIC short header/AEAD/DATAGRAM +
+    // UDP/IPv6. RED redundancy and RTP headers are measured, not nominal codec
+    // bitrate.
+    const uint64_t cost = datagram.bytes.size() + 96;
+    if (metadata.original_packet_id) {
+      stats_.recovery_wire_bytes += cost;
+    } else if (metadata.media_type == RoqMediaType::kAudio) {
+      stats_.audio_payload_bytes += metadata.primary_payload_bytes;
+      stats_.audio_wire_bytes += cost;
+      ++stats_.audio_packets;
+      stats_.audio_redundant_payload_bytes += metadata.redundant_payload_bytes;
+      stats_.audio_redundant_blocks += metadata.redundant_blocks;
+    } else if (metadata.media_type == RoqMediaType::kVideo) {
+      stats_.video_payload_bytes += metadata.primary_payload_bytes;
+      stats_.video_wire_bytes += cost;
+    } else {
+      stats_.rtcp_wire_bytes += cost;
+    }
     const DatagramEnqueueResult result =
         outgoing_.Enqueue(std::move(datagram), config_.clock->CurrentTime());
     CopyQueueStatsLocked();
@@ -448,6 +471,17 @@ class RoqSessionImpl final : public RoqSession {
       case DatagramEnqueueResult::kInvalid:
         return RoqSendResult::kInvalid;
     }
+  }
+
+  void SetMediaWireBudget(uint64_t probe_max_bytes_per_second,
+                          uint64_t recovery_bytes_per_second,
+                          uint64_t maintenance_bytes_per_second) override {
+    std::lock_guard lock(mutex_);
+    probe_max_bytes_per_second_ = probe_max_bytes_per_second;
+    maintenance_max_bytes_per_second_ = maintenance_bytes_per_second;
+    outgoing_.SetRecoveryRate(recovery_bytes_per_second,
+                              config_.clock->CurrentTime());
+    WakeNetworkLocked();
   }
 
   void RecordInvalidDatagram() override {
@@ -555,9 +589,39 @@ class RoqSessionImpl final : public RoqSession {
   }
 
  private:
+  void TrimVideoQueue(quiche_conn* connection) {
+    std::lock_guard lock(mutex_);
+    // A zero quiche queue means the slot has already been packetized. The
+    // pending UDP payload is immutable and must not be treated as queued RTP.
+    if (quiche_conn_dgram_send_queue_len(connection) == 0) {
+      quiche_slot_datagram_.reset();
+      purge_quiche_slot_for_binding_ = false;
+      purge_quiche_slot_for_pmtu_ = false;
+    } else if (purge_quiche_slot_for_binding_ || purge_quiche_slot_for_pmtu_) {
+      quiche_conn_dgram_purge_outgoing(connection, PurgeDatagram);
+      if (purge_quiche_slot_for_pmtu_)
+        ++quiche_pmtu_purge_drops_;
+      if (!purge_quiche_slot_for_binding_ && quiche_slot_datagram_)
+        outgoing_.DiscardFrame(*quiche_slot_datagram_,
+                               config_.clock->CurrentTime());
+      quiche_slot_datagram_.reset();
+      purge_quiche_slot_for_binding_ = false;
+      purge_quiche_slot_for_pmtu_ = false;
+    }
+    const auto now = config_.clock->CurrentTime();
+    if (outgoing_.TrimVideo(
+            now, quiche_slot_datagram_ ? &*quiche_slot_datagram_ : nullptr)) {
+      quiche_conn_dgram_purge_outgoing(connection, PurgeDatagram);
+      quiche_slot_datagram_.reset();
+      ++stats_.quiche_slot_expired_drops;
+    }
+    CopyQueueStatsLocked();
+  }
+
   void WakeNetworkLocked() {
     if (!waiter_.WakeUp()) {
-      if (error_.empty()) error_ = "failed to wake network event waiter";
+      if (error_.empty())
+        error_ = "failed to wake network event waiter";
       abort_requested_ = true;
       condition_.notify_all();
     }
@@ -570,6 +634,8 @@ class RoqSessionImpl final : public RoqSession {
       if (error_.empty())
         error_ = std::move(error);
       failure = error_;
+      outgoing_.Clear();
+      quiche_slot_datagram_.reset();
       closed_ = true;
       condition_.notify_all();
     }
@@ -593,8 +659,8 @@ class RoqSessionImpl final : public RoqSession {
     if (!config ||
         quiche_config_set_application_protos(config.get(), alpn_wire.data(),
                                              alpn_wire.size()) != 0 ||
-        quiche_config_set_cc_algorithm_name(config.get(), "bbr2_gcongestion") !=
-            0) {
+        quiche_config_set_cc_algorithm_name(config.get(), "bbr2_gcongestion") != 0 ||
+        quiche_config_set_bbr_loss_response(config.get(), 1) != 0) {
       *error = "failed to configure quiche";
       return nullptr;
     }
@@ -623,12 +689,31 @@ class RoqSessionImpl final : public RoqSession {
     return config;
   }
 
+  void ObserveSendQueue(quiche_conn* connection) {
+    std::lock_guard lock(mutex_);
+    const auto age = outgoing_.OldestVideoAge(
+        config_.clock->CurrentTime(),
+        quiche_slot_datagram_ ? &*quiche_slot_datagram_ : nullptr);
+    quiche_conn_observe_send_queue(connection, outgoing_.byte_size(),
+                                  std::max<int64_t>(0, age.us()) * 1000,
+                                  outgoing_.expired_video_frames() +
+                                      outgoing_.queue_full_drops());
+  }
+
   void CopyQueueStatsLocked() {
     stats_.queue_full_drops = outgoing_.queue_full_drops();
     stats_.oversize_drops = outgoing_.oversize_drops() + quiche_oversize_drops_;
     stats_.pmtu_purge_drops =
         outgoing_.pmtu_purge_drops() + quiche_pmtu_purge_drops_;
     stats_.expired_drops = outgoing_.expired_drops();
+    stats_.expired_video_frames = outgoing_.expired_video_frames();
+    stats_.oldest_video_queue_age_us =
+        outgoing_
+            .OldestVideoAge(
+                config_.clock->CurrentTime(),
+                quiche_slot_datagram_ ? &*quiche_slot_datagram_ : nullptr)
+            .us();
+    stats_.max_video_queue_age_us = outgoing_.max_video_queue_age().us();
     stats_.invalid_drops = outgoing_.invalid_drops();
     stats_.peak_queue_size = outgoing_.peak_size();
     stats_.peak_queue_bytes = outgoing_.peak_byte_size();
@@ -647,6 +732,8 @@ class RoqSessionImpl final : public RoqSession {
         outgoing_.dropped_by_priority(DatagramPriority::kRtcp);
     stats_.dependency_drops = outgoing_.dependency_drops();
     stats_.recovery_requests = outgoing_.recovery_requests();
+    stats_.recovery_budget_drops = outgoing_.recovery_budget_drops();
+    stats_.coalesced_reports = outgoing_.coalesced_reports();
   }
 
   void CopyFlowStatsLocked() {
@@ -661,8 +748,17 @@ class RoqSessionImpl final : public RoqSession {
     if (quiche_conn_path_stats(connection, 0, &path) != 0)
       return;
     quiche_conn_stats(connection, &connection_stats);
+    quiche_bandwidth_recovery_stats recovery = {};
+    quiche_conn_bandwidth_recovery_stats(connection, &recovery);
     {
       std::lock_guard lock(mutex_);
+      stats_.probe_wire_bytes =
+          quiche_conn_bandwidth_probe_sent_bytes(connection);
+      stats_.sent_wire_bytes = connection_stats.sent_bytes;
+      stats_.bandwidth_evidence_round = recovery.evidence_round;
+      stats_.bandwidth_evidence_bytes_per_second = recovery.evidence_rate;
+      stats_.bandwidth_evidence_age_ns = recovery.evidence_age_ns;
+      stats_.maintenance_wire_bytes = recovery.maintenance_sent_bytes;
       stats_.rtt_ns = path.rtt;
       stats_.max_rtt_ns = path.max_rtt;
       stats_.delivery_rate_bytes_per_second = path.delivery_rate;
@@ -674,13 +770,94 @@ class RoqSessionImpl final : public RoqSession {
       stats_.lost_bytes = connection_stats.lost_bytes;
       stats_.pmtu_bytes = path.pmtu;
       stats_.dgram_lost = path.dgram_lost;
-      const Timestamp now =
-          Timestamp::Micros(config_.clock->CurrentTime().us());
       if (connection_stats.acked_bytes > last_path_acked_bytes_) {
         last_path_acked_bytes_ = connection_stats.acked_bytes;
-        last_path_ack_at_ = now;
-        stats_.last_ack_monotonic_us = now.us();
+        stats_.last_ack_monotonic_us =
+            std::chrono::duration_cast<std::chrono::microseconds>(
+                SteadyClock::now().time_since_epoch())
+                .count();
       }
+    }
+    LogTransportDiagnostics(connection);
+  }
+
+  void LogTransportDiagnostics(quiche_conn* connection) {
+    if (!media_diagnostics_)
+      return;
+    const auto now = config_.clock->CurrentTime();
+    if (now - last_diagnostic_at_ < TimeDelta::Millis(500))
+      return;
+    last_diagnostic_at_ = now;
+    RoqSessionStats stats;
+    DatagramQueueDiagnostics classes;
+    uint64_t probe_cap = 0;
+    {
+      std::lock_guard lock(mutex_);
+      stats = stats_;
+      probe_cap = probe_max_bytes_per_second_;
+      classes = outgoing_.Diagnostics(
+          now, quiche_conn_dgram_send_queue_len(connection) > 0 &&
+                       quiche_slot_datagram_
+                   ? &*quiche_slot_datagram_
+                   : nullptr);
+    }
+    // Copy under the queue lock, but format/write after releasing it. Logging
+    // is opt-in and sampled, independent of subscriber/renderer availability.
+    RTC_LOG(LS_INFO) << "roq_transport_sample sample_us=" << TimeMicros()
+                     << " session=" << this
+                     << " established=" << stats.established
+                     << " rtt_us=" << stats.rtt_ns / 1000 << " delivery_bps="
+                     << stats.delivery_rate_bytes_per_second * 8
+                     << " max_bw_bps="
+                     << stats.max_bandwidth_bytes_per_second * 8
+                     << " cwnd_bytes=" << stats.current_cwnd_bytes
+                     << " acked_bytes=" << stats.acked_bytes
+                     << " lost_packets=" << stats.lost_packets
+                     << " dgram_lost=" << stats.dgram_lost
+                     << " sent_udp=" << stats.sent_udp_packets
+                     << " received_udp=" << stats.received_udp_packets
+                     << " startup_exit_cwnd=" << stats.startup_exit_cwnd
+                     << " controller_bps=" << stats.controller_target_rate_bps
+                     << " queued_packets=" << stats.queued_packets
+                     << " queued_bytes=" << stats.queued_bytes
+                     << " queue_full=" << stats.queue_full_drops
+                     << " expired=" << stats.expired_drops
+                     << " expired_frames=" << stats.expired_video_frames
+                     << " recovery_requests=" << stats.recovery_requests
+                     << " slot_expired=" << stats.quiche_slot_expired_drops
+                     << " probe_cap_Bps=" << probe_cap
+                     << " probe_bytes=" << stats.probe_wire_bytes
+                     << " maintenance_bytes=" << stats.maintenance_wire_bytes
+                     << " evidence_round=" << stats.bandwidth_evidence_round
+                     << " evidence_bps=" << stats.bandwidth_evidence_bytes_per_second * 8
+                     << " evidence_age_ns=" << stats.bandwidth_evidence_age_ns
+                     << " recovery_budget_drops=" << stats.recovery_budget_drops
+                     << " coalesced_reports=" << stats.coalesced_reports
+                     << " audio_wire_bytes=" << stats.audio_wire_bytes
+                     << " audio_primary_bytes=" << stats.audio_payload_bytes
+                     << " audio_packets=" << stats.audio_packets
+                     << " audio_redundant_bytes="
+                     << stats.audio_redundant_payload_bytes
+                     << " audio_red_blocks=" << stats.audio_redundant_blocks
+                     << " video_wire_bytes=" << stats.video_wire_bytes;
+    constexpr std::array<const char*, 6> names = {
+        "periodic_rtcp", "video_delta", "video_key",
+        "rtx",           "audio",       "critical_rtcp"};
+    for (size_t i = 0; i < classes.size(); ++i) {
+      const auto& c = classes[i];
+      RTC_LOG(LS_INFO) << "roq_transport_class sample_us=" << TimeMicros()
+                       << " session=" << this << " class=" << names[i]
+                       << " enqueued_packets=" << c.enqueued_packets
+                       << " enqueued_bytes=" << c.enqueued_bytes
+                       << " submitted_packets=" << c.submitted_packets
+                       << " submitted_bytes=" << c.submitted_bytes
+                       << " dropped_packets=" << c.dropped_packets
+                       << " dropped_bytes=" << c.dropped_bytes
+                       << " purged_packets=" << c.purged_packets
+                       << " queued_packets=" << c.queued_packets
+                       << " queued_bytes=" << c.queued_bytes
+                       << " slot_packets=" << c.slot_packets
+                       << " oldest_age_us=" << c.oldest_age_us;
     }
   }
 
@@ -938,15 +1115,17 @@ class RoqSessionImpl final : public RoqSession {
       }
       ssize_t sent;
       do {
-        sent = sendto(socket_fd.get(), pending.bytes.data(), pending.bytes.size(),
-                      0, reinterpret_cast<const sockaddr*>(&pending.destination),
-                      pending.destination_length);
+        sent =
+            sendto(socket_fd.get(), pending.bytes.data(), pending.bytes.size(),
+                   0, reinterpret_cast<const sockaddr*>(&pending.destination),
+                   pending.destination_length);
       } while (sent < 0 && errno == EINTR);
       const int send_error = sent < 0 ? errno : 0;
       const RoqUdpSendDisposition disposition =
           ClassifyUdpSendResult(sent, pending.bytes.size(), send_error);
       if (disposition == RoqUdpSendDisposition::kRetry) {
-        socket_write_blocked = send_error == EAGAIN || send_error == EWOULDBLOCK;
+        socket_write_blocked =
+            send_error == EAGAIN || send_error == EWOULDBLOCK;
         // ENOBUFS need not make the socket non-writable. Back off on a timer;
         // EAGAIN waits for the kernel's writable notification.
         if (!socket_write_blocked)
@@ -958,8 +1137,25 @@ class RoqSessionImpl final : public RoqSession {
         Fail("UDP send failed");
         return false;
       }
-      std::lock_guard lock(mutex_);
-      ++stats_.sent_udp_packets;
+      const auto submitted_at = config_.clock->CurrentTime();
+      {
+        std::lock_guard lock(mutex_);
+        ++stats_.sent_udp_packets;
+        if (pending.datagram) {
+          outgoing_.RecordSubmitted(*pending.datagram, submitted_at);
+          ++stats_.sent_datagrams;
+          if (!stats_.established) {
+            ++stats_.early_datagrams_sent;
+            stats_.early_data_attempted = true;
+          }
+        }
+      }
+      if (pending.datagram) {
+        if (pending.datagram->completion)
+          pending.datagram->completion->Complete(true, submitted_at.us());
+        if (pending.datagram->on_submitted)
+          pending.datagram->on_submitted();
+      }
       return true;
     };
     bool local_close_sent = false;
@@ -980,7 +1176,8 @@ class RoqSessionImpl final : public RoqSession {
             recvfrom(socket_fd.get(), packet.data(), packet.size(), 0,
                      reinterpret_cast<sockaddr*>(&peer_address), &peer_length);
         if (received < 0) {
-          if (errno == EINTR) continue;
+          if (errno == EINTR)
+            continue;
           if (errno != EAGAIN && errno != EWOULDBLOCK) {
             Fail("UDP receive failed");
             return;
@@ -1128,6 +1325,8 @@ class RoqSessionImpl final : public RoqSession {
       }
 
       if (connection) {
+        TrimVideoQueue(connection.get());
+        ObserveSendQueue(connection.get());
         const uint64_t timeout = quiche_conn_timeout_as_nanos(connection.get());
         if (timeout != kNoTimeout && timeout == 0)
           quiche_conn_on_timeout(connection.get());
@@ -1142,9 +1341,14 @@ class RoqSessionImpl final : public RoqSession {
       if (connection && !pending_udp) {
         {
           std::lock_guard lock(mutex_);
+          quiche_conn_set_bandwidth_probe_max_rate(connection.get(),
+                                                   probe_max_bytes_per_second_);
+          quiche_conn_set_bandwidth_maintenance_max_rate(
+              connection.get(), maintenance_max_bytes_per_second_);
           quiche_conn_set_external_dgram_queue_bytes(connection.get(),
                                                      outgoing_.byte_size());
         }
+        ObserveSendQueue(connection.get());
         quiche_send_info send_info = {};
         const ssize_t written =
             quiche_conn_send(connection.get(), packet.data(),
@@ -1152,6 +1356,14 @@ class RoqSessionImpl final : public RoqSession {
         if (written >= 0) {
           send_progress = true;
           PendingUdpPacket pending;
+          {
+            std::lock_guard lock(mutex_);
+            if (quiche_slot_datagram_ &&
+                quiche_conn_dgram_send_queue_len(connection.get()) == 0) {
+              pending.datagram = std::move(quiche_slot_datagram_);
+              quiche_slot_datagram_.reset();
+            }
+          }
           pending.bytes.assign(packet.begin(),
                                packet.begin() + static_cast<size_t>(written));
           pending.destination = send_info.to;
@@ -1182,6 +1394,7 @@ class RoqSessionImpl final : public RoqSession {
                              quiche_conn_is_in_early_data(connection.get()));
       }
       for (size_t attempted = 0; can_send_datagram; ++attempted) {
+        TrimVideoQueue(connection.get());
         const ssize_t queue_length =
             quiche_conn_dgram_send_queue_len(connection.get());
         bool purge_for_pmtu = false;
@@ -1226,9 +1439,14 @@ class RoqSessionImpl final : public RoqSession {
         if (queue_length != 0) {
           {
             std::lock_guard lock(mutex_);
+            quiche_conn_set_bandwidth_probe_max_rate(
+                connection.get(), probe_max_bytes_per_second_);
+            quiche_conn_set_bandwidth_maintenance_max_rate(
+                connection.get(), maintenance_max_bytes_per_second_);
             quiche_conn_set_external_dgram_queue_bytes(connection.get(),
                                                        outgoing_.byte_size());
           }
+          ObserveSendQueue(connection.get());
           quiche_send_info send_info = {};
           const ssize_t written =
               quiche_conn_send(connection.get(), packet.data(),
@@ -1241,6 +1459,14 @@ class RoqSessionImpl final : public RoqSession {
           }
           send_progress = true;
           PendingUdpPacket pending;
+          {
+            std::lock_guard lock(mutex_);
+            if (quiche_slot_datagram_ &&
+                quiche_conn_dgram_send_queue_len(connection.get()) == 0) {
+              pending.datagram = std::move(quiche_slot_datagram_);
+              quiche_slot_datagram_.reset();
+            }
+          }
           pending.bytes.assign(packet.begin(),
                                packet.begin() + static_cast<size_t>(written));
           pending.destination = send_info.to;
@@ -1265,16 +1491,7 @@ class RoqSessionImpl final : public RoqSession {
             connection.get(), outgoing->bytes.data(), outgoing->bytes.size());
         if (queued == static_cast<ssize_t>(outgoing->bytes.size())) {
           send_progress = true;
-          outgoing_.RecordSubmitted(*outgoing, config_.clock->CurrentTime());
-          ++stats_.sent_datagrams;
-          if (!stats_.established) {
-            ++stats_.early_datagrams_sent;
-            stats_.early_data_attempted = true;
-          }
-          quiche_slot_datagram_ = *outgoing;
-          lock.unlock();
-          if (outgoing->on_submitted)
-            outgoing->on_submitted();
+          quiche_slot_datagram_ = std::move(*outgoing);
         } else if (queued == QUICHE_ERR_BUFFER_TOO_SHORT) {
           ++quiche_oversize_drops_;
           outgoing_.DiscardFrame(*outgoing, config_.clock->CurrentTime());
@@ -1308,22 +1525,41 @@ class RoqSessionImpl final : public RoqSession {
 
       RoqSocketWaiter::Deadline deadline;
       const auto wait_now = SteadyClock::now();
-      const uint64_t timeout_ns = quiche_conn_timeout_as_nanos(connection.get());
+      const uint64_t timeout_ns =
+          quiche_conn_timeout_as_nanos(connection.get());
       if (timeout_ns != kNoTimeout) {
-        const auto maximum = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            SteadyClock::time_point::max() - wait_now).count();
-        deadline = wait_now + std::chrono::nanoseconds(
-            std::min(timeout_ns, static_cast<uint64_t>(maximum)));
+        const auto maximum =
+            std::chrono::duration_cast<std::chrono::nanoseconds>(
+                SteadyClock::time_point::max() - wait_now)
+                .count();
+        deadline = wait_now + std::chrono::nanoseconds(std::min(
+                                  timeout_ns, static_cast<uint64_t>(maximum)));
       }
       if (pending_udp && !socket_write_blocked &&
           (!deadline || pending_udp->send_at < *deadline))
         deadline = pending_udp->send_at;
+      {
+        std::lock_guard lock(mutex_);
+        const auto expires = std::min(
+            outgoing_.NextVideoExpiry(
+                quiche_slot_datagram_ ? &*quiche_slot_datagram_ : nullptr),
+            outgoing_.NextRecoveryService(config_.clock->CurrentTime()));
+        if (expires.IsFinite()) {
+          const auto delay = std::max(TimeDelta::Zero(),
+                                      expires - config_.clock->CurrentTime());
+          const auto age_deadline =
+              wait_now + std::chrono::microseconds(delay.us());
+          if (!deadline || age_deadline < *deadline)
+            deadline = age_deadline;
+        }
+      }
       const auto events = waiter_.Wait(deadline, socket_write_blocked);
       if (events.error) {
         Fail("network event wait failed: " + std::to_string(events.error));
         return;
       }
-      if (events.writable) socket_write_blocked = false;
+      if (events.writable)
+        socket_write_blocked = false;
     }
 
     if (connection)
@@ -1332,6 +1568,8 @@ class RoqSessionImpl final : public RoqSession {
       std::lock_guard lock(mutex_);
       CopyQueueStatsLocked();
       stats_.clean_shutdown = error_.empty();
+      outgoing_.Clear();
+      quiche_slot_datagram_.reset();
       closed_ = true;
       condition_.notify_all();
     }
@@ -1366,6 +1604,8 @@ class RoqSessionImpl final : public RoqSession {
   bool session_cached_ = false;
   bool cache_dirty_ = false;
   bool early_datagrams_allowed_ = config_.allow_early_datagrams;
+  uint64_t probe_max_bytes_per_second_ = 0;
+  uint64_t maintenance_max_bytes_per_second_ = 0;
   bool ping_requested_ = false;
   bool abort_requested_ = false;
   std::deque<RoqReceivedPacket> pending_received_;
@@ -1374,7 +1614,9 @@ class RoqSessionImpl final : public RoqSession {
   RoqSessionStats stats_;
   std::string error_;
   uint64_t last_path_acked_bytes_ = 0;
-  Timestamp last_path_ack_at_ = Timestamp::MinusInfinity();
+  const bool media_diagnostics_ =
+      std::getenv("ARTC_MEDIA_DIAGNOSTICS") != nullptr;
+  Timestamp last_diagnostic_at_ = Timestamp::MinusInfinity();
 };
 
 }  // namespace

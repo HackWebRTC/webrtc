@@ -93,6 +93,11 @@ struct NetEqLifetimeStatistics {
   int32_t total_interruption_duration_ms = 0;
   // Total number of comfort noise samples generated during DTX.
   uint64_t generated_noise_samples = 0;
+  // Read-only quality counters. Reading does not end an ongoing expand event.
+  uint64_t output_duration_us = 0;
+  uint64_t interruption_duration_us = 0;
+  uint64_t max_interruption_duration_us = 0;
+  uint64_t current_concealment_duration_us = 0;
   uint64_t total_processing_delay_us = 0;
 };
 

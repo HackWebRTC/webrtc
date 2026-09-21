@@ -130,6 +130,7 @@ RtpSenderEgress::RtpSenderEgress(const Environment& env,
                                          kRtpSequenceNumberMapMaxEntries)
                                    : nullptr) {
   RTC_DCHECK(worker_queue_);
+  async_send_state_->queue = worker_queue_;
   if (bitrate_callback_) {
     update_task_ = RepeatingTaskHandle::DelayedStart(worker_queue_,
                                                      kUpdateInterval, [this]() {
@@ -142,6 +143,8 @@ RtpSenderEgress::RtpSenderEgress(const Environment& env,
 RtpSenderEgress::~RtpSenderEgress() {
   RTC_DCHECK_RUN_ON(worker_queue_);
   update_task_.Stop();
+  std::lock_guard lock(async_send_state_->mutex);
+  async_send_state_->queue = nullptr;
 }
 
 void RtpSenderEgress::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
@@ -297,6 +300,32 @@ void RtpSenderEgress::CompleteSendPacket(const Packet& compound_packet,
   options.send_as_ect1 = packet->send_as_ect1();
   options.batchable = enable_send_packet_batching_ && !is_audio_;
   options.last_packet_in_batch = last_in_batch;
+  const bool async_rtx = transport_ && transport_->HasAsyncSendCompletion() &&
+                         packet->retransmitted_sequence_number().has_value();
+  if (async_rtx) {
+    const auto sequence = *packet->retransmitted_sequence_number();
+    const auto timestamp = packet->Timestamp();
+    options.is_retransmission = true;
+    if (auto deadline =
+            packet_history_->RetransmissionDeadline(sequence, timestamp))
+      options.retransmission_deadline_us = deadline->us();
+    // Always marshal terminal delivery. The transport can finish/reject inline,
+    // or on its network thread after this egress has already been destroyed.
+    options.on_send_complete = [this, state = async_send_state_,
+                                safety = task_safety_.flag(), sequence,
+                                timestamp](bool sent, int64_t at_us) {
+      std::lock_guard lock(state->mutex);
+      if (!state->queue)
+        return;
+      state->queue->PostTask(
+          SafeTask(safety, [this, sequence, timestamp, sent, at_us] {
+            RTC_DCHECK_RUN_ON(worker_queue_);
+            packet_history_->CompleteRetransmission(
+                sequence, timestamp,
+                sent ? std::optional(Timestamp::Micros(at_us)) : std::nullopt);
+          }));
+    };
+  }
   const bool send_success = SendPacketToNetwork(*packet, options, pacing_info);
 
   // Put packet in retransmission history or update pending status even if
@@ -304,7 +333,7 @@ void RtpSenderEgress::CompleteSendPacket(const Packet& compound_packet,
   if (options.is_media && packet->allow_retransmission()) {
     packet_history_->PutRtpPacket(std::make_unique<RtpPacketToSend>(*packet),
                                   now);
-  } else if (packet->retransmitted_sequence_number()) {
+  } else if (packet->retransmitted_sequence_number() && !async_rtx) {
     packet_history_->MarkPacketAsSent(*packet->retransmitted_sequence_number());
   }
 

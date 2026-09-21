@@ -737,6 +737,8 @@ uint32_t bitrate_allocator_impl::AllocatableTrack::MinBitrateWithHysteresis()
   if (media_ratio > 0.0 && media_ratio < 1.0)
     min_bitrate += min_bitrate * (1.0 - media_ratio);
 
+  if (config.cap_resume_bitrate_to_max && config.max_bitrate_bps > 0)
+    min_bitrate = std::min(min_bitrate, config.max_bitrate_bps);
   return min_bitrate;
 }
 

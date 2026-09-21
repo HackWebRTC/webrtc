@@ -188,6 +188,7 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   const Environment env_;
   const bool use_frame_rate_for_overhead_;
   const bool has_packet_feedback_;
+  const bool external_media_budget_;
 
   // Semantically equivalent to checking for `transport_->GetWorkerQueue()`
   // but some tests need to be updated to call from the correct context.

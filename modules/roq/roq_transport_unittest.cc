@@ -265,6 +265,34 @@ TEST(RoqPacketTransportTest, RedAudioAllowsPrimaryOpusFallback) {
   EXPECT_FALSE(transport.SendRtp(packet, PacketOptions()));
 }
 
+TEST(RoqPacketTransportTest, PropagatesRedCostButExcludesRetransmissions) {
+  SimulatedClock clock(Timestamp::Millis(100));
+  FakeRoqSession session;
+  RoqPacketTransport transport({.session = &session,
+                                .media_type = RoqMediaType::kAudio,
+                                .rtp_flow_id = 1,
+                                .primary_payload_type = 63,
+                                .primary_ssrc = 7,
+                                .clock = &clock});
+  std::vector<uint8_t> packet = {0x80, 63,   0, 1, 0, 0,   0, 1, 0, 0, 0,
+                                 7,    0xef, 0, 0, 3, 111, 1, 2, 3, 4, 5};
+  ASSERT_TRUE(transport.SendRtp(packet, PacketOptions()));
+  EXPECT_EQ(session.metadata_.primary_payload_bytes, 2u);
+  EXPECT_EQ(session.metadata_.redundant_payload_bytes, 3u);
+  EXPECT_EQ(session.metadata_.redundant_blocks, 1u);
+  PacketOptions rtx;
+  rtx.is_retransmission = true;
+  ASSERT_TRUE(transport.SendRtp(packet, rtx));
+  EXPECT_TRUE(session.metadata_.original_packet_id);
+  EXPECT_EQ(session.metadata_.primary_payload_bytes, 0u);
+  EXPECT_EQ(session.metadata_.redundant_payload_bytes, 0u);
+  EXPECT_EQ(session.metadata_.redundant_blocks, 0u);
+  packet[1] = 111;
+  ASSERT_TRUE(transport.SendRtp(packet, PacketOptions()));
+  EXPECT_EQ(session.metadata_.primary_payload_bytes, 10u);
+  EXPECT_EQ(session.metadata_.redundant_blocks, 0u);
+}
+
 TEST(RoqPacketTransportTest, MapsRtxToOriginalPrimaryPacket) {
   SimulatedClock clock(Timestamp::Millis(100));
   FakeRoqSession session;

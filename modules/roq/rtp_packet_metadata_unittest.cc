@@ -55,9 +55,9 @@ TEST(RtpPacketMetadataTest, RejectsTruncatedStapA) {
 
 #if defined(RTC_ENABLE_H265)
 TEST(RtpPacketMetadataTest, ParsesH265IdrUsingWebRtcDepacketizerSemantics) {
-  const std::array<uint8_t, 15> packet = {
-      0x80, 0xf4, 0x00, 0x2a, 0x00, 0x01, 0x5f, 0x90,
-      0x01, 0x53, 0x15, 0x8e, 0x26, 0x02, 0xff};
+  const std::array<uint8_t, 15> packet = {0x80, 0xf4, 0x00, 0x2a, 0x00,
+                                          0x01, 0x5f, 0x90, 0x01, 0x53,
+                                          0x15, 0x8e, 0x26, 0x02, 0xff};
   RtpPacketMetadata metadata;
 
   ASSERT_TRUE(ParseVideoRtpPacketMetadata(packet, kVideoCodecH265, &metadata));
@@ -69,12 +69,9 @@ TEST(RtpPacketMetadataTest, ParsesH265IdrUsingWebRtcDepacketizerSemantics) {
 
 TEST(RtpPacketMetadataTest, ParsesH265ParameterSetsFromAggregationPacket) {
   const std::array<uint8_t, 29> packet = {
-      0x80, 0xf4, 0x00, 0x2a, 0x00, 0x01, 0x5f, 0x90,
-      0x01, 0x53, 0x15, 0x8e,
-      0x60, 0x02,
-      0x00, 0x03, 0x40, 0x02, 0x01,
-      0x00, 0x03, 0x42, 0x02, 0x01,
-      0x00, 0x03, 0x44, 0x02, 0x01};
+      0x80, 0xf4, 0x00, 0x2a, 0x00, 0x01, 0x5f, 0x90, 0x01, 0x53,
+      0x15, 0x8e, 0x60, 0x02, 0x00, 0x03, 0x40, 0x02, 0x01, 0x00,
+      0x03, 0x42, 0x02, 0x01, 0x00, 0x03, 0x44, 0x02, 0x01};
   RtpPacketMetadata metadata;
 
   ASSERT_TRUE(ParseVideoRtpPacketMetadata(packet, kVideoCodecH265, &metadata));
@@ -85,9 +82,9 @@ TEST(RtpPacketMetadataTest, ParsesH265ParameterSetsFromAggregationPacket) {
 }
 
 TEST(RtpPacketMetadataTest, RejectsMalformedH265AggregationPacket) {
-  const std::array<uint8_t, 17> packet = {
-      0x80, 0xf4, 0x00, 0x2a, 0x00, 0x01, 0x5f, 0x90,
-      0x01, 0x53, 0x15, 0x8e, 0x60, 0x02, 0x00, 0x04, 0x40};
+  const std::array<uint8_t, 17> packet = {0x80, 0xf4, 0x00, 0x2a, 0x00, 0x01,
+                                          0x5f, 0x90, 0x01, 0x53, 0x15, 0x8e,
+                                          0x60, 0x02, 0x00, 0x04, 0x40};
   RtpPacketMetadata metadata;
 
   EXPECT_FALSE(ParseVideoRtpPacketMetadata(packet, kVideoCodecH265, &metadata));
@@ -164,6 +161,49 @@ TEST(RtpPacketMetadataTest, RejectsMalformedCompoundRtcp) {
   constexpr std::array<uint8_t, 8> packet = {0x80, 200, 0x00, 0x02, 0, 0, 0, 1};
   bool critical = false;
   EXPECT_FALSE(ClassifyRtcpPacket(packet, &critical));
+}
+
+TEST(RtpPacketMetadataTest, RedCostExcludesRedundancyAndHeaders) {
+  std::vector<uint8_t> packet = {0x80, 63,   0, 1, 0, 0,   0, 1, 0, 0, 0,
+                                 7,    0xef, 0, 0, 3, 111, 1, 2, 3, 4, 5};
+  EXPECT_EQ(PrimaryPayloadSize(packet, true), 2u);
+  EXPECT_EQ(PrimaryPayloadSize(packet, false), 10u);
+  const auto cost = ParseRtpPayloadCost(packet, true);
+  ASSERT_TRUE(cost);
+  EXPECT_EQ(cost->primary_bytes, 2u);
+  EXPECT_EQ(cost->redundant_bytes, 3u);
+  EXPECT_EQ(cost->redundant_blocks, 1u);
+  packet[15] = 250;
+  EXPECT_EQ(PrimaryPayloadSize(packet, true), 0u);
+  EXPECT_FALSE(ParseRtpPayloadCost(packet, true));
+}
+TEST(RtpPacketMetadataTest, TinyPrimaryWithTwoRedBlocksAndPadding) {
+  std::vector<uint8_t> packet = {0xa0, 63, 0,    1, 0, 0, 0,    1, 0, 0,
+                                 0,    7,  0xef, 0, 0, 3, 0xef, 0, 0, 2,
+                                 111,  1,  2,    3, 4, 5, 6,    0, 2};
+  auto cost = ParseRtpPayloadCost(packet, true);
+  ASSERT_TRUE(cost);
+  EXPECT_EQ(cost->primary_bytes, 1u);
+  EXPECT_EQ(cost->redundant_bytes, 5u);
+  EXPECT_EQ(cost->redundant_blocks, 2u);
+  packet[19] = 3;
+  EXPECT_FALSE(ParseRtpPayloadCost(packet, true));
+  packet.resize(15);
+  EXPECT_FALSE(ParseRtpPayloadCost(packet, true));
+}
+TEST(RtpPacketMetadataTest,
+     CoalescingKeyPreservesReportCoverageAndCriticalCompounds) {
+  std::vector<uint8_t> rr = {0x81, 201, 0, 7, 0, 0, 0, 7};
+  rr.resize(32);
+  rr[11] = 9;
+  const auto key = PeriodicRtcpKey(rr);
+  ASSERT_FALSE(key.empty());
+  rr[12] = 20;  // Same report with updated loss counters.
+  EXPECT_EQ(PeriodicRtcpKey(rr), key);
+  rr[11] = 10;  // Different report source cannot replace previous coverage.
+  EXPECT_NE(PeriodicRtcpKey(rr), key);
+  rr.insert(rr.end(), {0x81, 206, 0, 2, 0, 0, 0, 7, 0, 0, 0, 9});
+  EXPECT_TRUE(PeriodicRtcpKey(rr).empty());
 }
 
 }  // namespace

@@ -6,6 +6,7 @@
 #define API_ROQ_ROQ_SESSION_H_
 
 #include <array>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -90,6 +91,24 @@ struct RoqPacketId {
   bool operator==(const RoqPacketId&) const = default;
 };
 
+// Shared by the external queue, quiche slot and immutable UDP payload. The
+// last owner dropping it is a cancellation; completing a copy is idempotent.
+// Callbacks must be non-blocking and must not re-enter a session.
+class RoqDatagramCompletion {
+ public:
+  explicit RoqDatagramCompletion(std::function<void(bool, int64_t)> callback)
+      : callback_(std::move(callback)) {}
+  ~RoqDatagramCompletion() { Complete(false); }
+  void Complete(bool sent, int64_t at_us = -1) {
+    if (!completed_.exchange(true) && callback_)
+      callback_(sent, at_us);
+  }
+
+ private:
+  std::atomic<bool> completed_ = false;
+  const std::function<void(bool, int64_t)> callback_;
+};
+
 struct RoqDatagramMetadata {
   std::string binding_id;
   RoqMediaType media_type = RoqMediaType::kVideo;
@@ -105,6 +124,12 @@ struct RoqDatagramMetadata {
   bool contains_vps = false;
   bool contains_sps = false;
   bool contains_pps = false;
+  uint32_t rtp_timestamp = 0;
+  size_t primary_payload_bytes = 0;
+  size_t redundant_payload_bytes = 0;
+  size_t redundant_blocks = 0;
+  std::vector<uint8_t> periodic_rtcp_key;
+  std::shared_ptr<RoqDatagramCompletion> completion;
 };
 
 struct RoqSessionConfig {
@@ -171,6 +196,9 @@ struct RoqSessionStats {
   size_t oversize_drops = 0;
   size_t pmtu_purge_drops = 0;
   size_t expired_drops = 0;
+  uint64_t expired_video_frames = 0;
+  uint64_t oldest_video_queue_age_us = 0;
+  uint64_t max_video_queue_age_us = 0;
   size_t invalid_drops = 0;
   size_t quiche_slot_expired_drops = 0;
   size_t peak_quiche_queue_size = 0;
@@ -205,7 +233,29 @@ struct RoqSessionStats {
   uint64_t lost_bytes = 0;
   size_t pmtu_bytes = 0;
   size_t dgram_lost = 0;
+  // std::chrono::steady_clock epoch, shared with session liveness checks.
   int64_t last_ack_monotonic_us = -1;
+  int64_t configured_audio_bitrate_bps = 0;
+  int64_t configured_max_media_bitrate_bps = 0;
+  int64_t configured_resume_media_bitrate_bps = 0;
+  uint64_t bandwidth_evidence_round = 0;
+  uint64_t bandwidth_evidence_bytes_per_second = 0;
+  uint64_t bandwidth_evidence_age_ns = UINT64_MAX;
+  uint64_t maintenance_wire_bytes = 0;
+  uint64_t audio_payload_bytes = 0;
+  uint64_t audio_wire_bytes = 0;
+  uint64_t audio_packets = 0;
+  uint64_t audio_redundant_payload_bytes = 0;
+  uint64_t audio_redundant_blocks = 0;
+  uint64_t configured_audio_packet_rate = 50;
+  uint64_t video_payload_bytes = 0;
+  uint64_t video_wire_bytes = 0;
+  uint64_t rtcp_wire_bytes = 0;
+  uint64_t recovery_wire_bytes = 0;
+  uint64_t probe_wire_bytes = 0;
+  uint64_t sent_wire_bytes = 0;
+  size_t recovery_budget_drops = 0;
+  size_t coalesced_reports = 0;
 };
 
 struct RoqBindingSendStats {
@@ -265,6 +315,9 @@ class RoqSession {
                                   std::span<const uint8_t> packet,
                                   RoqDatagramMetadata metadata,
                                   std::function<void()> on_submitted) = 0;
+  virtual void SetMediaWireBudget(uint64_t probe_max_bytes_per_second,
+                                  uint64_t recovery_bytes_per_second,
+                                  uint64_t maintenance_bytes_per_second = 0) {}
   virtual void PurgeSendBinding(const std::string& binding_id) {
     (void)binding_id;
   }

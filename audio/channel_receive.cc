@@ -430,6 +430,7 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
   env_.event_log().Log(std::make_unique<RtcEventAudioPlayout>(remote_ssrc_));
 
   bool decoded_from_packet = false;
+  AudioPlayoutQuality quality;
   {
     MutexLock lock(&neteq_mutex_);
     if (neteq_->GetAudio(audio_frame) != NetEq::kOK) {
@@ -444,6 +445,18 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
       return AudioMixer::Source::AudioFrameInfo::kError;
     }
     decoded_from_packet = neteq_->LastOutputDecodedFromPacket();
+    const auto stats = neteq_->GetLifetimeStatistics();
+    quality = {
+        .total_samples = stats.total_samples_received,
+        .concealed_samples = stats.concealed_samples,
+        .silent_concealed_samples = stats.silent_concealed_samples,
+        .concealment_events = stats.concealment_events,
+        .interruption_count = static_cast<uint64_t>(stats.interruption_count),
+        .interruption_duration_us = stats.interruption_duration_us,
+        .max_interruption_duration_us = stats.max_interruption_duration_us,
+        .current_concealment_duration_us =
+            stats.current_concealment_duration_us,
+        .output_duration_us = stats.output_duration_us};
   }
 
   resampler_helper_.MaybeResample(sample_rate_hz, audio_frame);
@@ -463,7 +476,7 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
       AudioSinkInterface::Data data(
           audio_frame->data(), audio_frame->samples_per_channel_,
           audio_frame->sample_rate_hz_, audio_frame->num_channels_,
-          audio_frame->timestamp_, decoded_from_packet);
+          audio_frame->timestamp_, decoded_from_packet, quality);
       audio_sink_->OnData(data);
     }
   }

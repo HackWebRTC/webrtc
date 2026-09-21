@@ -5,6 +5,7 @@
 #include "api/roq/roq_media_engine.h"
 
 #include <chrono>
+#include <cstdlib>
 #include <deque>
 #include <map>
 #include <memory>
@@ -42,6 +43,7 @@
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread.h"
+#include "rtc_base/time_utils.h"
 #include "video/config/video_encoder_config.h"
 
 namespace webrtc::roq {
@@ -206,7 +208,18 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
       if (config_.network_stats_provider) {
         call_config.per_call_network_controller_factory =
             std::make_unique<QuicNetworkControllerFactory>(
-                config_.network_stats_provider,
+                [this] {
+                  auto stats = config_.network_stats_provider();
+                  stats.configured_audio_bitrate_bps =
+                      audio_payload_demand_.load();
+                  stats.configured_audio_packet_rate =
+                      audio_packet_demand_.load();
+                  stats.configured_max_media_bitrate_bps =
+                      max_payload_demand_.load();
+                  stats.configured_resume_media_bitrate_bps =
+                      resume_payload_demand_.load();
+                  return stats;
+                },
                 [this](const QuicNetworkControlState& state) {
                   network_control_updates_.fetch_add(1);
                   controller_target_rate_bps_.store(state.target_rate.bps());
@@ -218,6 +231,32 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
                       state.has_congestion_window);
                   if (config_.network_control_observer)
                     config_.network_control_observer(state);
+                  if (media_diagnostics_ &&
+                      (state.at_time - last_budget_diagnostic_at_ >=
+                           TimeDelta::Millis(500) ||
+                       last_capacity_state_ != state.capacity_state ||
+                       state.resume_fast_path ||
+                       (state.target_rate.bps() < resume_payload_demand_.load()) !=
+                           last_budget_below_resume_)) {
+                    last_budget_diagnostic_at_ = state.at_time;
+                    last_capacity_state_ = state.capacity_state;
+                    last_budget_below_resume_ =
+                        state.target_rate.bps() < resume_payload_demand_.load();
+                    RTC_LOG(LS_INFO)
+                        << "roq_media_budget engine=" << this
+                        << " capacity_state=" << state.capacity_state
+                        << " capacity_known=" << state.capacity_known
+                        << " fresh=" << state.fresh
+                        << " raw_bps=" << state.raw_capacity.bps()
+                        << " usable_bps=" << state.usable_media_rate.bps()
+                        << " target_bps=" << state.target_rate.bps()
+                        << " audio_red_multiplier="
+                        << state.audio_redundancy_multiplier
+                        << " audio_header_bps=" << state.audio_header_rate.bps()
+                        << " probe_bps=" << state.probe_max_rate.bps()
+                        << " maintenance_bps=" << state.maintenance_rate.bps()
+                        << " resume_fast=" << state.resume_fast_path;
+                  }
                 },
                 DataRate::BitsPerSec(config_.send_min_bitrate_bps),
                 DataRate::BitsPerSec(config_.send_start_bitrate_bps),
@@ -382,6 +421,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         send.min_bitrate_bps = config.audio_bitrate_bps;
         send.max_bitrate_bps = config.audio_bitrate_bps;
         send.include_in_congestion_control_allocation = true;
+        send.bitrate_priority = 10.0;
         send.encoder_factory = config_.audio_encoder_factory;
         binding.audio_send = call_->CreateAudioSendStream(send);
         binding.audio_nack_enabled = true;
@@ -401,6 +441,10 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
           return;
         }
         VideoSendStream::Config send(config.transport);
+        // min is hard: use native allocator suspension/hysteresis rather than
+        // silently lowering codec min or letting Call force an over-budget min.
+        send.suspend_below_min_bitrate =
+            config.transport->UsesMediaPayloadBudget();
         send.rtp.ssrcs = {config.primary_ssrc};
         send.rtp.payload_name = CodecTypeToPayloadString(config.video_codec);
         send.rtp.payload_type = config.payload_type;
@@ -460,6 +504,7 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
     ssrcs_.erase(it->second.config.primary_ssrc);
     ssrcs_.erase(it->second.config.rtx_ssrc);
     bindings_.erase(it);
+    UpdateWireDemand();
     worker_->BlockingCall([this] { UpdateAudioDeviceState(); });
     return true;
   }
@@ -835,6 +880,20 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
       return result;
     worker_->BlockingCall([&] {
       result.call_target_rate_bps = call_->GetStats().send_bandwidth_bps;
+      const auto now = env_.clock().CurrentTime();
+      const bool log_sample = media_diagnostics_ && now - last_diagnostic_at_ >=
+                                                        TimeDelta::Millis(500);
+      if (log_sample) {
+        last_diagnostic_at_ = now;
+        RTC_LOG(LS_INFO) << "roq_media_sample sample_us=" << TimeMicros()
+                         << " engine=" << this
+                         << " bindings=" << bindings_.size()
+                         << " controller_bps="
+                         << result.controller_target_rate_bps
+                         << " call_bps=" << result.call_target_rate_bps
+                         << " video_nack_packets=" << result.video_nack_received
+                         << " ingress_drops=" << ingress_drops_.load();
+      }
       for (const auto& [id, binding] : bindings_) {
         if (binding.audio)
           result.audio_receive_nack_enabled =
@@ -871,6 +930,25 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
         }
         if (binding.video_send) {
           const auto video = binding.video_send->GetStats();
+          if (log_sample) {
+            RTC_LOG(LS_INFO)
+                << "roq_media_video sample_us=" << TimeMicros()
+                << " engine=" << this << " binding=" << id
+                << " ssrc=" << binding.config.primary_ssrc
+                << " min_bps=" << binding.config.video_min_bitrate_bps
+                << " target_bps=" << video.target_media_bitrate_bps
+                << " encoded_bps=" << video.media_bitrate_bps
+                << " input_fps=" << video.input_frame_rate
+                << " encode_fps=" << video.encode_frame_rate
+                << " frames_encoded=" << video.frames_encoded
+                << " encode_ms=" << video.avg_encode_time_ms
+                << " encoder_queue_drops="
+                << video.frames_dropped_by_encoder_queue
+                << " rate_drops=" << video.frames_dropped_by_rate_limiter
+                << " encoder_drops=" << video.frames_dropped_by_encoder
+                << " suspended=" << video.suspended
+                << " recovery_version=" << binding.recovery_version;
+          }
           result.sent_video_frames += video.frames_sent;
           result.video_target_bitrate_bps += video.target_media_bitrate_bps;
           result.video_media_bitrate_bps += video.media_bitrate_bps;
@@ -883,6 +961,24 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
               video.frames_dropped_by_congestion_window +
               video.frames_dropped_by_encoder;
           for (const auto& [ssrc, stream] : video.substreams) {
+            if (log_sample) {
+              RTC_LOG(LS_INFO)
+                  << "roq_media_rtp sample_us=" << TimeMicros()
+                  << " engine=" << this << " ssrc=" << ssrc
+                  << " stream_type=" << static_cast<int>(stream.type)
+                  << " packets=" << stream.rtp_stats.transmitted.packets
+                  << " bytes=" << stream.rtp_stats.transmitted.TotalBytes()
+                  << " rtx_packets=" << stream.rtp_stats.retransmitted.packets
+                  << " rtx_bytes="
+                  << stream.rtp_stats.retransmitted.TotalBytes()
+                  << " nack_requests="
+                  << stream.rtcp_packet_type_counts.nack_requests
+                  << " unique_nacks="
+                  << stream.rtcp_packet_type_counts.unique_nack_requests
+                  << " plis=" << stream.rtcp_packet_type_counts.pli_packets
+                  << " key_frames=" << stream.frame_counts.key_frames
+                  << " delta_frames=" << stream.frame_counts.delta_frames;
+            }
             result.nack_received += stream.rtcp_packet_type_counts.nack_packets;
             result.retransmitted_packets_sent +=
                 stream.rtp_stats.retransmitted.packets;
@@ -992,12 +1088,35 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
     return true;
   }
 
+  void UpdateWireDemand() {
+    int64_t audio = 0, maximum = 0, resume = 0;
+    uint64_t audio_packets = 0;
+    for (const auto& [id, binding] : bindings_) {
+      if (binding.audio_send) {
+        audio += binding.config.audio_bitrate_bps;
+        audio_packets += 50;  // Opus uses 20-ms packetization on this path.
+      }
+      if (binding.video_send) {
+        maximum += binding.config.video_max_bitrate_bps;
+        const int64_t minimum = binding.config.video_min_bitrate_bps;
+        // Native BitrateAllocator::MinBitrateWithHysteresis, capped to max for
+        // RoQ. No protection ratio here: the input is already payload budget.
+        resume += std::min<int64_t>(binding.config.video_max_bitrate_bps,
+                                   minimum + std::max<int64_t>(minimum / 10, 20000));
+      }
+    }
+    audio_payload_demand_.store(audio);
+    audio_packet_demand_.store(audio_packets);
+    max_payload_demand_.store(audio + maximum);
+    resume_payload_demand_.store(resume > 0 ? audio + resume : 0);
+  }
   void Install(RoqMediaBindingConfig config, Binding binding) {
     terminal_stats_.erase(config.binding_id);
     ssrcs_.insert(config.primary_ssrc);
     if (config.rtx_ssrc != 0)
       ssrcs_.insert(config.rtx_ssrc);
     bindings_.emplace(config.binding_id, std::move(binding));
+    UpdateWireDemand();
   }
 
   RoqMediaBindingStats ReadBindingStatsOnWorker(const Binding& binding) {
@@ -1080,6 +1199,10 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
   std::unique_ptr<VideoBitrateAllocatorFactory> bitrate_allocator_factory_;
   scoped_refptr<PendingTaskSafetyFlag> safety_ =
       PendingTaskSafetyFlag::CreateDetached();
+  std::atomic<int64_t> audio_payload_demand_ = 0;
+  std::atomic<uint64_t> audio_packet_demand_ = 0;
+  std::atomic<int64_t> max_payload_demand_ = 0;
+  std::atomic<int64_t> resume_payload_demand_ = 0;
   std::map<std::string, Binding> bindings_;
   std::map<std::string, RoqMediaBindingStats> terminal_stats_;
   std::set<uint32_t> ssrcs_;
@@ -1106,6 +1229,12 @@ class RoqMediaEngineImpl final : public RoqMediaEngine {
   std::optional<Timestamp> ingress_receive_time_;
   bool started_ = false;
   bool playout_prepared_ = false;
+  const bool media_diagnostics_ =
+      std::getenv("ARTC_MEDIA_DIAGNOSTICS") != nullptr;
+  Timestamp last_diagnostic_at_ = Timestamp::MinusInfinity();
+  Timestamp last_budget_diagnostic_at_ = Timestamp::MinusInfinity();
+  std::string last_capacity_state_;
+  bool last_budget_below_resume_ = false;
 };
 
 }  // namespace

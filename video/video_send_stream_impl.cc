@@ -845,7 +845,10 @@ MediaStreamAllocationConfig VideoSendStreamImpl::GetAllocationConfig() const {
       .rate_elasticity =
           (content_type_ == VideoEncoderConfig::ContentType::kRealtimeVideo)
               ? std::optional(TrackRateElasticity::kCanConsumeExtraRate)
-              : std::nullopt};
+              : std::nullopt,
+      .cap_resume_bitrate_to_max =
+          config_.send_transport &&
+          config_.send_transport->UsesMediaPayloadBudget()};
 }
 
 void VideoSendStreamImpl::OnEncoderConfigurationChanged(

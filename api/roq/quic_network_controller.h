@@ -23,10 +23,17 @@ struct QuicNetworkControlState {
   uint64_t max_bandwidth_bytes_per_second = 0;
   TimeDelta round_trip_time = TimeDelta::Zero();
   bool fresh = false;
+  bool capacity_known = false;
+  const char* capacity_state = "discovering";
+  double audio_redundancy_multiplier = 2.0;
+  DataRate audio_header_rate = DataRate::Zero();
   DataRate raw_capacity = DataRate::Zero();
   DataRate overhead = DataRate::Zero();
   DataRate recovery_reserve = DataRate::Zero();
   DataRate safety_headroom = DataRate::Zero();
+  DataRate probe_max_rate = DataRate::Zero();
+  DataRate maintenance_rate = DataRate::Zero();
+  bool resume_fast_path = false;
   DataRate usable_media_rate = DataRate::Zero();
   DataRate target_rate = DataRate::KilobitsPerSec(1000);
   DataRate pacer_rate = DataRate::KilobitsPerSec(1000);

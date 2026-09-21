@@ -4,6 +4,7 @@
 #include "api/call/transport.h"
 #include "api/crypto/crypto_options.h"
 #include "audio/channel_send.h"
+#include "call/bitrate_allocator.h"
 #include "call/rtp_transport_controller_send.h"
 #include "test/create_test_environment.h"
 #include "test/gtest.h"
@@ -25,6 +26,24 @@ class ExternalAudioTransport final : public Transport {
   }
   size_t packets = 0;
 };
+TEST(ExternalAudioTransportTest, FixedHardMaximumDoesNotPreventResumeForever) {
+  bitrate_allocator_impl::AllocatableTrack track(
+      nullptr, {.min_bitrate_bps = 128000,
+                .max_bitrate_bps = 128000,
+                .pad_up_bitrate_bps = 0,
+                .priority_bitrate_bps = 0,
+                .enforce_min_bitrate = false,
+                .bitrate_priority = 1,
+                .cap_resume_bitrate_to_max = true});
+  track.allocated_bitrate_bps = 0;
+  EXPECT_EQ(track.MinBitrateWithHysteresis(), 128000u);
+  track.config.cap_resume_bitrate_to_max = false;
+  EXPECT_EQ(track.MinBitrateWithHysteresis(), 148000u);
+  track.config.cap_resume_bitrate_to_max = true;
+  track.config.max_bitrate_bps = 256000;
+  EXPECT_EQ(track.MinBitrateWithHysteresis(), 148000u);
+}
+
 TEST(ExternalAudioTransportTest, DoesNotWaitForWebRtcNetworkPacer) {
   GlobalSimulatedTimeController time(Timestamp::Seconds(1));
   const auto env = CreateTestEnvironment({.time = &time});

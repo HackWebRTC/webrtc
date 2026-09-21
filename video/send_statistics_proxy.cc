@@ -16,6 +16,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <limits>
 #include <map>
 #include <optional>
@@ -852,6 +853,14 @@ void SendStatisticsProxy::OnEncodedFrameTimeMeasured(int encode_time_ms,
 void SendStatisticsProxy::OnSuspendChange(bool is_suspended) {
   int64_t now_ms = clock_->TimeInMilliseconds();
   MutexLock lock(&mutex_);
+  static const bool media_diagnostics =
+      std::getenv("ARTC_MEDIA_DIAGNOSTICS") != nullptr;
+  if (media_diagnostics && stats_.suspended != is_suspended) {
+    RTC_LOG(LS_INFO) << "roq_media_encoder_suspend ssrc="
+                     << (rtp_config_.ssrcs.empty() ? 0 : rtp_config_.ssrcs.front())
+                     << " suspended=" << is_suspended
+                     << " target_bps=" << stats_.target_media_bitrate_bps;
+  }
   stats_.suspended = is_suspended;
   if (is_suspended) {
     // Pause framerate (add min pause time since there may be frames/packets

@@ -96,6 +96,14 @@ class RtpPacketHistory {
   // Updates the send time for the given packet and increments the transmission
   // counter. Marks the packet as no longer being in the pacer queue.
   void MarkPacketAsSent(uint16_t sequence_number);
+  // Terminal state for an external asynchronous RTX. Cancellation releases
+  // pending without inventing a send or consuming another retransmission.
+  // Timestamp identity prevents stale callbacks affecting a reused sequence.
+  std::optional<Timestamp> RetransmissionDeadline(uint16_t sequence_number,
+                                                  uint32_t rtp_timestamp);
+  void CompleteRetransmission(uint16_t sequence_number,
+                              uint32_t rtp_timestamp,
+                              std::optional<Timestamp> submitted_at);
 
   // Returns true if history contains packet with `sequence_number` and it can
   // be retransmitted.

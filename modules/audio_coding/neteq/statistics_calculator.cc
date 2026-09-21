@@ -209,6 +209,13 @@ void StatisticsCalculator::EndExpandEvent(int fs_hz) {
   if (event_duration_ms >= kInterruptionLenMs && decoded_output_played_) {
     lifetime_stats_.interruption_count++;
     lifetime_stats_.total_interruption_duration_ms += event_duration_ms;
+    const uint64_t duration_us =
+        1000000ULL *
+        (lifetime_stats_.concealed_samples - concealed_samples_at_event_end_) /
+        fs_hz;
+    lifetime_stats_.interruption_duration_us += duration_us;
+    lifetime_stats_.max_interruption_duration_us =
+        std::max(lifetime_stats_.max_interruption_duration_us, duration_us);
     RTC_HISTOGRAM_COUNTS("WebRTC.Audio.AudioInterruptionMs", event_duration_ms,
                          /*min=*/150, /*max=*/5000, /*bucket_count=*/50);
   }
@@ -296,6 +303,8 @@ void StatisticsCalculator::IncreaseCounter(size_t num_samples, int fs_hz) {
       static_cast<uint32_t>(fs_hz * kMaxReportPeriod)) {
     timestamps_since_last_report_ = 0;
   }
+  output_sample_rate_hz_ = fs_hz;
+  lifetime_stats_.output_duration_us += 1000000ULL * num_samples / fs_hz;
   lifetime_stats_.total_samples_received += num_samples;
   expand_uma_logger_.UpdateSampleCounter(lifetime_stats_.concealed_samples,
                                          fs_hz);
@@ -420,7 +429,12 @@ void StatisticsCalculator::GetNetworkStatistics(size_t samples_per_packet,
 }
 
 NetEqLifetimeStatistics StatisticsCalculator::GetLifetimeStatistics() const {
-  return lifetime_stats_;
+  auto result = lifetime_stats_;
+  result.current_concealment_duration_us =
+      1000000ULL *
+      (result.concealed_samples - concealed_samples_at_event_end_) /
+      output_sample_rate_hz_;
+  return result;
 }
 
 NetEqOperationsAndState StatisticsCalculator::GetOperationsAndState() const {

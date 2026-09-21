@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <span>
 #include <utility>
@@ -164,6 +165,12 @@ class RtpSenderEgress {
       RTC_GUARDED_BY(worker_queue_);
   RepeatingTaskHandle update_task_ RTC_GUARDED_BY(worker_queue_);
   std::vector<Packet> packets_to_send_ RTC_GUARDED_BY(worker_queue_);
+  struct AsyncSendState {
+    std::mutex mutex;
+    TaskQueueBase* queue = nullptr;
+  };
+  const std::shared_ptr<AsyncSendState> async_send_state_ =
+      std::make_shared<AsyncSendState>();
   ScopedTaskSafety task_safety_;
 };
 

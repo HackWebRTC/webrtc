@@ -122,9 +122,8 @@ bool ParseVideoRtpPacketMetadata(std::span<const uint8_t> packet,
     std::unique_ptr<VideoRtpDepacketizer> depacketizer =
         CreateVideoRtpDepacketizer(kVideoCodecH265);
     std::optional<VideoRtpDepacketizer::ParsedRtpPayload> parsed =
-        depacketizer->Parse(
-            CopyOnWriteBuffer(packet.subspan(payload_offset,
-                                              payload_end - payload_offset)));
+        depacketizer->Parse(CopyOnWriteBuffer(
+            packet.subspan(payload_offset, payload_end - payload_offset)));
     if (!parsed)
       return false;
     metadata->is_key =
@@ -163,6 +162,70 @@ bool ParseRtxOriginalSequenceNumber(std::span<const uint8_t> packet,
   }
   *sequence_number = ReadU16(packet, payload_offset);
   return true;
+}
+
+size_t PrimaryPayloadSize(std::span<const uint8_t> packet, bool red) {
+  const auto cost = ParseRtpPayloadCost(packet, red);
+  return cost ? cost->primary_bytes : 0;
+}
+
+std::optional<RtpPayloadCost> ParseRtpPayloadCost(
+    std::span<const uint8_t> packet,
+    bool red) {
+  RtpPacketMetadata metadata;
+  size_t start = 0, end = 0;
+  if (!ParseRtpHeader(packet, &metadata, &start, &end) || start >= end)
+    return std::nullopt;
+  if (!red)
+    return RtpPayloadCost{.primary_bytes = end - start};
+  size_t redundant_bytes = 0;
+  size_t redundant_blocks = 0;
+  while (start < end && (packet[start] & 0x80)) {
+    if (end - start < 4)
+      return std::nullopt;
+    redundant_bytes += ((packet[start + 2] & 3) << 8) | packet[start + 3];
+    ++redundant_blocks;
+    start += 4;
+  }
+  if (start == end || redundant_bytes >= end - start - 1)
+    return std::nullopt;
+  return RtpPayloadCost{.primary_bytes = end - start - 1 - redundant_bytes,
+                        .redundant_bytes = redundant_bytes,
+                        .redundant_blocks = redundant_blocks};
+}
+
+std::vector<uint8_t> PeriodicRtcpKey(std::span<const uint8_t> packet) {
+  std::vector<uint8_t> key;
+  bool has_report = false;
+  while (!packet.empty()) {
+    if (packet.size() < 4 || (packet[0] >> 6) != 2 || (packet[0] & 0x20))
+      return {};
+    const size_t size = (static_cast<size_t>(ReadU16(packet, 2)) + 1) * 4;
+    if (size > packet.size())
+      return {};
+    const uint8_t type = packet[1];
+    const size_t reports = packet[0] & 31;
+    key.insert(key.end(), packet.begin(), packet.begin() + 4);
+    if (type == 200 || type == 201) {
+      const size_t base = type == 200 ? 28 : 8;
+      if (size != base + reports * 24)
+        return {};
+      has_report = true;
+      key.insert(key.end(), packet.begin() + 4, packet.begin() + 8);
+      for (size_t i = 0; i < reports; ++i) {
+        const size_t offset = base + i * 24;
+        key.insert(key.end(), packet.begin() + offset,
+                   packet.begin() + offset + 4);
+      }
+    } else if (type == 202) {
+      // Never discard a new CNAME or different SDES item set.
+      key.insert(key.end(), packet.begin() + 4, packet.begin() + size);
+    } else {
+      return {};
+    }
+    packet = packet.subspan(size);
+  }
+  return has_report ? key : std::vector<uint8_t>{};
 }
 
 bool ClassifyRtcpPacket(std::span<const uint8_t> packet, bool* critical) {

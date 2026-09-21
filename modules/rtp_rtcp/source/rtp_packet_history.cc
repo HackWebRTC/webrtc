@@ -209,6 +209,36 @@ void RtpPacketHistory::MarkPacketAsSent(uint16_t sequence_number) {
   packet->IncrementTimesRetransmitted();
 }
 
+std::optional<Timestamp> RtpPacketHistory::RetransmissionDeadline(
+    uint16_t sequence_number,
+    uint32_t rtp_timestamp) {
+  MutexLock lock(&lock_);
+  const StoredPacket* packet = GetStoredPacket(sequence_number);
+  if (!packet || packet->packet_->Timestamp() != rtp_timestamp)
+    return std::nullopt;
+  const TimeDelta duration =
+      rtt_.IsFinite()
+          ? std::max(kMinPacketDurationRtt * rtt_, kMinPacketDuration)
+          : kMinPacketDuration;
+  return packet->send_time() + kPacketCullingDelayFactor * duration;
+}
+
+void RtpPacketHistory::CompleteRetransmission(
+    uint16_t sequence_number,
+    uint32_t rtp_timestamp,
+    std::optional<Timestamp> submitted_at) {
+  MutexLock lock(&lock_);
+  StoredPacket* packet = GetStoredPacket(sequence_number);
+  if (!packet || !packet->pending_transmission_ ||
+      packet->packet_->Timestamp() != rtp_timestamp)
+    return;
+  packet->pending_transmission_ = false;
+  if (submitted_at) {
+    packet->set_send_time(*submitted_at);
+    packet->IncrementTimesRetransmitted();
+  }
+}
+
 bool RtpPacketHistory::GetPacketState(uint16_t sequence_number) const {
   MutexLock lock(&lock_);
   if (mode_ == StorageMode::kDisabled) {

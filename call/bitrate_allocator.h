@@ -71,6 +71,9 @@ struct MediaStreamAllocationConfig {
   // observers, it should be allocated twice the bitrate above its min.
   double bitrate_priority;
   std::optional<TrackRateElasticity> rate_elasticity;
+  // A hard capped external payload budget must be able to resume fixed-rate
+  // streams (min == max). Native RTP allocation retains its existing margin.
+  bool cap_resume_bitrate_to_max = false;
 };
 
 // Interface used for mocking

@@ -16,6 +16,19 @@
 
 namespace webrtc {
 
+// Per-stream NetEq observations, before mixer gain/panning and resampling.
+struct AudioPlayoutQuality {
+  uint64_t total_samples = 0;
+  uint64_t concealed_samples = 0;
+  uint64_t silent_concealed_samples = 0;
+  uint64_t concealment_events = 0;
+  uint64_t interruption_count = 0;
+  uint64_t interruption_duration_us = 0;
+  uint64_t max_interruption_duration_us = 0;
+  uint64_t current_concealment_duration_us = 0;
+  uint64_t output_duration_us = 0;
+};
+
 // Represents a simple push audio sink.
 class AudioSinkInterface {
  public:
@@ -27,13 +40,15 @@ class AudioSinkInterface {
          int sample_rate,
          size_t channels,
          uint32_t timestamp,
-         bool decoded_from_packet = true)
+         bool decoded_from_packet = true,
+         AudioPlayoutQuality quality = {})
         : data(data),
           samples_per_channel(samples_per_channel),
           sample_rate(sample_rate),
           channels(channels),
           timestamp(timestamp),
-          decoded_from_packet(decoded_from_packet) {}
+          decoded_from_packet(decoded_from_packet),
+          quality(quality) {}
 
     const int16_t* data;         // The actual 16bit audio data.
     size_t samples_per_channel;  // Number of frames in the buffer.
@@ -43,6 +58,7 @@ class AudioSinkInterface {
     // A successful speech decode this pull, including RED/FEC recovery.
     // False for PLC, CNG, startup silence and buffered-only output.
     bool decoded_from_packet;
+    AudioPlayoutQuality quality;
   };
 
   virtual void OnData(const Data& audio) = 0;

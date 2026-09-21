@@ -337,6 +337,9 @@ void AudioSendStream::ConfigureStream(
                                    "Failed to set up send codec state."));
   }
 
+  // Transport is immutable and must be visible during the first encoder
+  // overhead update, before the rest of new_config is committed below.
+  config_.send_transport = new_config.send_transport;
   // Set currently known overhead (used in ANA, opus only).
   UpdateOverheadPerPacket();
 
@@ -411,7 +414,8 @@ void AudioSendStream::SendAudioData(std::unique_ptr<AudioFrame> audio_frame) {
     MutexLock lock(&audio_level_lock_);
     audio_level_.ComputeLevel(*audio_frame, duration);
   }
-  channel_send_->ProcessAndEncodeAudio(std::move(audio_frame));
+  if (!external_budget_suspended_.load())
+    channel_send_->ProcessAndEncodeAudio(std::move(audio_frame));
 }
 
 bool AudioSendStream::SendTelephoneEvent(int payload_type,
@@ -512,6 +516,13 @@ uint32_t AudioSendStream::OnBitrateUpdated(BitrateAllocationUpdate update) {
         update.packet_overhead.bytes<size_t>();
     UpdateOverheadPerPacket();
   }
+  if (config_.send_transport &&
+      config_.send_transport->UsesMediaPayloadBudget()) {
+    external_budget_suspended_.store(update.target_bitrate.IsZero());
+    if (update.target_bitrate.IsZero())
+      return 0;
+    update.packet_overhead = DataSize::Zero();
+  }
   // Pick a target bitrate between the constraints. Overrules the allocator if
   // it 1) allocated a bitrate of zero to disable the stream or 2) allocated a
   // higher than max to allow for e.g. extra FEC.
@@ -536,7 +547,12 @@ void AudioSendStream::UpdateOverheadPerPacket() {
   size_t overhead_per_packet_bytes =
       transport_overhead_per_packet_bytes_ +
       rtp_rtcp_module_->ExpectedPerPacketOverhead();
-  if (overhead_per_packet_ == overhead_per_packet_bytes) {
+  if (config_.send_transport &&
+      config_.send_transport->UsesMediaPayloadBudget())
+    overhead_per_packet_bytes = 0;
+  if (overhead_per_packet_ == overhead_per_packet_bytes &&
+      !(config_.send_transport &&
+        config_.send_transport->UsesMediaPayloadBudget())) {
     return;
   }
   overhead_per_packet_ = overhead_per_packet_bytes;
@@ -842,10 +858,15 @@ void AudioSendStream::ConfigureBitrateObserver() {
           .max_bitrate_bps = constraints->max.bps<uint32_t>(),
           .pad_up_bitrate_bps = 0,
           .priority_bitrate_bps = priority_bitrate.bps(),
-          .enforce_min_bitrate = true,
+          .enforce_min_bitrate =
+              !(config_.send_transport &&
+                config_.send_transport->UsesMediaPayloadBudget()),
           .bitrate_priority = allocation_settings_.bitrate_priority.value_or(
               config_.bitrate_priority),
-          .rate_elasticity = TrackRateElasticity::kCanContributeUnusedRate});
+          .rate_elasticity = TrackRateElasticity::kCanContributeUnusedRate,
+          .cap_resume_bitrate_to_max =
+              config_.send_transport &&
+              config_.send_transport->UsesMediaPayloadBudget()});
 
   registered_with_allocator_ = true;
 }
@@ -867,6 +888,9 @@ AudioSendStream::GetMinMaxBitrateConstraints() const {
   TargetAudioBitrateConstraints constraints{
       .min = DataRate::BitsPerSec(config_.min_bitrate_bps),
       .max = DataRate::BitsPerSec(config_.max_bitrate_bps)};
+  if (config_.send_transport &&
+      config_.send_transport->UsesMediaPayloadBudget())
+    return constraints;
 
   // If bitrates were explicitly overriden via field trial, use those values.
   if (allocation_settings_.min_bitrate)

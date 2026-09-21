@@ -201,6 +201,7 @@ class StatisticsCalculator {
   size_t expanded_speech_samples_;
   size_t expanded_noise_samples_;
   size_t concealed_samples_at_event_end_ = 0;
+  int output_sample_rate_hz_ = 48000;
   uint32_t timestamps_since_last_report_;
   std::deque<int> waiting_times_;
   uint32_t secondary_decoded_samples_;

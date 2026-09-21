@@ -6,7 +6,9 @@
 #define MODULES_ROQ_RTP_PACKET_METADATA_H_
 
 #include <cstdint>
+#include <optional>
 #include <span>
+#include <vector>
 
 #include "api/video/video_codec_type.h"
 
@@ -33,6 +35,18 @@ bool ParseRtpPacketMetadata(std::span<const uint8_t> packet,
                             RtpPacketMetadata* metadata);
 bool ParseRtxOriginalSequenceNumber(std::span<const uint8_t> packet,
                                     uint16_t* sequence_number);
+// Returns the primary codec payload length, excluding RTP and RED redundancy.
+size_t PrimaryPayloadSize(std::span<const uint8_t> packet, bool red);
+struct RtpPayloadCost {
+  size_t primary_bytes = 0;
+  size_t redundant_bytes = 0;
+  size_t redundant_blocks = 0;
+};
+std::optional<RtpPayloadCost> ParseRtpPayloadCost(
+    std::span<const uint8_t> packet,
+    bool red);
+// Exact report coverage + exact SDES. Empty means unsafe to coalesce.
+std::vector<uint8_t> PeriodicRtcpKey(std::span<const uint8_t> packet);
 bool ClassifyRtcpPacket(std::span<const uint8_t> packet, bool* critical);
 
 }  // namespace webrtc::roq

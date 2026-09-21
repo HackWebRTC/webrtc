@@ -405,6 +405,7 @@ RtpVideoSender::RtpVideoSender(
       use_frame_rate_for_overhead_(
           env.field_trials().IsEnabled("WebRTC-Video-UseFrameRateForOverhead")),
       has_packet_feedback_(TransportSeqNumExtensionConfigured(rtp_config)),
+      external_media_budget_(send_transport->UsesMediaPayloadBudget()),
       transport_queue_(*transport_queue),
       active_(false),
       fec_controller_(std::move(fec_controller)),
@@ -832,8 +833,15 @@ std::map<uint32_t, RtpPayloadState> RtpVideoSender::GetRtpPayloadStates()
 
 void RtpVideoSender::OnBitrateUpdated(BitrateAllocationUpdate update,
                                       int framerate) {
-  // Substract overhead from bitrate.
+  // External wire policy has already deducted RED/RTX/protocol costs. Double
+  // subtraction here would defeat the allocator's hard-min suspension.
   MutexLock lock(&mutex_);
+  if (external_media_budget_) {
+    encoder_target_rate_bps_ = update.target_bitrate.bps<uint32_t>();
+    protection_bitrate_bps_ = 0;
+    return;
+  }
+  // Subtract overhead for native WebRTC allocation.
   if (transport_overhead_bytes_per_packet_ !=
       update.packet_overhead.bytes<size_t>()) {
     transport_overhead_bytes_per_packet_ =

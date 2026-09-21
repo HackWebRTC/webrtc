@@ -105,6 +105,8 @@ class TestTransport : public Transport {
  public:
   explicit TestTransport(RtpHeaderExtensionMap* extensions)
       : total_data_sent_(DataSize::Zero()), extensions_(extensions) {}
+  bool async_completion = false;
+  bool HasAsyncSendCompletion() const override { return async_completion; }
   MOCK_METHOD(void, SentRtp, (const PacketOptions& options), ());
   bool SendRtp(std::span<const uint8_t> packet,
                const PacketOptions& options) override {
@@ -187,6 +189,44 @@ class RtpSenderEgressTest : public ::testing::Test {
   RtpPacketHistory packet_history_;
   uint16_t sequence_number_;
 };
+
+TEST_F(RtpSenderEgressTest,
+       AsyncRtxPendingUntilTerminalAndRttStartsAtSubmission) {
+  transport_.async_completion = true;
+  auto sender = CreateRtpSenderEgress();
+  packet_history_.SetStorePacketsStatus(
+      RtpPacketHistory::StorageMode::kStoreAndCull, 10);
+  packet_history_.SetRtt(TimeDelta::Millis(100));
+  auto original = BuildRtpPacket();
+  original->set_allow_retransmission(true);
+  const auto seq = original->SequenceNumber();
+  sender->SendPacket(std::move(original), PacedPacketInfo());
+  auto rtx = packet_history_.GetPacketAndMarkAsPending(seq);
+  ASSERT_TRUE(rtx);
+  rtx->set_packet_type(RtpPacketMediaType::kRetransmission);
+  rtx->set_retransmitted_sequence_number(seq);
+  sender->SendPacket(std::move(rtx), PacedPacketInfo());
+  auto complete = transport_.last_packet()->options.on_send_complete;
+  ASSERT_TRUE(complete);
+  time_controller_.AdvanceTime(TimeDelta::Millis(500));
+  EXPECT_FALSE(packet_history_.GetPacketAndMarkAsPending(seq));
+  complete(true, env_.clock().CurrentTime().us());
+  time_controller_.AdvanceTime(TimeDelta::Zero());
+  EXPECT_FALSE(packet_history_.GetPacketAndMarkAsPending(seq));
+  time_controller_.AdvanceTime(TimeDelta::Millis(101));
+  rtx = packet_history_.GetPacketAndMarkAsPending(seq);
+  ASSERT_TRUE(rtx);
+  rtx->set_packet_type(RtpPacketMediaType::kRetransmission);
+  rtx->set_retransmitted_sequence_number(seq);
+  sender->SendPacket(std::move(rtx), PacedPacketInfo());
+  complete = transport_.last_packet()->options.on_send_complete;
+  complete(false, -1);
+  time_controller_.AdvanceTime(TimeDelta::Zero());
+  EXPECT_TRUE(packet_history_.GetPacketAndMarkAsPending(seq));
+  sender.reset();
+  complete(false, -1);  // Late callback never accesses destroyed egress/queue.
+  time_controller_.AdvanceTime(TimeDelta::Zero());
+}
 
 TEST_F(RtpSenderEgressTest, SendsPacketsOneByOneWhenNotBatching) {
   std::unique_ptr<RtpSenderEgress> sender = CreateRtpSenderEgress();

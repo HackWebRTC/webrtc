@@ -14,12 +14,12 @@ QueuedDatagram VideoPacket(uint8_t value, Timestamp now) {
           .frame_id = DatagramFrameId{7, 90000, "video"},
           .packet_id = DatagramPacketId{7, value}};
 }
-TEST(PacketForwardingTest, IncompleteFrameDoesNotBlockOrExpirePacket) {
+TEST(PacketForwardingTest, IncompleteFrameDoesNotBlockBeforeQueueAgeLimit) {
   const auto now = Timestamp::Millis(100);
   BoundedDatagramQueue q(4, 1024);
   ASSERT_EQ(q.Enqueue(VideoPacket(100, now), now),
             DatagramEnqueueResult::kQueued);
-  auto packet = q.Pop(now + TimeDelta::Seconds(2));
+  auto packet = q.Pop(now + TimeDelta::Millis(150));
   ASSERT_TRUE(packet);
   EXPECT_EQ(packet->bytes, (std::vector<uint8_t>{100}));
 }
@@ -28,6 +28,8 @@ TEST(PacketForwardingTest, RTXDoesNotRequireOriginalTransportSubmission) {
   BoundedDatagramQueue q(4, 1024);
   auto rtx = VideoPacket(101, now);
   rtx.original_packet_id = DatagramPacketId{7, 100};
+  // This test has no history deadline. Primary-video fixture age is unrelated.
+  rtx.deadline = Timestamp::PlusInfinity();
   ASSERT_EQ(q.Enqueue(std::move(rtx), now), DatagramEnqueueResult::kQueued);
   EXPECT_TRUE(q.Pop(now + TimeDelta::Seconds(2)));
 }

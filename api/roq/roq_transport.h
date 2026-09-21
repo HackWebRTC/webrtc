@@ -47,6 +47,8 @@ class RoqPacketTransport final : public Transport {
 
   bool SendRtp(std::span<const uint8_t> packet,
                const PacketOptions& options) override;
+  bool HasAsyncSendCompletion() const override { return true; }
+  bool UsesMediaPayloadBudget() const override { return true; }
   size_t MaxRtpPacketSize() const override {
     return std::min(
         std::min(application_packet_limit_.load(), size_t{1100}),

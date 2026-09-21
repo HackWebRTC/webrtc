@@ -174,6 +174,33 @@ TEST(StatisticsCalculator, InterruptionCounter) {
   EXPECT_EQ(5100 + 151, lts.total_interruption_duration_ms);
 }
 
+TEST(StatisticsCalculator, OngoingQualitySnapshotDoesNotCloseOrResetEvent) {
+  TickTimer timer;
+  StatisticsCalculator stats(&timer);
+  stats.IncreaseCounter(480, 48000);
+  EXPECT_EQ(stats.GetLifetimeStatistics().output_duration_us, 0u);
+  stats.DecodedOutputPlayed();
+  stats.IncreaseCounter(480, 48000);
+  stats.ExpandedVoiceSamples(7200, true);
+  auto ongoing = stats.GetLifetimeStatistics();
+  EXPECT_EQ(ongoing.current_concealment_duration_us, 150000u);
+  EXPECT_EQ(ongoing.interruption_count, 0);
+  EXPECT_EQ(ongoing.output_duration_us, 10000u);
+  EXPECT_EQ(stats.GetLifetimeStatistics().current_concealment_duration_us,
+            150000u);
+  stats.EndExpandEvent(48000);
+  auto completed = stats.GetLifetimeStatistics();
+  EXPECT_EQ(completed.current_concealment_duration_us, 0u);
+  EXPECT_EQ(completed.interruption_count, 1);
+  EXPECT_EQ(completed.interruption_duration_us, 150000u);
+  EXPECT_EQ(completed.max_interruption_duration_us, 150000u);
+  // Normal DTX comfort noise is not concealed audio.
+  stats.GeneratedNoiseSamples(48000);
+  stats.IncreaseCounter(320, 32000);
+  EXPECT_EQ(stats.GetLifetimeStatistics().current_concealment_duration_us, 0u);
+  EXPECT_EQ(stats.GetLifetimeStatistics().output_duration_us, 20000u);
+}
+
 TEST(StatisticsCalculator, InterruptionCounterDoNotLogBeforeDecoding) {
   constexpr int fs_khz = 48;
   constexpr int fs_hz = fs_khz * 1000;

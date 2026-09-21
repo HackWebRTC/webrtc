@@ -11,6 +11,7 @@
 #ifndef AUDIO_AUDIO_SEND_STREAM_H_
 #define AUDIO_AUDIO_SEND_STREAM_H_
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -215,6 +216,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   // Total overhead, including transport and RTP headers.
   size_t overhead_per_packet_ RTC_GUARDED_BY(worker_thread_checker_) = 0;
 
+  std::atomic<bool> external_budget_suspended_ = false;
   bool registered_with_allocator_ RTC_GUARDED_BY(worker_thread_checker_) =
       false;
   std::optional<std::pair<TimeDelta, TimeDelta>> frame_length_range_
